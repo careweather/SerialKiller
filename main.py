@@ -11,15 +11,16 @@ from datetime import datetime
 
 import command
 
-from PyQt5.QtWidgets import QFileDialog, QTableWidget, QTableWidgetItem
+from PyQt5.QtWidgets import QFileDialog, QTableWidget, QTableWidgetItem, QApplication
 import loggingTools
 import getopt
 try:
-    import serialHandler as SH
     import scripting
     from GUI_MAIN import Ui_MainWindow  # Local
     from GUI_HELP import Ui_Help
     from PyQt5.QtCore import QObject, QThread, pyqtSignal, QTimer
+    from PyQt5.QtCore import *
+
     from PyQt5 import QtGui, QtWidgets
     import serialHandler as SH
 except Exception as E:
@@ -34,10 +35,11 @@ except Exception as E:
     pySerial    - pip install pyserial''')
     quit()
 
-
+KEY_SHIFT = 67108864
 KEY_UP = 16777235
 KEY_DOWN = 16777237
 KEY_ENTER = 16777220
+KEY_ESCAPE = 16777216
 
 TYPE_INPUT = 0
 TYPE_OUTPUT = 1
@@ -156,8 +158,7 @@ class RescanWorker(QObject):  # THIS RESCANS FOR CHANGING PORTS. ASYNC
                 self.disconnected.emit(False)
 
     def stop(self):
-        pass
-        #self._active = False
+        self._active = False
 
 
 class SerialWorker(QObject):  # THIS FETCHES SERIAL DATA. ASYNC.
@@ -217,24 +218,37 @@ class MainWindow(QtWidgets.QMainWindow):
         self.cmd.add_command("script", self.handle_script, "start script", parse="dash")
         self.cmd.add_command("auto", self.ui.checkbox_autoReconnect.toggle)
         self.cmd.add_command("help", self.open_help)
+        self.cmd.add_command("@", self.updatePlot)
+        timer = QTimer()
+        timer.timeout.connect(self.ui.widget_plot.update)
+        timer.start(100)
         self.load_settings()
         self.update_ports()
+
+    def updatePlot(self):
+        self.ui.widget_plot.update()
 
     def open_help(self):
         self.help = HelpPopup()
         self.help.show()
 
 
-    def keyPressEvent(self, event):
-        key = event.key()
-        modifiers = int(event.modifiers())
+    def keyPressEvent(self, QKeyEvent):
+
+        key = QKeyEvent.key()
+        modifiers = int(QKeyEvent.modifiers())
+        if self.script_active and key == KEY_ESCAPE:
+            self.end_script()
+        #if (key == Qt.Key_O) and modifiers == Qt.ShiftModifier:
+        #    print("shift + o")
+
+        print("key", key, "modifiers", modifiers)
         if self.ui.lineEdit_input.hasFocus():
-            # print(key)
+            #print(key)
             if key == KEY_ENTER:  # send
                 self.send_clicked()
             elif key == KEY_UP:
-                print(self.currentIndex)
-                print(self.historyIndex)
+                
                 if len(self.history) > 0:
                     self.currentIndex -= 1
                     if (self.currentIndex < 0):

@@ -41,73 +41,33 @@ plotThese = [
 ]
 
 class graphWidget(pg.GraphicsLayoutWidget):
-    def __init__(self, parent=None, **kargs):
-        pg.GraphicsLayoutWidget.__init__(self, **kargs)
-        self.graph = pg.GraphicsLayoutWidget()
-        self.aplot = self.graph.addPlot()
-        self.aplot.setYRange(-100,100)
-        self.aplot.setXRange(-100,100)
-        self.drawplot = self.aplot.plot(pen = 'y')
-
-        '''
-        self.traces = dict()
-        self.lastDict = {}
+    def __init__(self, parent):
+        super().__init__()
+        self.plt1 = self.addPlot()
+        #self.data1 = np.random.normal(size=100)
+        #self.data2 = np.random.normal(size=100)
+        self.data1 = np.zeros(shape= (100))
+        self.data2 = np.zeros(shape=(100))
+        self.curve1 = self.plt1.plot(self.data1)
+        self.curve2 = self.plt1.plot(self.data2)
         self.ptr = 0
-        self.data = np.zeros(shape = 0)
-        self.plotwiget = pg.plot(title = 'does work')
-        self.setParent(parent)
-        self.x = np.arange(50)
-        timer = QtCore.QTimer()
-        print("started timer")
-        timer.timeout.connect(self.test)
-        timer.start(1000)
-        self.addLineGraph()
-        
-        '''
-        
 
-    def addLineGraph(self):
-        x = np.arange(100)
-        y = np.random.normal(size=(1,100))
-        #y = self.data
-        self.trace = self.plotwiget.plot(x,y[0])
-        
-
-    def addLine(self, key):
-        print("adding", key)
-        pass
-        #for line in 
-
-
-    def updateLineGraph(self):
-        val = self.valDict['a']
-        print('val: ' , str(val))
-        self.data = np.append(self.data, val)
+    def update(self): 
+        print("updating!")
+        self.data1[:-1] = self.data1[1:]
+        self.data2[:-1] = self.data2[1:]
+        #data1[-1] = np.random.normal()
+        self.data1[-1] = np.sin(self.ptr/2)
+        self.data2[-1] = np.sin(self.ptr/1.9)
+        self.curve2.setData(self.data2)
+        self.curve1.setData(self.data1)
         self.ptr += 1 
-        self.data[:-1] = self.data[1:]
-        self.data[-1] = self.traces['a']
-        self.trace.setData(self.data)
-        self.trace.setPos(self.ptr,0)
 
-        # val = self.valDict['a']
-        # print('val: ' , str(val))
-        # self.data = np.append(self.data, val)
-        # for item in self.valDict:
-        #     print(item)
-        #     print(self.valDict[item])
-        # print(self.data)
-        # now = time.time()
-        
-        # plt = pg.plot(x=self.data, y=self.ptr)
-
-        # self.lineGraph.plot(x=self.data, y=self.ptr)
-        #self.curve.setData(self.data, )
-        #self.processEvents()
-        
-
-    def parseBarVal(self, input): 
+    def start(self):
         pass
-        
+
+    def close(self):
+        pass
     def parseKeyVal(self, input):
         print("parsing")
         tokens = re.split(token_splits, input)
