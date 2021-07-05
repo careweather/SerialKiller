@@ -86,7 +86,6 @@ class commands():
         return -1
 
     def check(self, input, execute=True):
-        # print(self.commandList)
         for com in self.commandList:
             result = self.compare(com.key, input)
             if result != -1:
@@ -100,7 +99,6 @@ class commands():
 
                 dprint('args: ', str(args))
                 dprint(type(args))
-                
                 dprint('n_args: ', str(n_args))
                 if n_args < com.req_args:
                     print("ERROR TOO FEW ARGUMENTS")
