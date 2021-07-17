@@ -8,13 +8,11 @@ TYPE_NONE = 3
 
 debug = False
 
-
 def dprint(*args):
     if debug:
         for arg in args:
             
             print("COMMAND DEBUG:" ,arg)
-
 
 class _command():
     def __init__(self, key, funct, funct_name="function", type=TYPE_NONE, req_args=0):
@@ -152,7 +150,12 @@ def test2():
                 pass
         print("sum", x)
         print("strsum", xstr)
-
+    
+    def evaluate(*args): 
+        for arg in args: 
+            print("evaluating:", arg)
+            eval(arg)
+    
     coms = commands()
     coms.use_args(True)
     coms.add_command("echo", echoMe, "Echo Me", parse= "none")
@@ -160,6 +163,7 @@ def test2():
     coms.add_command("add", adder, "Adder", parse="paren")
     coms.add_command("times", echoTimes, "Adder", parse="paren")
     coms.add_command("exit", exit, "")
+    coms.add_command("eval", evaluate, "" , parse='dash')
 
     userin = ""
     quit_vars = ["q", "quit", "x"]
@@ -169,5 +173,4 @@ def test2():
 
 
 if __name__ == '__main__':
-    # print(__name__)
     test2()

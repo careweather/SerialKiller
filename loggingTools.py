@@ -1,7 +1,7 @@
 import os
 import datetime
 from datetime import date
-from GUI_LOG import Ui_logViewer
+from gui.GUI_LOG import Ui_logViewer
 from PyQt5.QtWidgets import QFileDialog
 from PyQt5 import QtWidgets 
 import logging 

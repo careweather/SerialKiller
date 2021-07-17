@@ -4,22 +4,21 @@ More full documentation is avaliable in the github repo linked below.
 Certain functions are accessable via "terminal style" commands.  
 Enter the keyword directly into the "To Device" text box. 
 ### TERMINAL COMMANDS:  
-| --Key-- | --Function-- | 
-|:-------------:|:-------------|
-|help|open this help window|
-|con|connect to the port selected|
-|dcon|disconnect|
-|clear|clear terminal text|
-|script|run the script in script tab|
-|quit|close the program immediately|
-|save|save current configuration|
-|new|open a new window|
-|log|open the latest log|
-|logs|open a log from the log directory|
-|scan|rescan for Serial Ports|
-|auto|toggle auto-reconnect|
-|com*|open com port (*) if it's avaliable|
-|baud*|change baud rate to (*)|
+|Key|Function|Args|Example|
+|:-------------:|:-------------:|:----------:|:---:|
+|help|open this help window| none | >> help
+|con|connect to the port selected|none | >>con
+|dcon|disconnect|none | >>dcon
+|clear|clear terminal text|none | >>clear
+|script|run the script in script tab|-o open -s save -[name] run "name"|>>script -example
+|quit|close the program immediately|none |
+|save|save current configuration|none |
+|new|open a new window|none |
+|log|open the latest log|-l open latest. -n start new.|
+|scan|rescan for Serial Ports|none |
+|auto|toggle auto-reconnect|none |
+|com*|open com port (*) if it's avaliable|none |
+|baud*|change baud rate to (*)|none |
 
 
 ### Command Conflicts: 

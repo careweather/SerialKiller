@@ -1,19 +1,25 @@
-
-
 from PyQt5.QtWidgets import QApplication
 import pyqtgraph.examples
 from pyqtgraph.Qt import QtGui, QtCore
 import numpy as np
 import pyqtgraph as pg
 import time
+import math
 import sys
+import re
+
 # pyqtgraph.examples.run()
 
 # quit()
 # import initExample ## Add path to library (just for examples; you do not need this)
 
+"""
+Data Types: 
+Bulk: a:1,2,3,4,5,6,7,8
+Stream: a:1,b:2,c:3,d:4
 
-import re
+"""
+
 
 token_splits = r"[;,\t]"
 value_splits = r"[:=]"
@@ -25,6 +31,24 @@ testStrs = [
     'a=1f,b=22f,c=3,d=4a,e=-5d',
     'dad = mad'
 ]
+
+sines = [64, 67, 70, 73, 76, 80, 83, 86,
+         88, 91, 94, 97, 100, 102, 105, 107,
+         109, 111, 113, 115, 117, 119, 120, 122,
+         123, 124, 125, 126, 127, 127, 128, 128,
+         128, 128, 128, 127, 127, 126, 125, 124,
+         123, 122, 120, 119, 117, 115, 113, 111,
+         109, 107, 105, 102, 100, 97, 94, 91,
+         88, 86, 83, 80, 76, 73, 70, 67,
+         64, 61, 58, 55, 52, 48, 45, 42,
+         40, 37, 34, 31, 28, 26, 23, 21,
+         19, 17, 15, 13, 11, 9, 8, 6,
+         5, 4, 3, 2, 1, 1, 0, 0,
+         0, 0, 0, 1, 1, 2, 3, 4,
+         5, 6, 8, 9, 11, 13, 15, 17,
+         19, 21, 23, 26, 28, 31, 34, 37,
+         40, 42, 45, 48, 52, 55, 58, 61, ]
+
 
 plotTests = [
     'a:0,b:0,c:0',
@@ -40,32 +64,113 @@ plotTests = [
     'a:0,b:0,c:0',
 ]
 
+bulkTest = [
+    "a:1,2,3,4,5,6,7,8,9,10",
+    "a:0,2,4,6,8,10,8,6,4,2",
+    "a:1,2,3,4,5,6,7,8,9,10",
+    "a:1,2,3,4,5,6,7,8,9,10",
+            ]
 
-# TYPES OF GRAPHS
+plotTests = []
+d = 0
+for v in sines:
+    d += 1
+    st = f"a:{v},b:{-v+64},c:{20*math.sin(d/6.28)}"
+    plotTests.append(st)
+
+
+
+verbose = True
+debug = True
+
+def dprint(input, *args): # for debugging the program
+    if debug:
+        print(input, *args)
+
+
+def vprint(input, *args): # verbose prints stuff to terminal 
+    if verbose:
+        print(input, *args)
+
 TYPE_NONE = 0
-TYPE_LINE = 1
-
+TYPE_STREAM = 1 
+TYPE_BULK = 2 
 
 class graphWidget(pg.GraphicsLayoutWidget):
     def __init__(self, parent):
         super().__init__()
         self.graph_type = TYPE_NONE
+
         self.ptr = 0
         self.n_lines = 0
         self.previous_dict = {}
         self.current_dict = {}
         self.data_dict = {}
         self.curve_dict = {}
+        self.started = False
+        self.v_list = []
 
-    def startLineGraph(self, max_variables=5, max_points=100):
+    def startLineGraph(self):
         print("Starting Line Graph")
-        if self.graph_type == TYPE_NONE:
-            self.graph_type = TYPE_LINE
-            self.lineGraph = self.addPlot()
-            self.data = np.zeros([10])
-            #self.curve = self.lineGraph.plot(self.data)
-        else:
-            print("Already Started")
+        self.lineGraph = self.addPlot()
+        self.graph_type = TYPE_STREAM
+
+    def startStreamGraph(self, targets = ""):
+        print("Starting Stream Graph")
+        self.lineGraph = self.addPlot()
+        self.graph_type = TYPE_STREAM
+        self.targets = targets
+        self.data_list = []
+
+
+    def updateStreamGraph(self, input): 
+        dprint('input: ' , str(input), type(input))
+
+
+    def startBulkGraph(self, targets = ""): 
+        self.graph_type = TYPE_BULK
+        self.lineGraph = self.addPlot()
+        self.targets = targets 
+        self.data_list = []
+
+
+    def updateBulkGraph(self, input):
+        dprint('input: ' , str(input), type(input))
+        
+    def setKeys(self, keys=""):
+        pass
+
+    def update(self, input):
+        if self.started == False:
+            self.startLineGraph()
+        self.parseLineData(input)
+        self.updateLineData()
+        self.updateLineGraph()
+
+    def parseBulkData(self, input): 
+        tokens = re.split(r'[:;=]', input)
+        #print('tokens: ' , str(tokens), type(tokens))
+        key = tokens[0]
+        #print('key: ' , str(key), type(key))
+
+        vals = tokens[-1]
+        print('vals: ' , str(vals), type(vals))
+        try:
+            
+            vals = re.split(r'[,]', vals)
+            self.v_list = []
+            for val in vals:
+                try:
+                    self.v_list.append(float(val))
+                except Exception as E:
+                    print(E)
+            print('v_list: ' , str(self.v_list), type(self.v_list))
+        except Exception as E:
+            print(E) 
+        if not self.started:
+            self.startLineGraph()
+        self.lineGraph.clear()
+        self.lineGraph.plot(self.v_list)
 
     def parseLineData(self, input):
         tokens = re.split(token_splits, input)
@@ -82,25 +187,29 @@ class graphWidget(pg.GraphicsLayoutWidget):
 
     def addNewLine(self, key):
         self.n_lines += 1
-        self.data_dict[key] = np.zeros(25)
-        self.curve_dict[key] = self.lineGraph.plot(self.data_dict[key], pen=self.n_lines)
-        label = pg.TextItem(key, color = self.n_lines,anchor = (self.n_lines,-1))
+        self.data_dict[key] = np.zeros(256)
+        self.curve_dict[key] = self.lineGraph.plot(
+            self.data_dict[key], pen=self.n_lines*2)
+        label = pg.TextItem(key, color=self.n_lines*2,
+                            anchor=(self.n_lines, -1))
         label.setTextWidth(25)
         self.lineGraph.addItem(label)
-        #self.addItem(Label)
-
+        # self.addItem(Label)
 
     def updateLineData(self):
         for key in self.current_dict.keys():
             if key not in self.data_dict.keys():
                 self.addNewLine(key)
-            #self.data_dict[key] = np.append(self.data_dict[key], [self.current_dict[key]])
-            print(key, self.current_dict[key])
             self.data_dict[key][-1] = self.current_dict[key]
             self.data_dict[key] = np.roll(self.data_dict[key], -1)
-            #while len(self.data_dict[key]) > 25:
-            #    c = curves.pop(0)
-            #    p5.removeItem(c)
+
+    def testSingleBulk(self): 
+        self.ptr += 1
+        if (self.ptr > len(bulkTest)-1):
+            self.ptr = 0
+        print('self.ptr: ' , str(self.ptr), type(self.ptr))
+        self.parseBulkData(bulkTest[self.ptr])
+
 
     def testSingleLine(self):
         if (self.ptr > len(plotTests)-1):
@@ -109,43 +218,48 @@ class graphWidget(pg.GraphicsLayoutWidget):
         self.updateLineData()
         self.updateLineGraph()
 
-        # time.sleep(.05)
-
     def testUpdate(self):
-        print("updating line data")
         self.startLineGraph()
         for line in plotTests:
             self.parseLineData(line)
-            # time.sleep(.05)
             self.updateLineData()
             self.updateLineGraph()
 
     def updateLineGraph(self):
         for element in self.data_dict:
-            print(self.data_dict[element])
-            # curve4.setData(data3[:ptr3])
-            #self.curve_dict[element] = self.lineGraph.plot(self.data_dict[element])
-            self.curve_dict[element].setData(
-                self.data_dict[element])
-            #self.curve_dict[element].setPos(self.ptr, 0)
-            # self.curve_dict[element].plot()
+            self.curve_dict[element].setData(self.data_dict[element][:-1])
         self.ptr += 1
 
 
-runExamples = 0
-
+runExamples = 1
+bulks = True
 
 def exe():
-    app = QApplication(sys.argv)
-    win = graphWidget(app)
-    win.show()
-    win.startLineGraph()
-    timer = pg.QtCore.QTimer()
-    timer.timeout.connect(win.testSingleLine)
-    timer.start(100)
-    # win.testUpdate()
-    status = app.exec_()
-    sys.exit(status)
+    if not bulks: 
+        app = QApplication(sys.argv)
+        win = graphWidget(app)
+        win.show()
+        win.startLineGraph()
+        timer = pg.QtCore.QTimer()
+        timer.timeout.connect(win.testSingleLine)
+        timer.start((1/80)*1000)
+        # win.testUpdate()
+        status = app.exec_()
+        sys.exit(status)
+    else: 
+        app = QApplication(sys.argv)
+        win = graphWidget(app)
+        win.show()
+        timer = pg.QtCore.QTimer()
+        timer.timeout.connect(win.testSingleBulk)
+        timer.start(1000)
+        status = app.exec_()
+        sys.exit(status)
+        
+
+
+        #status = app.exec_()
+        #sys.exit(status)
 
 
 if __name__ == '__main__':

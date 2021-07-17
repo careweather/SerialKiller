@@ -451,19 +451,6 @@
            <property name="spacing">
             <number>0</number>
            </property>
-           <item row="0" column="1">
-            <widget class="QPushButton" name="pushButton_startPlot">
-             <property name="minimumSize">
-              <size>
-               <width>80</width>
-               <height>0</height>
-              </size>
-             </property>
-             <property name="text">
-              <string>Start Plot</string>
-             </property>
-            </widget>
-           </item>
            <item row="0" column="0">
             <spacer name="horizontalSpacer_4">
              <property name="orientation">
@@ -476,6 +463,13 @@
               </size>
              </property>
             </spacer>
+           </item>
+           <item row="0" column="1">
+            <widget class="QCheckBox" name="checkBox_graphData">
+             <property name="text">
+              <string>Graph Data</string>
+             </property>
+            </widget>
            </item>
           </layout>
          </widget>

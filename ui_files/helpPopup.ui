@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>458</width>
-    <height>601</height>
+    <width>757</width>
+    <height>567</height>
    </rect>
   </property>
   <property name="minimumSize">
@@ -24,6 +24,9 @@
     <widget class="QTextBrowser" name="textBrowser">
      <property name="verticalScrollBarPolicy">
       <enum>Qt::ScrollBarAlwaysOn</enum>
+     </property>
+     <property name="autoFormatting">
+      <set>QTextEdit::AutoAll</set>
      </property>
      <property name="textInteractionFlags">
       <set>Qt::TextBrowserInteraction</set>

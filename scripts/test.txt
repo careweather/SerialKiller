@@ -1,0 +1,10 @@
+#delay200
+send hello1
+send hello2
+send hello3
+#delay100
+send hello1
+send hello2
+send hello3
+clear
+save

@@ -4,7 +4,6 @@ import os
 
 ser = serial.Serial(timeout=1)
 
-
 def sendString(toSend=""):
     try:
         ser.flush()
@@ -45,9 +44,8 @@ def getLine():
     waiting = ser.inWaiting()
     if waiting > 0:
         line = ser.readline()
-        print(line)
+        line = line.decode('UTF-8')
         return line
-
 
 def getSerialString():
     waiting = ser.inWaiting()
