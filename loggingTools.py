@@ -139,6 +139,8 @@ def setPort(com_port = "NO_PORT"):
     global port
     port = com_port.ljust(7)
     print("Set logging port to:", port)
+    stopLogger()
+    startLogger()
 
 def addLine(text):
     global _started

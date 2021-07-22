@@ -29,11 +29,16 @@ except Exception as E:
     pySerial    - pip install pyserial''')
     quit()
 
-KEY_SHIFT = 67108864
+KEY_SHIFT = 33554432
 KEY_UP = 16777235
 KEY_DOWN = 16777237
 KEY_ENTER = 16777220
 KEY_ESCAPE = 16777216
+KEY_C = 67
+KEY_S = 83
+KEY_L_ANGLE = 44
+KEY_R_ANGLE = 46
+MOD_CTRL = 67108864
 
 TYPE_INPUT = 0
 TYPE_OUTPUT = 1
@@ -66,35 +71,90 @@ baudRates = [1200, 1800, 2400, 4800, 9600, 19200, 38400, 57600, 115200, 256000]
 verbose = True
 debug = True
 
-def dprint(input, *args): # for debugging the program
+
+
+CBLACK  = '\33[30m'
+CRED    = '\33[31m'
+CGREEN  = '\33[32m'
+CYELLOW = '\33[33m'
+CBLUE   = '\33[34m'
+CCYAN   = '\033[96m' 
+CVIOLET = '\33[35m'
+CBEIGE  = '\33[36m'
+CWHITE  = '\33[37m'
+ENDC = '\033[0m'
+BOLD = '\033[1m'
+UNDERLINE = '\033[4m'
+
+def dprint(input, *args, color = ""): # for debugging the program
     if debug:
-        print(input, *args)
+        print(color + input + ENDC, *args)
 
 
-def vprint(input, *args): # verbose prints stuff to terminal 
+def vprint(input, *args, color = ""): # verbose prints stuff to terminal 
     if verbose:
-        print(input, *args)
+        print(color + input + ENDC, *args, end='', flush=True)
 
 script_help = '''
 Script Help
+ARGUMENTS:
+(none)\t run script in the script tab
 -[name] \t run "name".txt
--o \t open script name from directory
+-o \t open and run a script from the directory
 -s \t save current script 
 -s -[name] \t save current script as "name".txt
 -n \t start new script
 -t \t jump to script tab
-'''
+-h\t display this help message
 
+SCRIPT SPECIFIC KEYWORDS:
+#delay[numb]\tchange to delay between lines to "numb" milliseconds
+#wait\twait for serial input before continuing'''
+
+log_help = '''LOG Help
+ARGUMENTS:
+(none)\topen the last log file avaliable
+-o\topen a log file from the directory
+-n\tstart a new log and archive the old
+-h\tdisplay this help message'''
+
+
+
+
+def get_timestamp(): 
+    millis = time.time() - int(time.time())
+    ts = time.strftime("%H:%M:%S", time.gmtime())
+    ts + str(millis)
+    ts = str(ts) + str(millis)[1:6]
+    return ts
+    
+
+def add_timestamp(text:str): 
+    ts = get_timestamp()
+    lines = text.splitlines(True)
+    print('lines: ' , str(lines), type(lines))
+    ret = ""
+    if len(lines) > 1: 
+        for line in lines[:-1]: 
+            ret = ret + ts + "| " + line 
+        #ret += lines[-1]
+    else: 
+        for line in lines: 
+            ret = ret + ts + "| " + line 
+
+    print(ret)
+    return ret
 
 class HelpPopup(QtWidgets.QDialog):
     def __init__(self):
         super().__init__()
-
         self.ui = Ui_Help()
         self.ui.setupUi(self)
-        text = open('help.md').read()
-        self.ui.textBrowser.setMarkdown(text)
-        #self.ui.button_repo.clicked.connect(goToRepo)
+        text = open('help.html').read()
+        self.ui.textBrowser.setHtml(text)
+        #text = open('help.md').read()
+        #self.ui.textBrowser.
+        #self.ui.textBrowser.setMarkdown(text)
 
     def keyPressEvent(self, event):
         if event.key():
@@ -113,9 +173,10 @@ class RescanWorker(QObject):  # THIS RESCANS FOR CHANGING PORTS. ASYNC
         while self._active:
             try:
                 ports = SH.getPorts()
+                #print(ports)
                 if(ports != lastPorts):
                     lastPorts = ports
-                    vprint(ports)
+                    vprint(str(ports), color=CGREEN)
                     self.updatedPorts.emit(ports)
                 time.sleep(.5)
             except Exception as E:
@@ -138,11 +199,12 @@ class SerialWorker(QObject):  # THIS FETCHES SERIAL DATA. ASYNC.
         while self._active:
             try:
                 serial_data = SH.getSerialString()
-                if(serial_data):
-                    dprint(serial_data)
+                #serial_data = SH.getLine()
+                if serial_data:
+                    vprint(serial_data, color = "")
                     self.out.emit(serial_data)
             except Exception as E:
-                print(E)
+                print("Serial Worker Error",E)
                 self._active = False
                 self.disconnected.emit(False)
 
@@ -163,7 +225,6 @@ class MainWindow(QtWidgets.QMainWindow):
         self.all_ports = []
         self.cwd = os.getcwd()
         self.log_dir = "\\logs\\"
-        
         self.script_dir = self.cwd + "\\scripts\\"
         self.current_port = ''  # Port Currently Active
         self.historyIndex = 0
@@ -179,6 +240,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.ui.button_runScript.clicked.connect(self.start_script)
         self.ui.button_loadScript.clicked.connect(lambda: self.handle_script('o'))
         self.ui.button_saveScript.clicked.connect(lambda: self.handle_script('s'))
+        self.ui.button_connect.clicked.connect(self.connect)
         for rate in baudRates:
             self.ui.combobox_baud.addItem(str(rate))
         self.ui.combobox_baud.setCurrentIndex(8)  # 115200
@@ -189,17 +251,21 @@ class MainWindow(QtWidgets.QMainWindow):
         self.cmd.add_command("dcon", self.disconnect, "disconnect")
         self.cmd.add_command("quit", quit, "quit")
         self.cmd.add_command("clear", self.clear_terminal, "clear")
-        self.cmd.add_command("com", self.connect, "clear", parse="none")
+        self.cmd.add_command("com", self.connect, "", parse="none")
         self.cmd.add_command("log", self.open_log, "", parse="dash")
         self.cmd.add_command("script", self.handle_script, "start script", parse="dash")
         self.cmd.add_command("auto", self.ui.checkbox_autoReconnect.toggle)
-        self.cmd.add_command("help", self.open_help)
+        self.cmd.add_command("help", self.open_help, "", parse='dash')
         self.cmd.add_command("scan", self.update_ports)
         self.cmd.add_command("new", self.new_window)
         self.cmd.add_command("save", self.save_settings)
         self.cmd.add_command("load", self.load_settings)
         self.cmd.add_command("baud", self.update_baud, parse="none")
-        self.cmd.add_command("terminal", lambda: self.ui.tabWidget.setCurrentIndex(0))
+        self.cmd.add_command("timestamp", lambda:self.ui.checkbox_timestamp.toggle())
+        self.cmd.add_command("time", get_timestamp)
+        self.cmd.add_command("alias", self.set_alias, parse='dash')
+        self.ui.checkbox_timestamp.setEnabled(True)
+        self.ui.checkbox_timestamp.setCheckable(True)
         self.load_settings()
         self.update_ports()
         self.command_char = self.ui.lineEdit_commandChar.text()
@@ -208,29 +274,26 @@ class MainWindow(QtWidgets.QMainWindow):
     def startPlot(self):
         self.ui.widget_plot.startLineGraph()
 
+    def set_alias(self, alias:str):
+        loggingTools.setPort(alias)
+        print("Port Name:", alias) 
+
+
     def updatePlot(self): 
         self.ui.widget_plot.updateLineData()
     
     def testPlot(self):
         self.ui.widget_plot.testUpdate()
 
-    def open_help(self):
-        self.help = HelpPopup()
-        self.help.show()
-
     def keyPressEvent(self, keypress: QtGui.QKeyEvent) -> None:
         key = keypress.key()
         modifiers = int(keypress.modifiers())
-        if self.script_active and key == KEY_ESCAPE:
-            self.end_script()
-       
-        dprint("key", key, "modifiers", modifiers)
+        #dprint("key", key, "modifiers", modifiers)
         if self.ui.lineEdit_input.hasFocus():
             if key == KEY_ENTER:  # send
                 self.send_clicked()
                 return
             elif key == KEY_UP:
-                
                 if len(self.history) > 0:
                     self.currentIndex -= 1
                     if (self.currentIndex < 0):
@@ -245,16 +308,19 @@ class MainWindow(QtWidgets.QMainWindow):
                 else:
                     self.ui.lineEdit_input.setText(
                         self.history[self.currentIndex])
-        elif key == KEY_ESCAPE: 
-            if self.script_active:
+        if self.script_active: 
+            if (key == KEY_C and modifiers == MOD_CTRL) or key == KEY_ESCAPE:  
                 self.end_script()
+                self.ui.lineEdit_input.setFocus()
+        elif key == KEY_ESCAPE: 
             self.ui.lineEdit_input.setFocus()
-        if key == 44 and modifiers == 67108864: #Ctrl + <
+            return
+        if key == KEY_L_ANGLE and modifiers == MOD_CTRL: #Ctrl + <
             current_tab = self.ui.tabWidget.currentIndex()
             if current_tab > 0: 
                 self.ui.tabWidget.setCurrentIndex(current_tab-1)
             return
-        elif key == 46 and modifiers == 67108864: #Ctrl + >
+        elif key == KEY_R_ANGLE and modifiers == MOD_CTRL: #Ctrl + >
             current_tab = self.ui.tabWidget.currentIndex()
             if current_tab < 3: 
                 self.ui.tabWidget.setCurrentIndex(current_tab+1)
@@ -263,13 +329,10 @@ class MainWindow(QtWidgets.QMainWindow):
             if key == KEY_ENTER: 
                 self.connect(target = self.ui.combobox_port.currentText()[3:])
                 self.ui.lineEdit_input.setFocus()
-                pass
+                return
+        elif key == KEY_S and modifiers == MOD_CTRL: 
+            self.save_settings()
         
-
-
-
-       
-
     def load_settings(self):
         try:
             with open("user_settings.json", "r") as file:
@@ -302,40 +365,59 @@ class MainWindow(QtWidgets.QMainWindow):
         user_settings['autolog'] = self.ui.checkbox_autoLog.isChecked()
         user_settings['scriptdelay'] = self.ui.lineEdit_delay.text()
         user_settings['script'] = self.ui.textEdit_script.toPlainText()
-        vprint("[SAVING SETTINGS]", user_settings)
+        vprint("[SAVING SETTINGS]", user_settings, color=CGREEN)
         with open("user_settings.json", "w") as file:
             json.dump(user_settings, file)
+        self.debug_text("All Settings Saved")
 
     def add_text(self, text, type=TYPE_INPUT):  # add text to terminal
         if text[0] == "#":
-            print("ext cmd:",text[1:-1])
-            self.cmd.check(text[1:-1])
+            text = text.replace("\n", "")
+            print("ext cmd:", text[1:])
+            self.cmd.check(text[1:])
             return
         self.ui.terminalport.moveCursor(QTextCursor.End)
-        if type == TYPE_OUTPUT:
-            text = self.output_char + text
-            self.ui.terminalport.setTextColor(colorBlue)
-        elif type == TYPE_INFO:
-            text = "[" + text + "]\n"
-            self.ui.terminalport.setTextColor(colorGreen)
-        elif type == TYPE_ERROR:
-            text = "[" + text + "]\n"
-            self.ui.terminalport.setTextColor(colorRed)
-        elif type == TYPE_WARNING:
-            text = "[" + text + "]\n"
-            self.ui.terminalport.setTextColor(colorYellow)
-        else:
+        def add(text_to_add:str): # add subfunction
+            if self.ui.checkbox_timestamp.isChecked(): 
+                text_to_add = add_timestamp(text_to_add)
+            self.ui.terminalport.insertPlainText(text_to_add)  # add to terminal
+            if self.ui.checkbox_autoscroll.isChecked():
+                self.ui.terminalport.ensureCursorVisible()
+        if type == TYPE_INPUT:
             self.ui.terminalport.setTextColor(colorBlack)
+            add(text)
+            loggingTools.addLine(text)
             if self.script_active:
                 self.script_worker.incoming.emit(text)
             if self.ui.checkBox_graphData.isChecked():
                 self.ui.widget_plot.parseBulkData(text)
-        self.ui.terminalport.insertPlainText(text)  # add to terminal
-        vprint(text)
-        loggingTools.addLine(text)
-        if self.ui.checkbox_autoscroll.isChecked():
-            self.ui.terminalport.ensureCursorVisible()
-
+            return
+        elif type == TYPE_OUTPUT:
+            text = self.output_char + text
+            vprint(text, color=CBLUE)
+            self.ui.terminalport.setTextColor(colorBlue)
+            add(text)
+            loggingTools.addLine(text)
+            return
+        elif type == TYPE_INFO:
+            text = "<INFO>" +text + "\n"
+            vprint(text, color=CGREEN)
+            self.ui.terminalport.setTextColor(colorGreen)
+            add(text)
+            return
+        elif type == TYPE_ERROR:
+            text = "<ERROR>" + text + "\n"
+            vprint(text, color=CRED)
+            self.ui.terminalport.setTextColor(colorRed)
+            add(text)
+            return
+        elif type == TYPE_WARNING:
+            text = "<WARNING>" + text + "\n"
+            vprint(text, color=CYELLOW)
+            self.ui.terminalport.setTextColor(colorYellow)
+            add(text)
+            return
+        
     def clear_terminal(self):
         self.ui.terminalport.clear()
         self.debug_text()
@@ -394,7 +476,7 @@ class MainWindow(QtWidgets.QMainWindow):
             self.all_ports = ports
         else: 
             self.all_ports = SH.getPorts()
-            vprint(f"Ports: {self.all_ports}")
+            vprint(f"Ports: {self.all_ports}", color = CGREEN)
             self.debug_text(f"Found Ports: {self.all_ports}")
        
         self.ui.combobox_port.clear()
@@ -436,12 +518,11 @@ class MainWindow(QtWidgets.QMainWindow):
             self.ui.combobox_baud.setCurrentText(str(baud))
         else: 
             self.debug_text(f"Baud Rate {baud} Invalid!")
-        
-        
+         
     def connect(self, target="", intentional=True):
-        vprint("Connecting to:", target)
+        vprint("Connecting to:", target, color=CGREEN)
         if intentional:
-            vprint('self.current_port: ', str(self.current_port))
+            vprint('self.current_port: ', str(self.current_port), CGREEN)
             if target:
                 if target.isnumeric():
                     target = "COM" + target
@@ -496,6 +577,7 @@ class MainWindow(QtWidgets.QMainWindow):
             self.connect(target=self.target_port[3:])
         else:
             self.debug_text("WARNING: Already Connected!")
+            self.disconnect()
 
     def disconnect(self, intentional=True):
         if self.is_connected:
@@ -520,16 +602,29 @@ class MainWindow(QtWidgets.QMainWindow):
             self.debug_text("WARNING: Already Disconnected!", TYPE_WARNING)
             vprint("ERROR: NOT CONNECTED")
 
-    def open_log(self, arg=""):
-        if type(arg) == list:
-            arg = arg[0]
-        if not arg:
-            loggingTools.LogViewPopup(self)
-        elif arg in ["l", 'L', 'latest']:
+    def open_log(self, *args):
+        print(args, type(args))
+        if len(args) == 0: 
             loggingTools.LogViewPopup(self, latest=True)
-        elif arg in ['n', 'new', 'N']:
+            return
+        if type(args) == list or type(args) == tuple:
+            arg = args[0]
+        if not arg:
+            loggingTools.LogViewPopup(self, latest=True)
+        elif arg in ['o']:
+            loggingTools.LogViewPopup(self)
+            return
+        elif arg in ['a']:
             self.debug_text("Archiving Log:")
             loggingTools.archiveLog()
+            return
+        elif arg in ['h']:
+            self.add_text(log_help, type=TYPE_INFO)
+            return
+        elif arg in ['n']:
+            if args[1]: 
+                print("Naming Port:", args[1])
+                loggingTools.setPort(args[1])
         elif not (loggingTools.LogViewPopup(self, filename=arg)):
             self.debug_text(f"ERROR: Log {arg} not found!", type=TYPE_ERROR)
 
@@ -558,6 +653,17 @@ class MainWindow(QtWidgets.QMainWindow):
             vprint("ERROR IN SAVING FILE: ", e)
             return ""
 
+    def open_help(self, *args):
+        if args: 
+            with open('help.md', 'r') as file: 
+                text = file.read()
+                print(text)
+                self.ui.terminalport.moveCursor(QTextCursor.End)
+                self.ui.terminalport.setMarkdown(text)
+            return
+        self.help = HelpPopup()
+        self.help.show()
+
     def handle_script(self, *args):
         vprint('args: ', str(args), type(args))
         if not args:
@@ -582,7 +688,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 script_save = False
                 vprint("opening Script")
             elif arg in ['h', 'H', 'help']:
-                self.add_text(script_help, type=TYPE_OUTPUT)
+                self.add_text(script_help, type=TYPE_INFO)
                 return
             elif arg in ['save', 's', 'S']:
                 script_save = True
@@ -592,6 +698,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 script_name = arg
                 vprint("script name: ", script_name)
         if script_save:
+            self.debug_text(f"Saved Script as {self.script_dir}{script_name}.txt")
             script_text = self.ui.textEdit_script.toPlainText()
             self.save_file(self.script_dir, script_name, script_text)
             return
@@ -600,7 +707,6 @@ class MainWindow(QtWidgets.QMainWindow):
         else: 
             script_path = self.script_dir + script_name + '.txt'
         if os.path.exists(script_path):
-            print("Script Exists:", script_path)
             with open(script_path) as file: 
                 text = file.read()
             self.ui.textEdit_script.setPlainText(text)
@@ -630,7 +736,7 @@ class MainWindow(QtWidgets.QMainWindow):
         else:
             self.debug_text("ERROR: Script already active", type=TYPE_ERROR)
 
-    def script_line(self, line):
+    def script_line(self, line:str):
         line.replace("\n", "")
         print("SCRIPT LINE:", line)
         self.ui.lineEdit_input.setText(line)
@@ -639,7 +745,6 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def script_wait(self): 
         pass
-
 
     def end_script(self):
         vprint("Ending Script")
@@ -660,9 +765,9 @@ class MainWindow(QtWidgets.QMainWindow):
 
 # ***********************************************************************************************************
 updateCommands = [
-    "pyuic5 -o GUI_MAIN.py ui_files/mainWindow.ui",
-    "pyuic5 -o GUI_LOG.py ui_files/logViewer.ui",
-    "pyuic5 -o GUI_HELP.py ui_files/helpPopup.ui"
+    "pyuic5 -o gui/GUI_MAIN.py ui_files/mainWindow.ui",
+    "pyuic5 -o gui/GUI_LOG.py ui_files/logViewer.ui",
+    "pyuic5 -o gui/GUI_HELP.py ui_files/helpPopup.ui"
 ]
 
 def update_UI():

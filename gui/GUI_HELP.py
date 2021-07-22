@@ -14,12 +14,14 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 class Ui_Help(object):
     def setupUi(self, Help):
         Help.setObjectName("Help")
-        Help.resize(458, 601)
+        Help.resize(757, 567)
         Help.setMinimumSize(QtCore.QSize(400, 300))
         self.verticalLayout = QtWidgets.QVBoxLayout(Help)
         self.verticalLayout.setObjectName("verticalLayout")
         self.textBrowser = QtWidgets.QTextBrowser(Help)
         self.textBrowser.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOn)
+        self.textBrowser.setAutoFormatting(QtWidgets.QTextEdit.AutoAll)
+        self.textBrowser.setOverwriteMode(True)
         self.textBrowser.setTextInteractionFlags(QtCore.Qt.TextBrowserInteraction)
         self.textBrowser.setObjectName("textBrowser")
         self.verticalLayout.addWidget(self.textBrowser)

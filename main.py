@@ -22,9 +22,9 @@ except Exception as E:
 
 # # ***********************************************************************************************************
 updateCommands = [
-    "pyuic5 -o GUI_MAIN.py ui_files/mainWindow.ui",
-    "pyuic5 -o GUI_LOG.py ui_files/logViewer.ui",
-    "pyuic5 -o GUI_HELP.py ui_files/helpPopup.ui"
+    "pyuic5 -o gui/GUI_MAIN.py ui_files/mainWindow.ui",
+    "pyuic5 -o gui/GUI_LOG.py ui_files/logViewer.ui",
+    "pyuic5 -o gui/GUI_HELP.py ui_files/helpPopup.ui"
 ]
 
 def update_UI():

@@ -1,8 +1,9 @@
-#delay200
+fsk
+#delay1000
 send hello1
 send hello2
 send hello3
-#delay100
+#delay1000
 send hello1
 send hello2
 send hello3

@@ -17,7 +17,7 @@ class ScriptWorker(QObject):
     _wait = pyqtSignal(bool)
     incoming = pyqtSignal(str)
 
-    def __init__(self, text, delay=100):
+    def __init__(self, text: str, delay = 100):
         super().__init__()
         self.update_delay(delay)
         self.script = []
@@ -33,11 +33,16 @@ class ScriptWorker(QObject):
     def handle(self, text): 
         print("handling", text)
         if text[0:5] == "delay": 
-            self.update_delay(text[5:])
-        if text.startswith("python"):
-            print("STARTING PYTHON")
-        if text == "wait": 
+            try: 
+                self.delay = int(text[5:])/1000
+            except Exception as E: 
+                print("ERROR SETTING DELAY:", E)
+            return True
+        elif text == "wait": 
             self.wait()
+            return True
+        else:
+            return False
 
     def wait(self, timeout = 10):
         self._active = False
@@ -51,12 +56,12 @@ class ScriptWorker(QObject):
         while self._active:
             for sline in self.script:
                 if sline:
-                    if sline[0] == "#": 
-                        self.handle(sline[1:])
-                        continue
-                    elif(self._active):
-                        self.line.emit(sline)
-                        time.sleep(self.delay)
+                    if sline[0] == "#":
+                        if self.handle(sline[1:]): continue
+                if(self._active):
+                    self.line.emit(sline)
+                    time.sleep(self.delay)
+            self._active = False
             self.finished.emit(True)
 
     def stop(self):

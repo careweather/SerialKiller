@@ -4,22 +4,20 @@ More full documentation is avaliable in the github repo linked below.
 Certain functions are accessable via "terminal style" commands.  
 Enter the keyword directly into the "To Device" text box. 
 ### TERMINAL COMMANDS:  
-|Key|Function|Args|Example|
-|:-------------:|:-------------:|:----------:|:---:|
-|help|open this help window| none | >> help
-|con|connect to the port selected|none | >>con
-|dcon|disconnect|none | >>dcon
-|clear|clear terminal text|none | >>clear
-|script|run the script in script tab|-o open -s save -[name] run "name"|>>script -example
-|quit|close the program immediately|none |
-|save|save current configuration|none |
-|new|open a new window|none |
-|log|open the latest log|-l open latest. -n start new.|
-|scan|rescan for Serial Ports|none |
-|auto|toggle auto-reconnect|none |
-|com*|open com port (*) if it's avaliable|none |
-|baud*|change baud rate to (*)|none |
-
+| key | Args | Function | Example |
+|---|---|---|---|
+| help | (none) | open help | help |
+| con | (none) | connect to the selected port | con |
+| dcon | (none) | disconnect from the selected port | dcon |
+| clear | (none) | clear the terminal | clear |
+| script | (none)<br>-[name]<br>-o<br>-s<br>-s<br>-t<br>-h | run the script in the script tab<br>run "name".txt (if it exists in the script dir)<br>open and run a file from the script dir<br>save the current script as ... <br>save the current script as "name".txt<br>jump to the script editor<br>print script help | script<br>script -example   <br>script -o<br>script -s <br>script -s -example<br>script -t<br>script -h |
+| log | (none)<br>-o<br>-n<br>-h | open the latest log file<br>open |  |
+| auto | (none) | toggle auto reconnect | auto |
+| scan | (none) | scan/display open ports | scan |
+| com | [port#] | connect to com"port#" | com20 |
+| baud | [baud] | change baud rate to "baud" | baud9600 |
+| new | (none) | open another instance of Serial Killer | new |
+| quit | (none) | close the program | quit |
 
 ### Command Conflicts: 
 If there are possible conflicts between commands and messages to send to a device, a command char can be used to distinguish commands.  

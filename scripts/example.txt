@@ -1,19 +1,14 @@
 #delay1
-dcon
-clear
-#delay1500
+#dcon
+#clear
+#delay1000
 I am running from a script in the script tab
 type each line
 as if it were an input
 you can write commands too!
 like clearing the terminal
-get ready...
+see...
+#delay1500
+#clear
 #delay0
-clear
-extra info:
-type "script -s" to save a script
-type "script -o" to open one and run it 
-type "script -scriptname" to open and run "scriptname" 
-type "script" with no arguments to run whatever's in the script tab
-the ESCAPE key will stop a script mid-execution
-use #delay to modify the delay between lines
+#script -h
