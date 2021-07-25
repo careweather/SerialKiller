@@ -1,11 +1,7 @@
-fsk
-#delay1000
-send hello1
-send hello2
-send hello3
-#delay1000
-send hello1
-send hello2
-send hello3
-clear
-save
+#delay=500
+#name=send
+#loop=5
+send"hello 1"
+send"hello 2"
+send"hello 3"
+#endloop

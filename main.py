@@ -1,9 +1,7 @@
 # run this to update from GUI> pyuic5 -o GUI_MAIN.py ui_files/SK2_MainWindow.ui ; pyuic5 -o GUI_LOG.py ui_files/logViewer.ui
 import subprocess
 import sys
-from datetime import datetime
-from PyQt5.QtWidgets import QFileDialog, QTableWidget, QTableWidgetItem, QApplication
-from scripting import ScriptWorker
+import argparse
 try:
     from PyQt5 import QtGui, QtWidgets
     import serialHandler as SH
@@ -55,24 +53,33 @@ argList = [  # THIS IS ALL COMMANDS AND ARGS
 
 def execute():
     print("STARTING SERIAL KILLER")
-    for sysarg in sys.argv[1:]:
-        for argument in argList:
-            if sysarg in argument['arg']:
-                funct = argument['funct']
-                funct()
+    parser = argparse.ArgumentParser()
+    #parser.add_argument("-h", help="display help", required=False)
+    parser.add_argument("-v", "--verbose", help="print verbose to terminal",action='toggle_verbose' ,required=False)
+    parser.add_argument("-u", "--update", help="update from ui files", required=False, default=True)
+    #parser.add_argument("h", help="Show Help")
+    #parser.add_argument("h", help="Show Help")
+    
+
+    args = parser.parse_args()
+    print("Args:", args)
+    return
+
+    #for sysarg in sys.argv[1:]:
+    #    for argument in argList:
+    #        if sysarg in argument['arg']:
+    #            funct = argument['funct']
+    #            funct()
     from mainWindow import MainWindow           
     app = QtWidgets.QApplication([sys.argv])
     main = MainWindow()
     main.show()
     status = app.exec_()
     sys.exit(status)
-    return
+    
     
     #dprint("Argument List:", str(sys.argv))
     
-
-    
-
 
 if __name__ == "__main__":
     execute()

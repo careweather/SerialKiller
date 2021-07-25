@@ -1,0 +1,19 @@
+// This is an example for setting a delay
+#delay=0
+// Save as delay_example
+#name=delay_example
+this is a delay of 100
+#delay=100
+this is a delay of 200
+#delay=200
+this is a delay of 300
+#delay=300
+this is a delay of 500
+#delay=500
+this is a delay of 1000
+#delay=1000
+this is a delay of 2000
+#delay=2000
+bye now!
+#delay=0
+#clear

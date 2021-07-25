@@ -6,6 +6,7 @@ import os
 import sys
 import command
 
+
 from PyQt5.QtWidgets import QFileDialog
 import loggingTools
 from scripting import ScriptWorker
@@ -96,7 +97,9 @@ def vprint(input, *args, color = ""): # verbose prints stuff to terminal
         print(color + input + ENDC, *args, end='', flush=True)
 
 script_help = '''
-Script Help
+**** SCRIPT HELP ****
+Press ESCAPE or CTRL+C to stop a script mid-execution
+
 ARGUMENTS:
 (none)\t run script in the script tab
 -[name] \t run "name".txt
@@ -108,8 +111,13 @@ ARGUMENTS:
 -h\t display this help message
 
 SCRIPT SPECIFIC KEYWORDS:
-#delay[numb]\tchange to delay between lines to "numb" milliseconds
-#wait\twait for serial input before continuing'''
+#name=[myName]\tsave the script as "myName".txt every time it's run
+#delay=[numb]\tchange the delay between lines to "numb" milliseconds
+#loop=[numb]\t\tloop until endloop [numb] times. 
+#endloop\t\tend loop and continue with script
+#wait\t\twait for serial input before continuing
+#stop\t\texit script at this line
+# '''
 
 log_help = '''LOG Help
 ARGUMENTS:
@@ -118,7 +126,9 @@ ARGUMENTS:
 -n\tstart a new log and archive the old
 -h\tdisplay this help message'''
 
+terminal_placeholder = '''***Serial from device will appear here***
 
+Type "help" for detailed use instructions'''
 
 
 def get_timestamp(): 
@@ -128,7 +138,6 @@ def get_timestamp():
     ts = str(ts) + str(millis)[1:6]
     return ts
     
-
 def add_timestamp(text:str): 
     ts = get_timestamp()
     lines = text.splitlines(True)
@@ -141,7 +150,6 @@ def add_timestamp(text:str):
     else: 
         for line in lines: 
             ret = ret + ts + "| " + line 
-
     print(ret)
     return ret
 
@@ -173,12 +181,11 @@ class RescanWorker(QObject):  # THIS RESCANS FOR CHANGING PORTS. ASYNC
         while self._active:
             try:
                 ports = SH.getPorts()
-                #print(ports)
                 if(ports != lastPorts):
                     lastPorts = ports
                     vprint(str(ports), color=CGREEN)
                     self.updatedPorts.emit(ports)
-                time.sleep(.5)
+                time.sleep(1)
             except Exception as E:
                 print("Rescan worker Error", E)
                 self.disconnected.emit(False)
@@ -231,6 +238,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.currentIndex = 0
         self.lastLine = ""
         self.history = []
+        self.ui.terminalport.setPlaceholderText(terminal_placeholder)
         self.output_char = self.ui.lineEdit_sentText.text()
         self.ui.button_clear.clicked.connect(self.clear_terminal)
         self.ui.button_send.clicked.connect(self.send_clicked)
@@ -263,7 +271,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.cmd.add_command("baud", self.update_baud, parse="none")
         self.cmd.add_command("timestamp", lambda:self.ui.checkbox_timestamp.toggle())
         self.cmd.add_command("time", get_timestamp)
-        self.cmd.add_command("alias", self.set_alias, parse='dash')
+        #self.cmd.add_command("alias", self.set_alias, parse='dash')
         self.ui.checkbox_timestamp.setEnabled(True)
         self.ui.checkbox_timestamp.setCheckable(True)
         self.load_settings()
@@ -314,7 +322,6 @@ class MainWindow(QtWidgets.QMainWindow):
                 self.ui.lineEdit_input.setFocus()
         elif key == KEY_ESCAPE: 
             self.ui.lineEdit_input.setFocus()
-            return
         if key == KEY_L_ANGLE and modifiers == MOD_CTRL: #Ctrl + <
             current_tab = self.ui.tabWidget.currentIndex()
             if current_tab > 0: 
@@ -424,7 +431,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.add_text("Terminal Cleared", type=TYPE_INFO)
 
     def update_history(self, line=""):
-        if line and line is not self.lastLine:
+        if line and line is not self.lastLine and self.script_active == False:
             self.lastline = line
             self.history.append(line)
             self.historyIndex += 1
@@ -635,6 +642,12 @@ class MainWindow(QtWidgets.QMainWindow):
         dprint(' files[0]: ', str(files[0]))
         return files[0]
 
+    def get_filename(self, dir):
+        options = QFileDialog.Options()
+        files = QFileDialog.getSaveFileName(self, caption="File", directory=dir, filter='*.txt', options=options)
+        print("file name", files[0])
+        return files[0]
+        
     def save_file(self, start, name="", content="", title="Save As", ext="*.txt"):
         vprint("file save name:", name)
         if name != "":
@@ -665,56 +678,96 @@ class MainWindow(QtWidgets.QMainWindow):
         self.help.show()
 
     def handle_script(self, *args):
-        vprint('args: ', str(args), type(args))
         if not args:
             self.start_script()
             return
         script_open = False
         script_save = False
+        script_delete = False
+        script_exists = False
         script_name = ""
+        script_path = None
         for arg in args:
-            vprint("arg ", arg)
-            if arg in ['n', 'N', "new"]:
+            vprint("\narg ", arg, '\n')
+            if arg in ['n', 'N', "new"]: # single arg
                 self.ui.tabWidget.setCurrentIndex(1)
                 self.ui.textEdit_script.clear()
                 self.ui.textEdit_script.setFocus(True)
                 return
-            elif arg in ['t', 'T']:
+            elif arg in ['t', 'T']: # single arg
                 self.ui.tabWidget.setCurrentIndex(1)
                 self.ui.textEdit_script.setFocus(True)
+                return
+            elif arg in ['h', 'H', 'help']: # single arg
+                self.add_text(script_help, type=TYPE_INFO)
                 return
             elif arg in ['o', 'O', 'open']:
                 script_open = True
                 script_save = False
-                vprint("opening Script")
-            elif arg in ['h', 'H', 'help']:
-                self.add_text(script_help, type=TYPE_INFO)
-                return
+                vprint("opening Script\n")
             elif arg in ['save', 's', 'S']:
                 script_save = True
                 script_open = False
-                vprint("saving script")
+                vprint("saving script\n")
+            elif arg == 'd': 
+                script_delete = True
+                vprint("deleting script\n")
             elif arg: 
                 script_name = arg
-                vprint("script name: ", script_name)
-        if script_save:
-            self.debug_text(f"Saved Script as {self.script_dir}{script_name}.txt")
-            script_text = self.ui.textEdit_script.toPlainText()
-            self.save_file(self.script_dir, script_name, script_text)
-            return
-        if script_open and script_name == "":
-            script_path = self.get_file(self.script_dir)
-        else: 
-            script_path = self.script_dir + script_name + '.txt'
-        if os.path.exists(script_path):
-            with open(script_path) as file: 
-                text = file.read()
-            self.ui.textEdit_script.setPlainText(text)
-            self.start_script(text = text)
-            return
-        else:
-            self.debug_text(f"ERROR: Script {script_path} not found!", type=TYPE_ERROR)
+
+        if script_name:
+            print("script_name:",script_name)
+            script_path = script_path = self.script_dir + script_name + '.txt'
+            print('script_path: ' , str(script_path), type(script_path))
+            script_exists = os.path.exists(script_path)
         
+        if script_save: 
+            if script_path == None: # popup no script name arg
+                script_path = self.get_filename(self.script_dir)
+            if script_path: 
+                with open(script_path, 'w') as File: 
+                    File.write(self.ui.textEdit_script.toPlainText())
+                self.debug_text(f"Script saved to: {script_path}")
+            else: 
+                dprint("Script Save Cancelled\n", color=CRED)
+                return
+        
+        elif script_open:
+            if script_path == None: 
+                script_path = self.get_file(self.script_dir)
+                if not script_path:
+                    return
+            elif script_exists == False:
+                self.debug_text(f"ERROR: Script {script_path} not found", TYPE_ERROR)
+                return
+            self.debug_text(f"Loaded: {script_path}")
+            with open(script_path, 'r') as File:
+                text = File.read()
+                print(text)
+                self.ui.textEdit_script.setPlainText(text)
+            #if script_run: 
+                self.start_script()
+            return
+        
+        elif script_delete: 
+            if script_exists: 
+                os.remove(script_path)
+                self.debug_text(f"Removed {script_path}")
+            else: 
+                self.debug_text(f"ERROR: File {script_path} not found", type=TYPE_ERROR)
+            return
+
+        elif script_exists:
+            with open(script_path, 'r') as File:
+                text = File.read()
+                print(text)
+                self.ui.textEdit_script.setPlainText(text)
+            self.start_script()
+            return
+        
+        else: 
+            self.debug_text(f"ERROR: script {script_path} not found", TYPE_ERROR)
+ 
     def start_script(self, text = False):
         if text == False:
             text = self.ui.textEdit_script.toPlainText()
@@ -731,6 +784,7 @@ class MainWindow(QtWidgets.QMainWindow):
             self.script_worker.moveToThread(self.script_thread)
             self.script_thread.started.connect(self.script_worker.run)
             self.script_worker.line.connect(self.script_line)
+            self.script_worker.saveName.connect(self.handle_script)
             self.script_worker.finished.connect(self.end_script)
             self.script_thread.start()
         else:
@@ -738,10 +792,10 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def script_line(self, line:str):
         line.replace("\n", "")
-        print("SCRIPT LINE:", line)
         self.ui.lineEdit_input.setText(line)
         self.send_clicked()
         self.ui.lineEdit_input.setText(line)
+        self.ui.lineEdit_input.setDisabled(True)
 
     def script_wait(self): 
         pass
@@ -752,7 +806,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.script_worker.stop()
         self.script_thread.exit()
         self.debug_text("Script Ended")
-        self.ui.lineEdit_input.clear()
+        self.ui.lineEdit_input.setText("")
         self.ui.lineEdit_input.setDisabled(False)
         self.ui.button_send.setDisabled(False)
         self.ui.lineEdit_input.setFocus()
