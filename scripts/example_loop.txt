@@ -8,4 +8,4 @@ I'm Running
 In a loop
 #endloop
 see...
-#script -t
+script -t

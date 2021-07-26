@@ -237,7 +237,7 @@
        <enum>QTabWidget::North</enum>
       </property>
       <property name="currentIndex">
-       <number>2</number>
+       <number>3</number>
       </property>
       <widget class="QWidget" name="tab_terminal">
        <attribute name="title">
@@ -491,25 +491,6 @@
         <string>Adv. Settings</string>
        </attribute>
        <layout class="QGridLayout" name="gridLayout_6">
-        <item row="3" column="0">
-         <widget class="QPushButton" name="button_saveSettings">
-          <property name="sizePolicy">
-           <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
-            <horstretch>0</horstretch>
-            <verstretch>0</verstretch>
-           </sizepolicy>
-          </property>
-          <property name="maximumSize">
-           <size>
-            <width>120</width>
-            <height>16777215</height>
-           </size>
-          </property>
-          <property name="text">
-           <string>Save Config</string>
-          </property>
-         </widget>
-        </item>
         <item row="0" column="0">
          <widget class="QLabel" name="label_3">
           <property name="sizePolicy">
@@ -529,7 +510,26 @@
           </property>
          </widget>
         </item>
-        <item row="2" column="0">
+        <item row="4" column="0">
+         <widget class="QPushButton" name="button_saveSettings">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+          <property name="maximumSize">
+           <size>
+            <width>120</width>
+            <height>16777215</height>
+           </size>
+          </property>
+          <property name="text">
+           <string>Save Config</string>
+          </property>
+         </widget>
+        </item>
+        <item row="1" column="0">
          <widget class="QToolBox" name="toolBox">
           <property name="sizePolicy">
            <sizepolicy hsizetype="MinimumExpanding" vsizetype="Expanding">
@@ -565,6 +565,43 @@
             <string>Logs</string>
            </attribute>
            <layout class="QGridLayout" name="gridLayout_4">
+            <item row="0" column="0">
+             <widget class="QLabel" name="label_logPath">
+              <property name="text">
+               <string>Log Path:</string>
+              </property>
+             </widget>
+            </item>
+            <item row="6" column="4">
+             <widget class="QPushButton" name="button_newLog">
+              <property name="text">
+               <string>Archive Current</string>
+              </property>
+             </widget>
+            </item>
+            <item row="6" column="0">
+             <widget class="QCheckBox" name="checkbox_autoLog">
+              <property name="text">
+               <string>Auto-Log</string>
+              </property>
+              <property name="checked">
+               <bool>true</bool>
+              </property>
+             </widget>
+            </item>
+            <item row="7" column="2">
+             <spacer name="verticalSpacer">
+              <property name="orientation">
+               <enum>Qt::Vertical</enum>
+              </property>
+              <property name="sizeHint" stdset="0">
+               <size>
+                <width>20</width>
+                <height>40</height>
+               </size>
+              </property>
+             </spacer>
+            </item>
             <item row="4" column="0">
              <widget class="QLabel" name="label_logPath_2">
               <property name="text">
@@ -572,7 +609,14 @@
               </property>
              </widget>
             </item>
-            <item row="0" column="2" colspan="2">
+            <item row="6" column="2">
+             <widget class="QPushButton" name="button_viewLogs">
+              <property name="text">
+               <string>View Logs</string>
+              </property>
+             </widget>
+            </item>
+            <item row="0" column="2" colspan="3">
              <widget class="QLineEdit" name="lineEdit_logPath">
               <property name="toolTip">
                <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;The path that the logs will be stored to&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
@@ -591,37 +635,27 @@
               </property>
              </widget>
             </item>
-            <item row="0" column="0">
-             <widget class="QLabel" name="label_logPath">
-              <property name="text">
-               <string>Log Path:</string>
-              </property>
-             </widget>
-            </item>
-            <item row="7" column="2">
-             <spacer name="verticalSpacer">
+            <item row="6" column="5">
+             <spacer name="horizontalSpacer_2">
               <property name="orientation">
-               <enum>Qt::Vertical</enum>
+               <enum>Qt::Horizontal</enum>
               </property>
               <property name="sizeHint" stdset="0">
                <size>
-                <width>20</width>
-                <height>40</height>
+                <width>40</width>
+                <height>20</height>
                </size>
               </property>
              </spacer>
             </item>
-            <item row="6" column="0">
-             <widget class="QCheckBox" name="checkbox_autoLog">
+            <item row="0" column="5">
+             <widget class="QToolButton" name="toolButton_logPath">
               <property name="text">
-               <string>Auto-Log</string>
-              </property>
-              <property name="checked">
-               <bool>true</bool>
+               <string>Browse...</string>
               </property>
              </widget>
             </item>
-            <item row="4" column="2" colspan="3">
+            <item row="4" column="2" colspan="4">
              <widget class="QComboBox" name="comboBox_logType">
               <property name="enabled">
                <bool>false</bool>
@@ -644,36 +678,9 @@
              </widget>
             </item>
             <item row="6" column="3">
-             <widget class="QPushButton" name="button_newLog">
+             <widget class="QPushButton" name="button_viewLatest">
               <property name="text">
-               <string>Archive Current</string>
-              </property>
-             </widget>
-            </item>
-            <item row="6" column="4">
-             <spacer name="horizontalSpacer_2">
-              <property name="orientation">
-               <enum>Qt::Horizontal</enum>
-              </property>
-              <property name="sizeHint" stdset="0">
-               <size>
-                <width>40</width>
-                <height>20</height>
-               </size>
-              </property>
-             </spacer>
-            </item>
-            <item row="6" column="2">
-             <widget class="QPushButton" name="button_viewLogs">
-              <property name="text">
-               <string>View Logs</string>
-              </property>
-             </widget>
-            </item>
-            <item row="0" column="4">
-             <widget class="QToolButton" name="toolButton_logPath">
-              <property name="text">
-               <string>Browse...</string>
+               <string>View Latest</string>
               </property>
              </widget>
             </item>
@@ -691,20 +698,7 @@
            <attribute name="label">
             <string>Terminal</string>
            </attribute>
-           <layout class="QGridLayout" name="gridLayout_11">
-            <item row="3" column="3">
-             <spacer name="horizontalSpacer_3">
-              <property name="orientation">
-               <enum>Qt::Horizontal</enum>
-              </property>
-              <property name="sizeHint" stdset="0">
-               <size>
-                <width>40</width>
-                <height>20</height>
-               </size>
-              </property>
-             </spacer>
-            </item>
+           <layout class="QGridLayout" name="gridLayout_5">
             <item row="0" column="0">
              <widget class="QLabel" name="label_5">
               <property name="sizePolicy">
@@ -718,80 +712,7 @@
               </property>
              </widget>
             </item>
-            <item row="1" column="0">
-             <widget class="QLabel" name="label_4">
-              <property name="sizePolicy">
-               <sizepolicy hsizetype="Maximum" vsizetype="Preferred">
-                <horstretch>0</horstretch>
-                <verstretch>0</verstretch>
-               </sizepolicy>
-              </property>
-              <property name="text">
-               <string>Sent Text:</string>
-              </property>
-             </widget>
-            </item>
-            <item row="2" column="0">
-             <widget class="QLabel" name="label_6">
-              <property name="sizePolicy">
-               <sizepolicy hsizetype="Maximum" vsizetype="Preferred">
-                <horstretch>0</horstretch>
-                <verstretch>0</verstretch>
-               </sizepolicy>
-              </property>
-              <property name="text">
-               <string>Terminal Info:</string>
-              </property>
-             </widget>
-            </item>
-            <item row="6" column="0">
-             <spacer name="verticalSpacer_2">
-              <property name="orientation">
-               <enum>Qt::Vertical</enum>
-              </property>
-              <property name="sizeHint" stdset="0">
-               <size>
-                <width>20</width>
-                <height>40</height>
-               </size>
-              </property>
-             </spacer>
-            </item>
-            <item row="1" column="2">
-             <widget class="QLineEdit" name="lineEdit_sentText">
-              <property name="sizePolicy">
-               <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
-                <horstretch>0</horstretch>
-                <verstretch>0</verstretch>
-               </sizepolicy>
-              </property>
-              <property name="maximumSize">
-               <size>
-                <width>40</width>
-                <height>16777215</height>
-               </size>
-              </property>
-              <property name="toolTip">
-               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;The first char of a command to differentiate it from text to the device. &lt;/p&gt;&lt;p&gt;Ex. &amp;quot;$&amp;quot; will force every command to begin with $.  &lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-              </property>
-              <property name="whatsThis">
-               <string>A char to identify commands to serial killer vs commands to the device. Ex. &quot;$&quot; would require all commands to start with &quot;$&quot;</string>
-              </property>
-              <property name="text">
-               <string>&gt;&gt;</string>
-              </property>
-              <property name="maxLength">
-               <number>3</number>
-              </property>
-              <property name="alignment">
-               <set>Qt::AlignCenter</set>
-              </property>
-              <property name="placeholderText">
-               <string>n/a</string>
-              </property>
-             </widget>
-            </item>
-            <item row="0" column="2">
+            <item row="0" column="1">
              <widget class="QLineEdit" name="lineEdit_receivedText">
               <property name="sizePolicy">
                <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
@@ -801,7 +722,7 @@
               </property>
               <property name="maximumSize">
                <size>
-                <width>40</width>
+                <width>80</width>
                 <height>16777215</height>
                </size>
               </property>
@@ -825,8 +746,34 @@
               </property>
              </widget>
             </item>
-            <item row="2" column="2">
-             <widget class="QLineEdit" name="lineEdit_terminalInfo">
+            <item row="0" column="2">
+             <spacer name="horizontalSpacer_3">
+              <property name="orientation">
+               <enum>Qt::Horizontal</enum>
+              </property>
+              <property name="sizeHint" stdset="0">
+               <size>
+                <width>40</width>
+                <height>20</height>
+               </size>
+              </property>
+             </spacer>
+            </item>
+            <item row="1" column="0">
+             <widget class="QLabel" name="label_4">
+              <property name="sizePolicy">
+               <sizepolicy hsizetype="Maximum" vsizetype="Preferred">
+                <horstretch>0</horstretch>
+                <verstretch>0</verstretch>
+               </sizepolicy>
+              </property>
+              <property name="text">
+               <string>Sent Text:</string>
+              </property>
+             </widget>
+            </item>
+            <item row="1" column="1">
+             <widget class="QLineEdit" name="lineEdit_sentText">
               <property name="sizePolicy">
                <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
                 <horstretch>0</horstretch>
@@ -835,7 +782,7 @@
               </property>
               <property name="maximumSize">
                <size>
-                <width>40</width>
+                <width>80</width>
                 <height>16777215</height>
                </size>
               </property>
@@ -846,7 +793,7 @@
                <string>A char to identify commands to serial killer vs commands to the device. Ex. &quot;$&quot; would require all commands to start with &quot;$&quot;</string>
               </property>
               <property name="text">
-               <string>--</string>
+               <string>&gt;&gt;</string>
               </property>
               <property name="maxLength">
                <number>3</number>
@@ -858,6 +805,177 @@
                <string>n/a</string>
               </property>
              </widget>
+            </item>
+            <item row="2" column="0">
+             <widget class="QLabel" name="label_6">
+              <property name="sizePolicy">
+               <sizepolicy hsizetype="Maximum" vsizetype="Preferred">
+                <horstretch>0</horstretch>
+                <verstretch>0</verstretch>
+               </sizepolicy>
+              </property>
+              <property name="text">
+               <string>Info Text</string>
+              </property>
+             </widget>
+            </item>
+            <item row="2" column="1">
+             <widget class="QLineEdit" name="lineEdit_infoText">
+              <property name="sizePolicy">
+               <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+                <horstretch>0</horstretch>
+                <verstretch>0</verstretch>
+               </sizepolicy>
+              </property>
+              <property name="maximumSize">
+               <size>
+                <width>80</width>
+                <height>16777215</height>
+               </size>
+              </property>
+              <property name="toolTip">
+               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;The first char of a command to differentiate it from text to the device. &lt;/p&gt;&lt;p&gt;Ex. &amp;quot;$&amp;quot; will force every command to begin with $.  &lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+              </property>
+              <property name="whatsThis">
+               <string>A char to identify commands to serial killer vs commands to the device. Ex. &quot;$&quot; would require all commands to start with &quot;$&quot;</string>
+              </property>
+              <property name="text">
+               <string>&lt;INFO&gt;</string>
+              </property>
+              <property name="maxLength">
+               <number>20</number>
+              </property>
+              <property name="alignment">
+               <set>Qt::AlignCenter</set>
+              </property>
+              <property name="placeholderText">
+               <string>n/a</string>
+              </property>
+             </widget>
+            </item>
+            <item row="3" column="0">
+             <widget class="QLabel" name="label_7">
+              <property name="sizePolicy">
+               <sizepolicy hsizetype="Maximum" vsizetype="Preferred">
+                <horstretch>0</horstretch>
+                <verstretch>0</verstretch>
+               </sizepolicy>
+              </property>
+              <property name="text">
+               <string>Error Text</string>
+              </property>
+             </widget>
+            </item>
+            <item row="3" column="1">
+             <widget class="QLineEdit" name="lineEdit_errorText">
+              <property name="sizePolicy">
+               <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+                <horstretch>0</horstretch>
+                <verstretch>0</verstretch>
+               </sizepolicy>
+              </property>
+              <property name="maximumSize">
+               <size>
+                <width>80</width>
+                <height>16777215</height>
+               </size>
+              </property>
+              <property name="toolTip">
+               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;The first char of a command to differentiate it from text to the device. &lt;/p&gt;&lt;p&gt;Ex. &amp;quot;$&amp;quot; will force every command to begin with $.  &lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+              </property>
+              <property name="whatsThis">
+               <string>A char to identify commands to serial killer vs commands to the device. Ex. &quot;$&quot; would require all commands to start with &quot;$&quot;</string>
+              </property>
+              <property name="text">
+               <string>&lt;ERROR&gt;</string>
+              </property>
+              <property name="maxLength">
+               <number>20</number>
+              </property>
+              <property name="alignment">
+               <set>Qt::AlignCenter</set>
+              </property>
+              <property name="placeholderText">
+               <string>n/a</string>
+              </property>
+             </widget>
+            </item>
+            <item row="4" column="0">
+             <widget class="QLabel" name="label_8">
+              <property name="sizePolicy">
+               <sizepolicy hsizetype="Maximum" vsizetype="Preferred">
+                <horstretch>0</horstretch>
+                <verstretch>0</verstretch>
+               </sizepolicy>
+              </property>
+              <property name="text">
+               <string>Warning Text</string>
+              </property>
+             </widget>
+            </item>
+            <item row="4" column="1">
+             <widget class="QLineEdit" name="lineEdit_warningText">
+              <property name="sizePolicy">
+               <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+                <horstretch>0</horstretch>
+                <verstretch>0</verstretch>
+               </sizepolicy>
+              </property>
+              <property name="maximumSize">
+               <size>
+                <width>80</width>
+                <height>16777215</height>
+               </size>
+              </property>
+              <property name="toolTip">
+               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;The first char of a command to differentiate it from text to the device. &lt;/p&gt;&lt;p&gt;Ex. &amp;quot;$&amp;quot; will force every command to begin with $.  &lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+              </property>
+              <property name="whatsThis">
+               <string>A char to identify commands to serial killer vs commands to the device. Ex. &quot;$&quot; would require all commands to start with &quot;$&quot;</string>
+              </property>
+              <property name="text">
+               <string>&lt;WARNING&gt;</string>
+              </property>
+              <property name="maxLength">
+               <number>20</number>
+              </property>
+              <property name="alignment">
+               <set>Qt::AlignCenter</set>
+              </property>
+              <property name="placeholderText">
+               <string>n/a</string>
+              </property>
+             </widget>
+            </item>
+            <item row="5" column="0">
+             <widget class="QCheckBox" name="checkBox_newline">
+              <property name="text">
+               <string>+ newline</string>
+              </property>
+              <property name="checked">
+               <bool>true</bool>
+              </property>
+             </widget>
+            </item>
+            <item row="6" column="0">
+             <widget class="QCheckBox" name="checkBox_return">
+              <property name="text">
+               <string>+ return</string>
+              </property>
+             </widget>
+            </item>
+            <item row="7" column="0">
+             <spacer name="verticalSpacer_2">
+              <property name="orientation">
+               <enum>Qt::Vertical</enum>
+              </property>
+              <property name="sizeHint" stdset="0">
+               <size>
+                <width>20</width>
+                <height>40</height>
+               </size>
+              </property>
+             </spacer>
             </item>
            </layout>
           </widget>

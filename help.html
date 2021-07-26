@@ -1,101 +1,101 @@
 <h1>SERIAL KILLER QUICK HELP</h1>
 <p>More full documentation is avaliable in the github repo linked below.</p>
 <p>Certain functions are accessable via "terminal style" commands.<br />Enter the keyword directly into the "To Device" text box.</p>
-<h2 id="terminal-commands-">TERMINAL COMMANDS:</h2>
-<table class="tg" style="border-style: solid;" border="1" cellpadding="5">
+<h2>TERMINAL COMMANDS:</h2>
+<p><strong>com -</strong> Connect to a port<br />Args:&nbsp;<br />[port number] connect to port COM[port number]<br />-auto&nbsp;</p>
+<table border="1" cellspacing="1" cellpadding="0">
 <thead>
 <tr>
-<th class="tg-0pky" style="text-align: left;">key</th>
-<th class="tg-0pky" style="text-align: left;">Args</th>
-<th class="tg-0pky" style="text-align: left;">Function</th>
-<th class="tg-0pky" style="text-align: left;">Example</th>
+<th>key</th>
+<th>Args</th>
+<th>Function</th>
+<th>Example</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td class="tg-0pky" style="text-align: left;">help</td>
-<td class="tg-0pky" style="text-align: left;">none</td>
-<td class="tg-0pky" style="text-align: left;">open help</td>
-<td class="tg-0pky" style="text-align: left;">help</td>
+<td>help</td>
+<td>none</td>
+<td>open help</td>
+<td>help</td>
 </tr>
 <tr>
-<td class="tg-0pky" style="text-align: left;">con</td>
-<td class="tg-0pky" style="text-align: left;">none</td>
-<td class="tg-0pky" style="text-align: left;">connect to the selected port</td>
-<td class="tg-0pky" style="text-align: left;">con</td>
+<td>con</td>
+<td>none</td>
+<td>connect to the selected port</td>
+<td>con</td>
 </tr>
 <tr>
-<td class="tg-0pky" style="text-align: left;">dcon</td>
-<td class="tg-0pky" style="text-align: left;">none</td>
-<td class="tg-0pky" style="text-align: left;">disconnect from the selected port</td>
-<td class="tg-0pky" style="text-align: left;">dcon</td>
+<td>dcon</td>
+<td>none</td>
+<td>disconnect from the selected port</td>
+<td>dcon</td>
 </tr>
 <tr>
-<td class="tg-0pky" style="text-align: left;">clear</td>
-<td class="tg-0pky" style="text-align: left;">none</td>
-<td class="tg-0pky" style="text-align: left;">clear the terminal</td>
-<td class="tg-0pky" style="text-align: left;">clear</td>
+<td>clear</td>
+<td>none</td>
+<td>clear the terminal</td>
+<td>clear</td>
 </tr>
 <tr>
-<td class="tg-0pky" style="text-align: left;">script</td>
-<td class="tg-0pky" style="text-align: left;">none<br />-[name]<br />-o<br />-s<br />-s -[name]<br />-t<br />-h</td>
-<td class="tg-0pky" style="text-align: left;">run the script in the script tab<br />run "name".txt (if it exists in the script dir)<br />open and run a file from the script dir<br />save the current script as ... <br />save the current script as "name".txt<br />jump to the script editor<br />print script help</td>
-<td class="tg-0pky" style="text-align: left;">script<br />script -example <br />script -o<br />script -s <br />script -s -example<br />script -t<br />script -h</td>
+<td>script</td>
+<td>none<br />-[name]<br />-o<br />-s<br />-s -[name]<br />-t<br />-h</td>
+<td>run the script in the script tab<br />run "name".txt (if it exists in the script dir)<br />open and run a file from the script dir<br />save the current script as ... <br />save the current script as "name".txt<br />jump to the script editor<br />print script help</td>
+<td>script<br />script -example <br />script -o<br />script -s <br />script -s -example<br />script -t<br />script -h</td>
 </tr>
 <tr>
-<td class="tg-0pky" style="text-align: left;">log</td>
-<td class="tg-0pky" style="text-align: left;">
+<td>log</td>
+<td>
 <p>none<br />-o<br />-n -[name]<br />-a<br />-h</p>
 </td>
-<td class="tg-0pky" style="text-align: left;">open the latest log file<br />open a log file from the log directory<br />name the current port in the log file<br />archive the current log<br />print log help</td>
-<td class="tg-0pky" style="text-align: left;">log<br />log -o<br />log -n -arduino1<br />log -a<br />log -h</td>
+<td>open the latest log file<br />open a log file from the log directory<br />name the current port in the log file<br />archive the current log<br />print log help</td>
+<td>log<br />log -o<br />log -n -arduino1<br />log -a<br />log -h</td>
 </tr>
 <tr>
-<td class="tg-0pky" style="text-align: left;">auto</td>
-<td class="tg-0pky" style="text-align: left;">none</td>
-<td class="tg-0pky" style="text-align: left;">toggle auto reconnect</td>
-<td class="tg-0pky" style="text-align: left;">auto</td>
+<td>auto</td>
+<td>none</td>
+<td>toggle auto reconnect</td>
+<td>auto</td>
 </tr>
 <tr>
-<td class="tg-0pky" style="text-align: left;">scan</td>
-<td class="tg-0pky" style="text-align: left;">none</td>
-<td class="tg-0pky" style="text-align: left;">scan/display open ports</td>
-<td class="tg-0pky" style="text-align: left;">scan</td>
+<td>scan</td>
+<td>none</td>
+<td>scan/display open ports</td>
+<td>scan</td>
 </tr>
 <tr>
-<td class="tg-0pky" style="text-align: left;">com</td>
-<td class="tg-0pky" style="text-align: left;">[port#]</td>
-<td class="tg-0pky" style="text-align: left;">connect to com"port#"</td>
-<td class="tg-0pky" style="text-align: left;">com20</td>
+<td>com</td>
+<td>[port#]</td>
+<td>connect to com"port#"</td>
+<td>com20</td>
 </tr>
 <tr>
-<td class="tg-0pky" style="text-align: left;">baud</td>
-<td class="tg-0pky" style="text-align: left;">[baud]</td>
-<td class="tg-0pky" style="text-align: left;">change baud rate to "baud"</td>
-<td class="tg-0pky" style="text-align: left;">baud9600</td>
+<td>baud</td>
+<td>[baud]</td>
+<td>change baud rate to "baud"</td>
+<td>baud9600</td>
 </tr>
 <tr>
-<td class="tg-0pky" style="text-align: left;">new</td>
-<td class="tg-0pky" style="text-align: left;">none</td>
-<td class="tg-0pky" style="text-align: left;">open another instance of Serial Killer</td>
-<td class="tg-0pky" style="text-align: left;">new</td>
+<td>new</td>
+<td>none</td>
+<td>open another instance of Serial Killer</td>
+<td>new</td>
 </tr>
 <tr>
-<td class="tg-0pky" style="text-align: left;">quit</td>
-<td class="tg-0pky" style="text-align: left;">none</td>
-<td class="tg-0pky" style="text-align: left;">close the program</td>
-<td class="tg-0pky" style="text-align: left;">quit</td>
+<td>quit</td>
+<td>none</td>
+<td>close the program</td>
+<td>quit</td>
 </tr>
 </tbody>
 </table>
-<h2 id="command-conflicts-">Command Conflicts:</h2>
+<h2>Command Conflicts:</h2>
 <p>If there are possible conflicts between commands and messages to send to a device, a command char can be used to distinguish commands.<br />For example, "$" would mean that only commands that begin with $ are accepted ($help, $new, etc...).<br />Set a command char with:</p>
 <blockquote>
 <p>Adv. Settings &gt; Commands</p>
 </blockquote>
-<h2 id="logging">Logging</h2>
-<p>&nbsp;</p>
-<h2 id="scripts">Scripts</h2>
+<h2>Logging</h2>
+<h2>Scripts</h2>
 <p>A script is an easy way to automate an interface with a device.</p>
 <p>Each new line of the script is run as an input in the "to device" line.</p>
 <h3><br />Forced commands:&nbsp;</h3>
@@ -104,4 +104,3 @@
 <p>#loop[number] : loops the section between itself and #endloop&nbsp;</p>
 <p>#endloop: ends the loop&nbsp;</p>
 <p>#stop: stops the script at this line</p>
-<p>&nbsp;</p>

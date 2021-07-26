@@ -38,7 +38,7 @@ class Command:
 
         if 'h' in args and self.help:
             print(f"HELP FOR {self.keyword}:", self.help)
-            return 
+            return self.help
 
         func_args = {} # dict to eventually be passed to a function
 

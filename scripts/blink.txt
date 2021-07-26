@@ -1,6 +1,0 @@
-#name=blink
-#delay=1
-blink50,50
-blink100,100
-blink500,500
-blink1000,1000

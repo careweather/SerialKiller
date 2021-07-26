@@ -1,12 +1,12 @@
 #delay=1500
 #clear
 #name=example
-#dcon
+dcon
 Hello! I am an example script.
 Edit me in the script tab up there ^.
 Type each new line as if it was being sent to the device.
 You can also run commands, like clearing the terminal.
 see...
-#clear
+clear
 Thats pretty neat. Here's more info
-#script -h
+script -h

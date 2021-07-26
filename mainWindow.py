@@ -2,34 +2,20 @@
 import subprocess
 import json
 import time 
+from datetime import datetime
 import os
 import sys
 import command
-
-
 from PyQt5.QtWidgets import QFileDialog
 import loggingTools
 from scripting import ScriptWorker
 from parser_f import Parser, Command
-try:
-    from gui.GUI_MAIN import Ui_MainWindow  # Local
-    from gui.GUI_HELP import Ui_Help
-    from PyQt5.QtCore import QObject, QThread, pyqtSignal
-    from PyQt5.QtGui import QIntValidator, QTextCursor
-    from PyQt5 import QtGui, QtWidgets
-    import serialHandler as SH
-except Exception as E:
-    print('''
-    -- ERROR --
-    Missing some Lib Dependancies!''')
-    print(E)
-    print('''
-    Make sure the following packages are installed:
-    pyqtgraph   - pip install pyqtgraph
-    pyqt5       - pip install pyqt5
-    pyqt5-tools - pip install pyqt5-tools
-    pySerial    - pip install pyserial''')
-    quit()
+from gui.GUI_MAIN import Ui_MainWindow  # Local
+from gui.GUI_HELP import Ui_Help
+from PyQt5.QtCore import QObject, QThread, pyqtSignal
+from PyQt5.QtGui import QIntValidator, QTextCursor
+from PyQt5 import QtGui, QtWidgets
+import serialHandler as SH
 
 KEY_SHIFT = 33554432
 KEY_UP = 16777235
@@ -103,12 +89,12 @@ Press ESCAPE or CTRL+C to stop a script mid-execution
 
 ARGUMENTS:
 (none)\t run script in the script tab
--[name] \t run "name".txt
--o \t open and run a script from the directory
--s \t save current script 
--s -[name] \t save current script as "name".txt
--n \t start new script
+-o [name]\t open a script. Optional: open "name".txt
+-r \t run the script you are opening
+-s [name] \t save current script. Optional: as "name".txt
+-n [name]\t start new script. Optional: include "name" line
 -t \t jump to script tab
+-ls \t display all scripts in the script dir
 -h\t display this help message
 
 SCRIPT SPECIFIC KEYWORDS:
@@ -133,6 +119,9 @@ Type "help" for detailed use instructions'''
 
 
 def get_timestamp(): 
+
+    ts = datetime.now().strftime("%H:%M:%S.%f")[:-3]
+    return ts
     millis = time.time() - int(time.time())
     ts = time.strftime("%H:%M:%S", time.gmtime())
     ts + str(millis)
@@ -238,8 +227,10 @@ class MainWindow(QtWidgets.QMainWindow):
         self.currentIndex = 0
         self.lastLine = ""
         self.history = []
+        
+        #self.input_char = self.ui.
+
         self.ui.terminalport.setPlaceholderText(terminal_placeholder)
-        self.output_char = self.ui.lineEdit_sentText.text()
         self.ui.button_clear.clicked.connect(self.clear_terminal)
         self.ui.button_send.clicked.connect(self.send_clicked)
         self.ui.button_rescan.clicked.connect(self.update_ports)
@@ -249,14 +240,18 @@ class MainWindow(QtWidgets.QMainWindow):
         self.ui.button_loadScript.clicked.connect(lambda: self.handle_script('o'))
         self.ui.button_saveScript.clicked.connect(lambda: self.handle_script('s'))
         self.ui.button_connect.clicked.connect(self.connect)
+        self.ui.button_viewLogs.clicked.connect(lambda: self.handle_log(open = ""))
         for rate in baudRates:
             self.ui.combobox_baud.addItem(str(rate))
         self.ui.combobox_baud.setCurrentIndex(8)  # 115200
         self.ui.tabWidget.setCurrentIndex(0)
         self.ui.lineEdit_input.setFocus()
+        self.ui.checkbox_timestamp.setEnabled(True)
+        self.ui.checkbox_timestamp.setCheckable(True)
 
         self.parser = Parser()
         cmd_connect = Command('com', self.connect, default_kw='target')
+        cmd_connect.add_argument('?', 'show', bool, True)
         cmd_connect.add_argument('auto', 'auto', bool, True)
         self.parser.add_command(cmd_connect)
         self.parser.add_command(Command("quit", quit))
@@ -280,11 +275,18 @@ class MainWindow(QtWidgets.QMainWindow):
         cmd_script.add_argument("t", 'tab', bool, default=True)
         cmd_script.add_argument("n", 'new', str, default="")
         cmd_script.add_argument("d", 'delete', str, default = "")
+        cmd_script.add_argument("h", "help", bool, True)
+        cmd_script.add_argument("ls", "list", bool, True)
+        cmd_save = Command('saves', self.save_setting)
+        cmd_save.add_argument("n", 'keyword', str)
+        cmd_save.add_argument("v", 'value', str)
+        #self.parser.add_command(Command("load", self.load_settings))
+        self.parser.add_command(cmd_save)
         self.parser.add_command(cmd_script)
         self.parser.add_command(cmd_baud)
         self.parser.add_command(cmd_log)
-        self.parser.debug()
-        self.cmd = command.commands()
+        #self.parser.debug() #uncomment for command debug
+        #self.cmd = command.commands()
         
         # self.cmd.add_command("con", self.connect, "connect")
         # self.cmd.add_command("dcon", self.disconnect, "disconnect")
@@ -303,26 +305,15 @@ class MainWindow(QtWidgets.QMainWindow):
         # self.cmd.add_command("timestamp", lambda:self.ui.checkbox_timestamp.toggle())
         # self.cmd.add_command("time", get_timestamp)
         #self.cmd.add_command("alias", self.set_alias, parse='dash')
-        self.ui.checkbox_timestamp.setEnabled(True)
-        self.ui.checkbox_timestamp.setCheckable(True)
-        self.load_settings()
+        
+        #self.load_settings()
+        self.info_char = self.ui.lineEdit_infoText.text()
+        self.warning_char = self.ui.lineEdit_warningText.text()
+        self.error_char = self.ui.lineEdit_errorText.text()
+        self.output_char = self.ui.lineEdit_sentText.text()
         self.update_ports()
         self.command_char = self.ui.lineEdit_commandChar.text()
         self.auto_rescan_toggled()
-
-    def startPlot(self):
-        self.ui.widget_plot.startLineGraph()
-
-    def set_alias(self, alias:str):
-        loggingTools.setPort(alias)
-        print("Port Name:", alias) 
-
-
-    def updatePlot(self): 
-        self.ui.widget_plot.updateLineData()
-    
-    def testPlot(self):
-        self.ui.widget_plot.testUpdate()
 
     def keyPressEvent(self, keypress: QtGui.QKeyEvent) -> None:
         key = keypress.key()
@@ -371,7 +362,7 @@ class MainWindow(QtWidgets.QMainWindow):
         elif key == KEY_S and modifiers == MOD_CTRL: 
             self.save_settings()
         
-    def load_settings(self):
+    def load_settings(self): # import and apply settings from json
         try:
             with open("user_settings.json", "r") as file:
                 user_settings = json.load(file)
@@ -381,7 +372,10 @@ class MainWindow(QtWidgets.QMainWindow):
                 all_ports = [self.ui.combobox_port.itemText(i) for i in range(self.ui.combobox_port.count())]
                 self.ui.lineEdit_delay.setText(user_settings['scriptdelay'])
                 self.ui.textEdit_script.setPlainText(user_settings['script'])
-                self.target_port = user_settings['port']
+                self.ui.lineEdit_errorText.setText(user_settings['error_char'])
+                self.ui.lineEdit_errorText.setText(user_settings['info_char'])
+                self.ui.lineEdit_errorText.setText(user_settings['warning_char'])
+                self.ui.lineEdit_errorText.setText(user_settings['output_char'])
                 if (user_settings["port"] in all_ports):
                     self.ui.combobox_port.setCurrentText(user_settings["port"])
 
@@ -389,8 +383,16 @@ class MainWindow(QtWidgets.QMainWindow):
             print(E)
             self.save_settings()
 
-    def save_setting(self, keyword, value):
-        pass
+    def save_setting(self, keyword, value): # save a single setting
+        with open("user_settings.json", "r") as file:
+            user_settings = json.load(file)
+            dprint("LOADED", user_settings)
+        user_settings[keyword] = value 
+        dprint("CHANGED TO:", user_settings)
+        with open("user_settings.json", "w") as file:
+            json.dump(user_settings, file)
+        
+        
 
     def save_settings(self):  # Save ALL settings
         user_settings = {} 
@@ -403,6 +405,10 @@ class MainWindow(QtWidgets.QMainWindow):
         user_settings['autolog'] = self.ui.checkbox_autoLog.isChecked()
         user_settings['scriptdelay'] = self.ui.lineEdit_delay.text()
         user_settings['script'] = self.ui.textEdit_script.toPlainText()
+        user_settings['output_char'] = self.ui.lineEdit_sentText.text()
+        user_settings['info_char'] = self.ui.lineEdit_infoText.text()
+        user_settings['error_char'] = self.ui.lineEdit_errorText.text()
+        user_settings['warning_char'] = self.ui.lineEdit_warningText.text()
         vprint("[SAVING SETTINGS]", user_settings, color=CGREEN)
         with open("user_settings.json", "w") as file:
             json.dump(user_settings, file)
@@ -438,7 +444,7 @@ class MainWindow(QtWidgets.QMainWindow):
             loggingTools.addLine(text)
             return
         elif type == TYPE_INFO:
-            text = "<INFO>" +text + "\n"
+            text = "<INFO>" + text + "\n"
             vprint(text, color=CGREEN)
             self.ui.terminalport.setTextColor(colorGreen)
             add(text)
@@ -459,7 +465,8 @@ class MainWindow(QtWidgets.QMainWindow):
     def clear_terminal(self):
         self.ui.terminalport.clear()
         self.debug_text()
-        self.add_text("Terminal Cleared", type=TYPE_INFO)
+        ts = get_timestamp()
+        self.add_text(f"Terminal Cleared at {ts}", type=TYPE_INFO)
 
     def update_history(self, line=""):
         if line and line is not self.lastLine and self.script_active == False:
@@ -482,11 +489,13 @@ class MainWindow(QtWidgets.QMainWindow):
                     self.debug_text(
                         f"ERROR: INVALID COMMAND: {text[1:]}", type=TYPE_ERROR)
                     return
-        isc = self.parser.parse(text)
-        print(isc)
-        return
-        if self.parser.parse(text) == "":
+        result = self.parser.parse(text)
+        if result != "" and result != "KEYWORD INVALID": 
+            self.debug_text(result, type=TYPE_ERROR)
+        if result != "KEYWORD INVALID":
             return
+        #if self.parser.parse(text) == "":
+        #    return
         text += '\n'
         if self.is_connected:
             SH.sendString(text)
@@ -560,7 +569,10 @@ class MainWindow(QtWidgets.QMainWindow):
         else: 
             self.debug_text(f"Baud Rate {baud} Invalid!")
          
-    def connect(self, target="", intentional=True, auto=False):
+    def connect(self, target="", intentional=True, auto=False, show=False):
+        if show: 
+            self.ui.combobox_port.setFocus()
+            return
         vprint("Connecting to:", target, color=CGREEN)
         if intentional:
             vprint('self.current_port: ', str(self.current_port), CGREEN)
@@ -735,7 +747,16 @@ class MainWindow(QtWidgets.QMainWindow):
         self.help = HelpPopup()
         self.help.show()
 
-    def handle_Script(self, opens = None, save = None, run = False, tab = False, new = None, delete = None): 
+    def handle_Script(self, opens = None, save = None, run = False, tab = False, new = None, delete = None, list=None, help = None): 
+        if help: 
+            self.add_text(script_help, TYPE_INFO)
+            return
+        if list: 
+            #cwd = os.getcwd()
+            scripts = os.listdir(self.cwd + "/scripts/")
+            for script in scripts: 
+                self.add_text(script, TYPE_INFO)
+            return
         if opens != None: 
             if opens == '': 
                 script_path = self.get_file(self.script_dir)
@@ -774,7 +795,7 @@ class MainWindow(QtWidgets.QMainWindow):
         if new != None: 
             self.ui.textEdit_script.clear()
             if new != "": 
-                self.ui.textEdit_script.setPlainText(f"#name={new}\n")
+                self.ui.textEdit_script.setPlainText(f"#name={new}\n#delay=100")
             self.ui.tabWidget.setCurrentIndex(1)
             self.ui.textEdit_script.setFocus(True)
             return
@@ -795,7 +816,6 @@ class MainWindow(QtWidgets.QMainWindow):
             self.start_script()
                 
         return
-
 
     def handle_script(self, *args):
         if not args:
@@ -971,21 +991,23 @@ argList = [  # THIS IS ALL COMMANDS AND ARGS
 ]
 
 
-def execute():
-    print("STARTING SERIAL KILLER")
-    app = QtWidgets.QApplication([sys.argv])
-    dprint("Argument List:", str(sys.argv))
-    for sysarg in sys.argv[1:]:
-        for argument in argList:
-            if sysarg in argument['arg']:
-                funct = argument['funct']
-                funct()
+# def execute():
+#     print("STARTING SERIAL KILLER")
+#     app = QtWidgets.QApplication([sys.argv])
+#     dprint("Argument List:", str(sys.argv))
+#     for sysarg in sys.argv[1:]:
+#         for argument in argList:
+#             if sysarg in argument['arg']:
+#                 funct = argument['funct']
+#                 funct()
 
-    main = MainWindow()
-    main.show()
-    status = app.exec_()
-    sys.exit(status)
+#     main = MainWindow()
+#     main.show()
+#     status = app.exec_()
+#     sys.exit(status)
 
 
 if __name__ == "__main__":
-    execute()
+    import main
+    main.execute()
+    #execute()
