@@ -11,8 +11,8 @@ import re
 today = date.today()
 stringBuff = ""
 cwd = os.getcwd()
-log_path = f'{cwd}/logs'
-log_name = f'/log-{today}'
+log_path = f'{cwd}/logs/'
+log_name = f'log-{today}'
 log_extension = '.txt'
 file_name = log_path + log_name + log_extension
 _started = False 
@@ -162,10 +162,15 @@ def addLine(text):
                 #print(line, "waiting for newline!")
                 stringBuff += line
 
-def archiveLog():
+def archiveLog(name = ""):
     stopLogger()
     logIndex = 1 
-    new_name = log_name + f'({logIndex})' + log_extension
+    if name != "": 
+        print("custom name", name)
+        new_name = name +  log_extension
+    else: 
+        new_name = log_name + f'({logIndex})' + log_extension
+    print("trying new name", new_name)
     while (os.path.exists(log_path + new_name)):
         print(f"{new_name} already exists!")
         logIndex += 1

@@ -10,6 +10,7 @@ import command
 from PyQt5.QtWidgets import QFileDialog
 import loggingTools
 from scripting import ScriptWorker
+from parser_f import Parser, Command
 try:
     from gui.GUI_MAIN import Ui_MainWindow  # Local
     from gui.GUI_HELP import Ui_Help
@@ -193,7 +194,6 @@ class RescanWorker(QObject):  # THIS RESCANS FOR CHANGING PORTS. ASYNC
     def stop(self):
         self._active = False
 
-
 class SerialWorker(QObject):  # THIS FETCHES SERIAL DATA. ASYNC.
     out = pyqtSignal(str)
     disconnected = pyqtSignal(bool)
@@ -254,23 +254,54 @@ class MainWindow(QtWidgets.QMainWindow):
         self.ui.combobox_baud.setCurrentIndex(8)  # 115200
         self.ui.tabWidget.setCurrentIndex(0)
         self.ui.lineEdit_input.setFocus()
+
+        self.parser = Parser()
+        cmd_connect = Command('com', self.connect, default_kw='target')
+        cmd_connect.add_argument('auto', 'auto', bool, True)
+        self.parser.add_command(cmd_connect)
+        self.parser.add_command(Command("quit", quit))
+        self.parser.add_command(Command("clear", self.clear_terminal))
+        self.parser.add_command(Command("help", self.open_help))
+        self.parser.add_command(Command("scan", self.update_ports))
+        self.parser.add_command(Command("dcon", self.disconnect))
+        self.parser.add_command(Command("new", self.new_window))
+        self.parser.add_command(Command("save", self.save_settings))
+        self.parser.add_command(Command("auto", self.ui.checkbox_autoReconnect.toggle))
+        self.parser.add_command(Command("con", self.connect))
+        cmd_log = Command("log", self.handle_log, help=log_help)
+        cmd_log.add_argument('n', 'name', str)
+        cmd_log.add_argument('o', 'open', str, default="")
+        cmd_log.add_argument('a', 'archive', str, default="")
+        cmd_baud = Command("baud", self.update_baud, 'target_rate', str, default_required=True)
+        cmd_script = Command("script", self.handle_Script)
+        cmd_script.add_argument("o", 'opens', str, default="")
+        cmd_script.add_argument("r", 'run', bool, default=True)
+        cmd_script.add_argument("s", 'save', str, default="")
+        cmd_script.add_argument("t", 'tab', bool, default=True)
+        cmd_script.add_argument("n", 'new', str, default="")
+        cmd_script.add_argument("d", 'delete', str, default = "")
+        self.parser.add_command(cmd_script)
+        self.parser.add_command(cmd_baud)
+        self.parser.add_command(cmd_log)
+        self.parser.debug()
         self.cmd = command.commands()
-        self.cmd.add_command("con", self.connect, "connect")
-        self.cmd.add_command("dcon", self.disconnect, "disconnect")
-        self.cmd.add_command("quit", quit, "quit")
-        self.cmd.add_command("clear", self.clear_terminal, "clear")
-        self.cmd.add_command("com", self.connect, "", parse="none")
-        self.cmd.add_command("log", self.open_log, "", parse="dash")
-        self.cmd.add_command("script", self.handle_script, "start script", parse="dash")
-        self.cmd.add_command("auto", self.ui.checkbox_autoReconnect.toggle)
-        self.cmd.add_command("help", self.open_help, "", parse='dash')
-        self.cmd.add_command("scan", self.update_ports)
-        self.cmd.add_command("new", self.new_window)
-        self.cmd.add_command("save", self.save_settings)
-        self.cmd.add_command("load", self.load_settings)
-        self.cmd.add_command("baud", self.update_baud, parse="none")
-        self.cmd.add_command("timestamp", lambda:self.ui.checkbox_timestamp.toggle())
-        self.cmd.add_command("time", get_timestamp)
+        
+        # self.cmd.add_command("con", self.connect, "connect")
+        # self.cmd.add_command("dcon", self.disconnect, "disconnect")
+        # self.cmd.add_command("quit", quit, "quit")
+        # self.cmd.add_command("clear", self.clear_terminal, "clear")
+        # self.cmd.add_command("com", self.connect, "", parse="none")
+        # self.cmd.add_command("log", self.open_log, "", parse="dash")
+        # self.cmd.add_command("script", self.handle_script, "start script", parse="dash")
+        # self.cmd.add_command("auto", self.ui.checkbox_autoReconnect.toggle)
+        # self.cmd.add_command("help", self.open_help, "", parse='dash')
+        # self.cmd.add_command("scan", self.update_ports)
+        # self.cmd.add_command("new", self.new_window)
+        # self.cmd.add_command("save", self.save_settings)
+        # self.cmd.add_command("load", self.load_settings)
+        # self.cmd.add_command("baud", self.update_baud, parse="none")
+        # self.cmd.add_command("timestamp", lambda:self.ui.checkbox_timestamp.toggle())
+        # self.cmd.add_command("time", get_timestamp)
         #self.cmd.add_command("alias", self.set_alias, parse='dash')
         self.ui.checkbox_timestamp.setEnabled(True)
         self.ui.checkbox_timestamp.setCheckable(True)
@@ -451,7 +482,10 @@ class MainWindow(QtWidgets.QMainWindow):
                     self.debug_text(
                         f"ERROR: INVALID COMMAND: {text[1:]}", type=TYPE_ERROR)
                     return
-        elif self.cmd.check(text):
+        isc = self.parser.parse(text)
+        print(isc)
+        return
+        if self.parser.parse(text) == "":
             return
         text += '\n'
         if self.is_connected:
@@ -526,7 +560,7 @@ class MainWindow(QtWidgets.QMainWindow):
         else: 
             self.debug_text(f"Baud Rate {baud} Invalid!")
          
-    def connect(self, target="", intentional=True):
+    def connect(self, target="", intentional=True, auto=False):
         vprint("Connecting to:", target, color=CGREEN)
         if intentional:
             vprint('self.current_port: ', str(self.current_port), CGREEN)
@@ -553,6 +587,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
         if self.is_connected == False:
             if (SH.makeConnection(port=self.target_port, baud=self.active_baud)):
+                    
                 self.is_connected = True
                 self.current_port = self.target_port
                 self.debug_text(f"Connected to {self.target_port}", TYPE_INFO)
@@ -575,6 +610,8 @@ class MainWindow(QtWidgets.QMainWindow):
                 self.serial_worker.disconnected.connect(self.disconnect)
                 self.serial_thread.setTerminationEnabled(True)
                 self.serial_thread.start()
+                if auto:
+                    self.ui.checkbox_autoReconnect.setChecked(True)
             else:
                 self.debug_text(
                     "ERROR: PORT COULD NOT CONNECT!", type=TYPE_ERROR)
@@ -609,6 +646,27 @@ class MainWindow(QtWidgets.QMainWindow):
             self.debug_text("WARNING: Already Disconnected!", TYPE_WARNING)
             vprint("ERROR: NOT CONNECTED")
 
+    def handle_log(self, open = False, archive = None, name = None): 
+        if open != False: 
+            if open == "":
+                loggingTools.LogViewPopup(self)
+                return
+            loggingTools.LogViewPopup(self,filename=open)
+            return
+        if name:
+            if len(name) > 1: 
+                print("Naming Port:", name)
+                loggingTools.setPort(name)
+            else: 
+                print("NAME MUST BE INCLUDED")
+            return
+        if archive != None: 
+            print("archiving log!")
+            loggingTools.archiveLog(name=archive)
+            return
+        else: 
+            loggingTools.LogViewPopup(self, latest=True)
+        
     def open_log(self, *args):
         print(args, type(args))
         if len(args) == 0: 
@@ -676,6 +734,68 @@ class MainWindow(QtWidgets.QMainWindow):
             return
         self.help = HelpPopup()
         self.help.show()
+
+    def handle_Script(self, opens = None, save = None, run = False, tab = False, new = None, delete = None): 
+        if opens != None: 
+            if opens == '': 
+                script_path = self.get_file(self.script_dir)
+            else:
+                script_path = self.script_dir + opens + '.txt' 
+            print(script_path)
+            if os.path.exists(script_path): 
+                print("exists")
+                with open(script_path, 'r') as File:
+                    text = File.read()
+                    print(text)
+                    self.ui.textEdit_script.setPlainText(text)
+                self.debug_text(f"Loaded: {script_path}")
+                if run: 
+                    self.start_script()
+            else: 
+                self.debug_text(f"ERROR: script {script_path} not found", TYPE_ERROR)
+                return 
+        if save != None: 
+            if save == '': 
+                script_path = self.get_filename(self.script_dir)
+            else:
+                script_path = self.script_dir + save + '.txt' 
+            print(script_path)
+            if script_path: 
+                with open(script_path, 'w') as File: 
+                    File.write(self.ui.textEdit_script.toPlainText())
+                self.debug_text(f"Script saved to: {script_path}")
+            else:
+                print("Save Script Cancelled")
+            return
+        if tab: 
+            self.ui.tabWidget.setCurrentIndex(1)
+            self.ui.textEdit_script.setFocus(True)
+            
+        if new != None: 
+            self.ui.textEdit_script.clear()
+            if new != "": 
+                self.ui.textEdit_script.setPlainText(f"#name={new}\n")
+            self.ui.tabWidget.setCurrentIndex(1)
+            self.ui.textEdit_script.setFocus(True)
+            return
+        if delete != None: 
+            if delete != "":
+                script_path = self.script_dir + delete + '.txt'
+                if os.path.exists(script_path): 
+                    os.remove(script_path)
+                    self.debug_text(f"Removed {script_path}")
+                else: 
+                    self.debug_text(f"ERROR: File {script_path} not found", type=TYPE_ERROR)
+            else: 
+                self.debug_text(f"ERROR: file name must be included", type=TYPE_ERROR)
+            return
+                     
+
+        if not opens and not save and not tab:
+            self.start_script()
+                
+        return
+
 
     def handle_script(self, *args):
         if not args:
