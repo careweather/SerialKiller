@@ -107,11 +107,17 @@ class Ui_MainWindow(object):
         self.gridLayout_2.addWidget(self.checkBox_autoRescan, 0, 0, 1, 1)
         self.gridLayout_7.addWidget(self.group_connection, 2, 0, 1, 2)
         self.tabWidget = QtWidgets.QTabWidget(self.centralwidget)
+        self.tabWidget.setEnabled(True)
         font = QtGui.QFont()
         font.setFamily("Segoe UI")
         font.setPointSize(9)
         self.tabWidget.setFont(font)
+        self.tabWidget.setFocusPolicy(QtCore.Qt.NoFocus)
         self.tabWidget.setTabPosition(QtWidgets.QTabWidget.North)
+        self.tabWidget.setTabShape(QtWidgets.QTabWidget.Rounded)
+        self.tabWidget.setElideMode(QtCore.Qt.ElideNone)
+        self.tabWidget.setUsesScrollButtons(True)
+        self.tabWidget.setMovable(False)
         self.tabWidget.setObjectName("tabWidget")
         self.tab_terminal = QtWidgets.QWidget()
         self.tab_terminal.setObjectName("tab_terminal")
@@ -500,7 +506,7 @@ class Ui_MainWindow(object):
         self.menubar.addAction(self.menuHelp.menuAction())
 
         self.retranslateUi(MainWindow)
-        self.tabWidget.setCurrentIndex(3)
+        self.tabWidget.setCurrentIndex(2)
         QtCore.QMetaObject.connectSlotsByName(MainWindow)
 
     def retranslateUi(self, MainWindow):

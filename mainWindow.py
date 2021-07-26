@@ -237,8 +237,8 @@ class MainWindow(QtWidgets.QMainWindow):
         self.ui.checkBox_autoRescan.clicked.connect(self.auto_rescan_toggled)
         self.ui.checkbox_autoReconnect.stateChanged.connect(self.auto_reconnect_toggled)
         self.ui.button_runScript.clicked.connect(self.start_script)
-        self.ui.button_loadScript.clicked.connect(lambda: self.handle_script('o'))
-        self.ui.button_saveScript.clicked.connect(lambda: self.handle_script('s'))
+        self.ui.button_loadScript.clicked.connect(lambda: self.handle_script(opens=""))
+        self.ui.button_saveScript.clicked.connect(lambda: self.handle_script(save=""))
         self.ui.button_connect.clicked.connect(self.connect)
         self.ui.button_viewLogs.clicked.connect(lambda: self.handle_log(open = ""))
         for rate in baudRates:
@@ -268,7 +268,7 @@ class MainWindow(QtWidgets.QMainWindow):
         cmd_log.add_argument('o', 'open', str, default="")
         cmd_log.add_argument('a', 'archive', str, default="")
         cmd_baud = Command("baud", self.update_baud, 'target_rate', str, default_required=True)
-        cmd_script = Command("script", self.handle_Script)
+        cmd_script = Command("script", self.handle_script)
         cmd_script.add_argument("o", 'opens', str, default="")
         cmd_script.add_argument("r", 'run', bool, default=True)
         cmd_script.add_argument("s", 'save', str, default="")
@@ -280,33 +280,12 @@ class MainWindow(QtWidgets.QMainWindow):
         cmd_save = Command('saves', self.save_setting)
         cmd_save.add_argument("n", 'keyword', str)
         cmd_save.add_argument("v", 'value', str)
-        #self.parser.add_command(Command("load", self.load_settings))
         self.parser.add_command(cmd_save)
         self.parser.add_command(cmd_script)
         self.parser.add_command(cmd_baud)
         self.parser.add_command(cmd_log)
-        #self.parser.debug() #uncomment for command debug
-        #self.cmd = command.commands()
-        
-        # self.cmd.add_command("con", self.connect, "connect")
-        # self.cmd.add_command("dcon", self.disconnect, "disconnect")
-        # self.cmd.add_command("quit", quit, "quit")
-        # self.cmd.add_command("clear", self.clear_terminal, "clear")
-        # self.cmd.add_command("com", self.connect, "", parse="none")
-        # self.cmd.add_command("log", self.open_log, "", parse="dash")
-        # self.cmd.add_command("script", self.handle_script, "start script", parse="dash")
-        # self.cmd.add_command("auto", self.ui.checkbox_autoReconnect.toggle)
-        # self.cmd.add_command("help", self.open_help, "", parse='dash')
-        # self.cmd.add_command("scan", self.update_ports)
-        # self.cmd.add_command("new", self.new_window)
-        # self.cmd.add_command("save", self.save_settings)
-        # self.cmd.add_command("load", self.load_settings)
-        # self.cmd.add_command("baud", self.update_baud, parse="none")
-        # self.cmd.add_command("timestamp", lambda:self.ui.checkbox_timestamp.toggle())
-        # self.cmd.add_command("time", get_timestamp)
-        #self.cmd.add_command("alias", self.set_alias, parse='dash')
-        
-        #self.load_settings()
+        self.load_settings()
+        self.input_char = self.ui.lineEdit_receivedText.text()
         self.info_char = self.ui.lineEdit_infoText.text()
         self.warning_char = self.ui.lineEdit_warningText.text()
         self.error_char = self.ui.lineEdit_errorText.text()
@@ -372,10 +351,11 @@ class MainWindow(QtWidgets.QMainWindow):
                 all_ports = [self.ui.combobox_port.itemText(i) for i in range(self.ui.combobox_port.count())]
                 self.ui.lineEdit_delay.setText(user_settings['scriptdelay'])
                 self.ui.textEdit_script.setPlainText(user_settings['script'])
+                self.ui.lineEdit_receivedText.setText(user_settings['input_char'])
                 self.ui.lineEdit_errorText.setText(user_settings['error_char'])
-                self.ui.lineEdit_errorText.setText(user_settings['info_char'])
-                self.ui.lineEdit_errorText.setText(user_settings['warning_char'])
-                self.ui.lineEdit_errorText.setText(user_settings['output_char'])
+                self.ui.lineEdit_infoText.setText(user_settings['info_char'])
+                self.ui.lineEdit_warningText.setText(user_settings['warning_char'])
+                self.ui.lineEdit_sentText.setText(user_settings['output_char'])
                 if (user_settings["port"] in all_ports):
                     self.ui.combobox_port.setCurrentText(user_settings["port"])
 
@@ -392,8 +372,7 @@ class MainWindow(QtWidgets.QMainWindow):
         with open("user_settings.json", "w") as file:
             json.dump(user_settings, file)
         
-        
-
+    
     def save_settings(self):  # Save ALL settings
         user_settings = {} 
         user_settings['logpath'] = self.ui.lineEdit_logPath.text()
@@ -405,6 +384,7 @@ class MainWindow(QtWidgets.QMainWindow):
         user_settings['autolog'] = self.ui.checkbox_autoLog.isChecked()
         user_settings['scriptdelay'] = self.ui.lineEdit_delay.text()
         user_settings['script'] = self.ui.textEdit_script.toPlainText()
+        user_settings['input_char'] = self.ui.lineEdit_receivedText.text()
         user_settings['output_char'] = self.ui.lineEdit_sentText.text()
         user_settings['info_char'] = self.ui.lineEdit_infoText.text()
         user_settings['error_char'] = self.ui.lineEdit_errorText.text()
@@ -444,19 +424,19 @@ class MainWindow(QtWidgets.QMainWindow):
             loggingTools.addLine(text)
             return
         elif type == TYPE_INFO:
-            text = "<INFO>" + text + "\n"
+            text = self.info_char + text + "\n"
             vprint(text, color=CGREEN)
             self.ui.terminalport.setTextColor(colorGreen)
             add(text)
             return
         elif type == TYPE_ERROR:
-            text = "<ERROR>" + text + "\n"
+            text = self.error_char + text + "\n"
             vprint(text, color=CRED)
             self.ui.terminalport.setTextColor(colorRed)
             add(text)
             return
         elif type == TYPE_WARNING:
-            text = "<WARNING>" + text + "\n"
+            text = self.warning_char + text + "\n"
             vprint(text, color=CYELLOW)
             self.ui.terminalport.setTextColor(colorYellow)
             add(text)
@@ -637,10 +617,16 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def disconnect(self, intentional=True):
         if self.is_connected:
-            self.add_text(
-                f"Disconnecting From: {self.current_port}", TYPE_ERROR)
-            self.debug_text(
-                f"Disconnecting from: {self.current_port}", TYPE_WARNING)
+            if intentional: 
+                self.add_text(
+                    f"Disconnecting From: {self.current_port}", TYPE_WARNING)
+                self.debug_text(
+                    f"Disconnecting from: {self.current_port}", TYPE_WARNING)
+            else: 
+                self.add_text(
+                    f" LOST: {self.current_port}", TYPE_ERROR)
+                self.debug_text(
+                    f" LOST: {self.current_port}", TYPE_ERROR)
             self.serial_worker.stop()
             self.serial_thread.exit()
             SH.closePort()
@@ -747,7 +733,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.help = HelpPopup()
         self.help.show()
 
-    def handle_Script(self, opens = None, save = None, run = False, tab = False, new = None, delete = None, list=None, help = None): 
+    def handle_script(self, opens = None, save = None, run = False, tab = False, new = None, delete = None, list=None, help = None): 
         if help: 
             self.add_text(script_help, TYPE_INFO)
             return
@@ -817,96 +803,96 @@ class MainWindow(QtWidgets.QMainWindow):
                 
         return
 
-    def handle_script(self, *args):
-        if not args:
-            self.start_script()
-            return
-        script_open = False
-        script_save = False
-        script_delete = False
-        script_exists = False
-        script_name = ""
-        script_path = None
-        for arg in args:
-            vprint("\narg ", arg, '\n')
-            if arg in ['n', 'N', "new"]: # single arg
-                self.ui.tabWidget.setCurrentIndex(1)
-                self.ui.textEdit_script.clear()
-                self.ui.textEdit_script.setFocus(True)
-                return
-            elif arg in ['t', 'T']: # single arg
-                self.ui.tabWidget.setCurrentIndex(1)
-                self.ui.textEdit_script.setFocus(True)
-                return
-            elif arg in ['h', 'H', 'help']: # single arg
-                self.add_text(script_help, type=TYPE_INFO)
-                return
-            elif arg in ['o', 'O', 'open']:
-                script_open = True
-                script_save = False
-                vprint("opening Script\n")
-            elif arg in ['save', 's', 'S']:
-                script_save = True
-                script_open = False
-                vprint("saving script\n")
-            elif arg == 'd': 
-                script_delete = True
-                vprint("deleting script\n")
-            elif arg: 
-                script_name = arg
+    # def handle_script(self, *args):
+    #     if not args:
+    #         self.start_script()
+    #         return
+    #     script_open = False
+    #     script_save = False
+    #     script_delete = False
+    #     script_exists = False
+    #     script_name = ""
+    #     script_path = None
+    #     for arg in args:
+    #         vprint("\narg ", arg, '\n')
+    #         if arg in ['n', 'N', "new"]: # single arg
+    #             self.ui.tabWidget.setCurrentIndex(1)
+    #             self.ui.textEdit_script.clear()
+    #             self.ui.textEdit_script.setFocus(True)
+    #             return
+    #         elif arg in ['t', 'T']: # single arg
+    #             self.ui.tabWidget.setCurrentIndex(1)
+    #             self.ui.textEdit_script.setFocus(True)
+    #             return
+    #         elif arg in ['h', 'H', 'help']: # single arg
+    #             self.add_text(script_help, type=TYPE_INFO)
+    #             return
+    #         elif arg in ['o', 'O', 'open']:
+    #             script_open = True
+    #             script_save = False
+    #             vprint("opening Script\n")
+    #         elif arg in ['save', 's', 'S']:
+    #             script_save = True
+    #             script_open = False
+    #             vprint("saving script\n")
+    #         elif arg == 'd': 
+    #             script_delete = True
+    #             vprint("deleting script\n")
+    #         elif arg: 
+    #             script_name = arg
 
-        if script_name:
-            print("script_name:",script_name)
-            script_path = script_path = self.script_dir + script_name + '.txt'
-            print('script_path: ' , str(script_path), type(script_path))
-            script_exists = os.path.exists(script_path)
+    #     if script_name:
+    #         print("script_name:",script_name)
+    #         script_path = script_path = self.script_dir + script_name + '.txt'
+    #         print('script_path: ' , str(script_path), type(script_path))
+    #         script_exists = os.path.exists(script_path)
         
-        if script_save: 
-            if script_path == None: # popup no script name arg
-                script_path = self.get_filename(self.script_dir)
-            if script_path: 
-                with open(script_path, 'w') as File: 
-                    File.write(self.ui.textEdit_script.toPlainText())
-                self.debug_text(f"Script saved to: {script_path}")
-            else: 
-                dprint("Script Save Cancelled\n", color=CRED)
-                return
+    #     if script_save: 
+    #         if script_path == None: # popup no script name arg
+    #             script_path = self.get_filename(self.script_dir)
+    #         if script_path: 
+    #             with open(script_path, 'w') as File: 
+    #                 File.write(self.ui.textEdit_script.toPlainText())
+    #             self.debug_text(f"Script saved to: {script_path}")
+    #         else: 
+    #             dprint("Script Save Cancelled\n", color=CRED)
+    #             return
         
-        elif script_open:
-            if script_path == None: 
-                script_path = self.get_file(self.script_dir)
-                if not script_path:
-                    return
-            elif script_exists == False:
-                self.debug_text(f"ERROR: Script {script_path} not found", TYPE_ERROR)
-                return
-            self.debug_text(f"Loaded: {script_path}")
-            with open(script_path, 'r') as File:
-                text = File.read()
-                print(text)
-                self.ui.textEdit_script.setPlainText(text)
-            #if script_run: 
-                self.start_script()
-            return
+    #     elif script_open:
+    #         if script_path == None: 
+    #             script_path = self.get_file(self.script_dir)
+    #             if not script_path:
+    #                 return
+    #         elif script_exists == False:
+    #             self.debug_text(f"ERROR: Script {script_path} not found", TYPE_ERROR)
+    #             return
+    #         self.debug_text(f"Loaded: {script_path}")
+    #         with open(script_path, 'r') as File:
+    #             text = File.read()
+    #             print(text)
+    #             self.ui.textEdit_script.setPlainText(text)
+    #         #if script_run: 
+    #             self.start_script()
+    #         return
         
-        elif script_delete: 
-            if script_exists: 
-                os.remove(script_path)
-                self.debug_text(f"Removed {script_path}")
-            else: 
-                self.debug_text(f"ERROR: File {script_path} not found", type=TYPE_ERROR)
-            return
+        # elif script_delete: 
+        #     if script_exists: 
+        #         os.remove(script_path)
+        #         self.debug_text(f"Removed {script_path}")
+        #     else: 
+        #         self.debug_text(f"ERROR: File {script_path} not found", type=TYPE_ERROR)
+        #     return
 
-        elif script_exists:
-            with open(script_path, 'r') as File:
-                text = File.read()
-                print(text)
-                self.ui.textEdit_script.setPlainText(text)
-            self.start_script()
-            return
+        # elif script_exists:
+        #     with open(script_path, 'r') as File:
+        #         text = File.read()
+        #         print(text)
+        #         self.ui.textEdit_script.setPlainText(text)
+        #     self.start_script()
+        #     return
         
-        else: 
-            self.debug_text(f"ERROR: script {script_path} not found", TYPE_ERROR)
+        # else: 
+        #     self.debug_text(f"ERROR: script {script_path} not found", TYPE_ERROR)
  
     def start_script(self, text = False):
         if text == False:
