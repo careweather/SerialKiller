@@ -1,7 +1,15 @@
-#delay=500
+#delay=100
 #name=send
-#loop=5
-send"hello 1"
-send"hello 2"
-send"hello 3"
+#loop=1
+send1
+send2
+send3
+send4
+send5
+send6
+send7
+send8
+send9
+send10
 #endloop
+clear

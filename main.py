@@ -22,19 +22,60 @@ updateCommands = [
     "pyuic5 -o gui/GUI_HELP.py ui_files/helpPopup.ui"
 ]
 
+ENDC = '\033[0m '
+
 def update_UI():
     print("UPDATING FROM UI FILE")
     for command in updateCommands:
-        print(command, end=" ", flush=True)
         result = subprocess.call(command, shell=True)
         if not result: 
             print("Success")
 
-def toggle_verbose():
-    global verbose, debug
-    verbose = False
-    debug = False
+
+_verbose = False
+_debug = False
+
+
+
+
+def _dprint(input, *args, color = ""): # for debugging the program
+    pass
+    #global _debug
     
+
+
+def _vprint(input, *args, color = ""): # verbose prints stuff to terminal 
+    pass
+    #global _verbose
+    
+
+
+def dprint(input, *args, color = "", enabled = False): 
+    if enabled: 
+        dprint.enable = True
+    if dprint.enable:
+        print(color, end="", flush=True)
+        print(input, *args, end="", flush=True)
+        print(ENDC, end="", flush=True)
+
+dprint.enable = True
+
+def vprint(input, *args, color = "", enabled = None):
+    if enabled: 
+        vprint.enable = True
+    if vprint.enable:
+        print(color, end="", flush=True)
+        print(input, *args, end="", flush=True)
+        print(ENDC, end="", flush=True)
+
+vprint.enable = True
+
+def toggle_verbose(): 
+    vprint.enable = True
+    dprint.enable = True
+
+print("V:", _verbose, "D:", _debug)
+
 argList = [  # THIS IS ALL COMMANDS AND ARGS
     {
         'arg': ['-u', '-update'],
@@ -51,13 +92,17 @@ argList = [  # THIS IS ALL COMMANDS AND ARGS
 ]
 
 def execute():
+    from mainWindow import MainWindow   
     print("STARTING SERIAL KILLER")
     for sysarg in sys.argv[1:]:
-       for argument in argList:
+        print("Argument", sysarg)
+        for argument in argList:
            if sysarg in argument['arg']:
                funct = argument['funct']
                funct()
-    from mainWindow import MainWindow           
+    
+    print("verbose", _verbose)
+    print("debug", _debug)
     app = QtWidgets.QApplication([sys.argv])
     main = MainWindow()
     main.show()
@@ -65,8 +110,7 @@ def execute():
     sys.exit(status)
     
     
-    #dprint("Argument List:", str(sys.argv))
-    
+
 
 if __name__ == "__main__":
     execute()

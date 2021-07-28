@@ -12,7 +12,7 @@ import command
 
 class ScriptWorker(QObject):
     line = pyqtSignal(str)
-    saveName = pyqtSignal(str , str)
+    saveName = pyqtSignal(dict)
     finished = pyqtSignal(int)
     waiting = pyqtSignal(bool)
     _wait = pyqtSignal(bool)
@@ -67,7 +67,7 @@ class ScriptWorker(QObject):
             return True
         elif text.startswith("name="): 
             print("saving as name", text[5:])
-            self.saveName.emit('s',text[5:])
+            self.line.emit(f"script -s {text[5:]}")
             return True
         elif text == "wait": 
             self.wait()
@@ -83,10 +83,6 @@ class ScriptWorker(QObject):
                 self.loopNumb -= 1
                 self.currentLine = self.loopStart
             return True
-        #elif text.startswith("script-"):
-        #    self.subScript(text[7:])
-        #    time.sleep(.05)
-        #    return True
         elif text == "stop": 
             self._active = False
             self.finished.emit(True)

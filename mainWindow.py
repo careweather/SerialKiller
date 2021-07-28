@@ -6,13 +6,14 @@ from datetime import datetime
 import os
 import sys
 import command
+from main import vprint, dprint
 from PyQt5.QtWidgets import QFileDialog
 import loggingTools
 from scripting import ScriptWorker
 from parser_f import Parser, Command
 from gui.GUI_MAIN import Ui_MainWindow  # Local
 from gui.GUI_HELP import Ui_Help
-from PyQt5.QtCore import QObject, QThread, pyqtSignal
+from PyQt5.QtCore import QObject, QThread, flush, pyqtSignal
 from PyQt5.QtGui import QIntValidator, QTextCursor
 from PyQt5 import QtGui, QtWidgets
 import serialHandler as SH
@@ -56,11 +57,6 @@ _colorLightGrey = "rgb(225, 225, 225)"
 
 baudRates = [1200, 1800, 2400, 4800, 9600, 19200, 38400, 57600, 115200, 256000]
 
-verbose = True
-debug = True
-
-
-
 CBLACK  = '\33[30m'
 CRED    = '\33[31m'
 CGREEN  = '\33[32m'
@@ -70,18 +66,11 @@ CCYAN   = '\033[96m'
 CVIOLET = '\33[35m'
 CBEIGE  = '\33[36m'
 CWHITE  = '\33[37m'
-ENDC = '\033[0m'
+
 BOLD = '\033[1m'
 UNDERLINE = '\033[4m'
 
-def dprint(input, *args, color = ""): # for debugging the program
-    if debug:
-        print(color + input + ENDC, *args)
 
-
-def vprint(input, *args, color = ""): # verbose prints stuff to terminal 
-    if verbose:
-        print(color + input + ENDC, *args, end='', flush=True)
 
 script_help = '''
 **** SCRIPT HELP ****
@@ -119,7 +108,6 @@ Type "help" for detailed use instructions'''
 
 
 def get_timestamp(): 
-
     ts = datetime.now().strftime("%H:%M:%S.%f")[:-3]
     return ts
     millis = time.time() - int(time.time())
@@ -173,9 +161,9 @@ class RescanWorker(QObject):  # THIS RESCANS FOR CHANGING PORTS. ASYNC
                 ports = SH.getPorts()
                 if(ports != lastPorts):
                     lastPorts = ports
-                    vprint(str(ports), color=CGREEN)
+                    vprint(str(ports) + "\n", color=CGREEN)
                     self.updatedPorts.emit(ports)
-                time.sleep(1)
+                time.sleep(.5)
             except Exception as E:
                 print("Rescan worker Error", E)
                 self.disconnected.emit(False)
@@ -372,7 +360,6 @@ class MainWindow(QtWidgets.QMainWindow):
         with open("user_settings.json", "w") as file:
             json.dump(user_settings, file)
         
-    
     def save_settings(self):  # Save ALL settings
         user_settings = {} 
         user_settings['logpath'] = self.ui.lineEdit_logPath.text()
@@ -389,16 +376,18 @@ class MainWindow(QtWidgets.QMainWindow):
         user_settings['info_char'] = self.ui.lineEdit_infoText.text()
         user_settings['error_char'] = self.ui.lineEdit_errorText.text()
         user_settings['warning_char'] = self.ui.lineEdit_warningText.text()
-        vprint("[SAVING SETTINGS]", user_settings, color=CGREEN)
+        vprint("[SAVING SETTINGS]\n", user_settings, color=CGREEN)
         with open("user_settings.json", "w") as file:
             json.dump(user_settings, file)
         self.debug_text("All Settings Saved")
 
-    def add_text(self, text, type=TYPE_INPUT):  # add text to terminal
-        if text[0] == "#":
-            text = text.replace("\n", "")
-            print("ext cmd:", text[1:])
-            self.cmd.check(text[1:])
+    def add_text(self, text:str, type=TYPE_INPUT):  # add text to terminal
+        if "#" in text: 
+            lines = text.splitlines()
+            print("possible CMD: ", lines)
+            for line in lines: 
+                if line.startswith("#"): 
+                    self.parser.parse(line[1:])
             return
         self.ui.terminalport.moveCursor(QTextCursor.End)
         def add(text_to_add:str): # add subfunction
@@ -449,10 +438,11 @@ class MainWindow(QtWidgets.QMainWindow):
         self.add_text(f"Terminal Cleared at {ts}", type=TYPE_INFO)
 
     def update_history(self, line=""):
-        if line and line is not self.lastLine and self.script_active == False:
-            self.lastline = line
-            self.history.append(line)
-            self.historyIndex += 1
+        if line and self.script_active == False:
+            if line != self.lastLine:
+                self.lastLine = line
+                self.history.append(line)
+                self.historyIndex += 1
             self.currentIndex = self.historyIndex
 
     def send_clicked(self):
@@ -506,9 +496,8 @@ class MainWindow(QtWidgets.QMainWindow):
             self.all_ports = ports
         else: 
             self.all_ports = SH.getPorts()
-            vprint(f"Ports: {self.all_ports}", color = CGREEN)
+            vprint(f"Ports: {self.all_ports}\n", color = CGREEN)
             self.debug_text(f"Found Ports: {self.all_ports}")
-       
         self.ui.combobox_port.clear()
         for port in self.all_ports:
             self.ui.combobox_port.addItem(port)
@@ -722,14 +711,7 @@ class MainWindow(QtWidgets.QMainWindow):
             vprint("ERROR IN SAVING FILE: ", e)
             return ""
 
-    def open_help(self, *args):
-        if args: 
-            with open('help.md', 'r') as file: 
-                text = file.read()
-                print(text)
-                self.ui.terminalport.moveCursor(QTextCursor.End)
-                self.ui.terminalport.setMarkdown(text)
-            return
+    def open_help(self):
         self.help = HelpPopup()
         self.help.show()
 
@@ -802,97 +784,6 @@ class MainWindow(QtWidgets.QMainWindow):
             self.start_script()
                 
         return
-
-    # def handle_script(self, *args):
-    #     if not args:
-    #         self.start_script()
-    #         return
-    #     script_open = False
-    #     script_save = False
-    #     script_delete = False
-    #     script_exists = False
-    #     script_name = ""
-    #     script_path = None
-    #     for arg in args:
-    #         vprint("\narg ", arg, '\n')
-    #         if arg in ['n', 'N', "new"]: # single arg
-    #             self.ui.tabWidget.setCurrentIndex(1)
-    #             self.ui.textEdit_script.clear()
-    #             self.ui.textEdit_script.setFocus(True)
-    #             return
-    #         elif arg in ['t', 'T']: # single arg
-    #             self.ui.tabWidget.setCurrentIndex(1)
-    #             self.ui.textEdit_script.setFocus(True)
-    #             return
-    #         elif arg in ['h', 'H', 'help']: # single arg
-    #             self.add_text(script_help, type=TYPE_INFO)
-    #             return
-    #         elif arg in ['o', 'O', 'open']:
-    #             script_open = True
-    #             script_save = False
-    #             vprint("opening Script\n")
-    #         elif arg in ['save', 's', 'S']:
-    #             script_save = True
-    #             script_open = False
-    #             vprint("saving script\n")
-    #         elif arg == 'd': 
-    #             script_delete = True
-    #             vprint("deleting script\n")
-    #         elif arg: 
-    #             script_name = arg
-
-    #     if script_name:
-    #         print("script_name:",script_name)
-    #         script_path = script_path = self.script_dir + script_name + '.txt'
-    #         print('script_path: ' , str(script_path), type(script_path))
-    #         script_exists = os.path.exists(script_path)
-        
-    #     if script_save: 
-    #         if script_path == None: # popup no script name arg
-    #             script_path = self.get_filename(self.script_dir)
-    #         if script_path: 
-    #             with open(script_path, 'w') as File: 
-    #                 File.write(self.ui.textEdit_script.toPlainText())
-    #             self.debug_text(f"Script saved to: {script_path}")
-    #         else: 
-    #             dprint("Script Save Cancelled\n", color=CRED)
-    #             return
-        
-    #     elif script_open:
-    #         if script_path == None: 
-    #             script_path = self.get_file(self.script_dir)
-    #             if not script_path:
-    #                 return
-    #         elif script_exists == False:
-    #             self.debug_text(f"ERROR: Script {script_path} not found", TYPE_ERROR)
-    #             return
-    #         self.debug_text(f"Loaded: {script_path}")
-    #         with open(script_path, 'r') as File:
-    #             text = File.read()
-    #             print(text)
-    #             self.ui.textEdit_script.setPlainText(text)
-    #         #if script_run: 
-    #             self.start_script()
-    #         return
-        
-        # elif script_delete: 
-        #     if script_exists: 
-        #         os.remove(script_path)
-        #         self.debug_text(f"Removed {script_path}")
-        #     else: 
-        #         self.debug_text(f"ERROR: File {script_path} not found", type=TYPE_ERROR)
-        #     return
-
-        # elif script_exists:
-        #     with open(script_path, 'r') as File:
-        #         text = File.read()
-        #         print(text)
-        #         self.ui.textEdit_script.setPlainText(text)
-        #     self.start_script()
-        #     return
-        
-        # else: 
-        #     self.debug_text(f"ERROR: script {script_path} not found", TYPE_ERROR)
  
     def start_script(self, text = False):
         if text == False:
@@ -910,7 +801,6 @@ class MainWindow(QtWidgets.QMainWindow):
             self.script_worker.moveToThread(self.script_thread)
             self.script_thread.started.connect(self.script_worker.run)
             self.script_worker.line.connect(self.script_line)
-            self.script_worker.saveName.connect(self.handle_script)
             self.script_worker.finished.connect(self.end_script)
             self.script_thread.start()
         else:
@@ -938,62 +828,11 @@ class MainWindow(QtWidgets.QMainWindow):
         self.ui.lineEdit_input.setFocus()
         self.scriptActive = False
 
-    def update_delay(self, delay=100):
-        if self.script_active:
-            self.ui.lineEdit_delay.setText(str(delay))
-
-
+vprint.enabled = False
+dprint.enabled = False
 # ***********************************************************************************************************
-updateCommands = [
-    "pyuic5 -o gui/GUI_MAIN.py ui_files/mainWindow.ui",
-    "pyuic5 -o gui/GUI_LOG.py ui_files/logViewer.ui",
-    "pyuic5 -o gui/GUI_HELP.py ui_files/helpPopup.ui"
-]
-
-def update_UI():
-    print("UPDATING FROM UI FILE")
-    for command in updateCommands:
-        print(command)
-        subprocess.call(command, shell=True)
-
-def toggle_verbose():
-    global verbose, debug
-    verbose = False
-    debug = False
-    
-argList = [  # THIS IS ALL COMMANDS AND ARGS
-    {
-        'arg': ['-u', '-update'],
-        'funct': update_UI,
-    },
-    {
-        'arg': ['-q', '-quit'],
-        'funct': quit,
-    },
-     {
-        'arg': ['-v', '-verbose'],
-        'funct': toggle_verbose,
-    },
-]
-
-
-# def execute():
-#     print("STARTING SERIAL KILLER")
-#     app = QtWidgets.QApplication([sys.argv])
-#     dprint("Argument List:", str(sys.argv))
-#     for sysarg in sys.argv[1:]:
-#         for argument in argList:
-#             if sysarg in argument['arg']:
-#                 funct = argument['funct']
-#                 funct()
-
-#     main = MainWindow()
-#     main.show()
-#     status = app.exec_()
-#     sys.exit(status)
-
 
 if __name__ == "__main__":
     import main
     main.execute()
-    #execute()
+

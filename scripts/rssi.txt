@@ -1,0 +1,5 @@
+#name=rssi
+#delay=50
+#loop=30
+r.read0x11
+#endloop

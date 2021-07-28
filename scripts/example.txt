@@ -1,4 +1,4 @@
-#delay=1500
+#delay=100
 #clear
 #name=example
 dcon
@@ -9,4 +9,4 @@ You can also run commands, like clearing the terminal.
 see...
 clear
 Thats pretty neat. Here's more info
-script -h
+#script -h

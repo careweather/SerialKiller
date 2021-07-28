@@ -1,0 +1,4 @@
+#delay = 100
+#name = radio
+r.read0xd
+r.write 0xD , 0b 1001 1111

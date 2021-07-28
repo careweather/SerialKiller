@@ -1,7 +1,11 @@
 import serial
+import platform
 from time import sleep
 import os
+import subprocess
 
+
+_platform = platform.system()
 ser = serial.Serial(timeout=1)
 
 def sendString(toSend=""):
@@ -12,14 +16,33 @@ def sendString(toSend=""):
         print("Error Sending Data: ", e)
 
 
-def getPorts():
+
+# USE THIS IF THAT ^^^ Doesnt work
+def getPorts_linux():
     stream = os.popen('py -m serial.tools.list_ports -q')
+    stream = subprocess.call()
     inputStream = stream.read()
     inputStream = inputStream.replace(" ", "")
     serialPorts = inputStream.rsplit('\n')
     serialPorts = list(filter(None, serialPorts))
-    #print("Found Ports: ", serialPorts)
     return serialPorts
+
+
+
+def getPorts(): 
+    if _platform == "Windows": 
+        #print('_platform:' , str(_platform), type(_platform))
+        r = subprocess.Popen("powershell [System.IO.Ports.SerialPort]::getportnames()", shell=True, stdout=subprocess.PIPE)
+        s = r.stdout.read().decode('utf-8')
+        #s = s.decode('utf-8')
+        lines = s.splitlines()
+        return lines
+    else: 
+        return getPorts_linux()
+    
+    
+
+
 
 
 def makeConnection(port=None, baud=115200):
