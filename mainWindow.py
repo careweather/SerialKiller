@@ -4,8 +4,6 @@ import json
 import time 
 from datetime import datetime
 import os
-import sys
-import command
 from main import vprint, dprint
 from PyQt5.QtWidgets import QFileDialog
 import loggingTools
@@ -99,7 +97,18 @@ log_help = '''LOG Help
 ARGUMENTS:
 (none)\topen the last log file avaliable
 -o\topen a log file from the directory
--n\tstart a new log and archive the old
+-n [name]\tset the connection name to 'name'
+-a [name]\tarchive the current log. Optional: archive as 'name'
+-h\tdisplay this help message'''
+
+plot_help = '''PLOT HELP
+(none)\topen the last log file avaliable
+-kw\tstart the plotter in keyword-argument mode
+-a\tstart the plotter in archive mode
+-l [length]\tset a max length of 'length'
+-p\tpause the plot
+-r\tresume plotting
+-c\tclear the plotter (and stop the plot)
 -h\tdisplay this help message'''
 
 terminal_placeholder = '''***Serial from device will appear here***
@@ -109,11 +118,6 @@ Type "help" for detailed use instructions'''
 
 def get_timestamp(): 
     ts = datetime.now().strftime("%H:%M:%S.%f")[:-3]
-    return ts
-    millis = time.time() - int(time.time())
-    ts = time.strftime("%H:%M:%S", time.gmtime())
-    ts + str(millis)
-    ts = str(ts) + str(millis)[1:6]
     return ts
     
 def add_timestamp(text:str): 
@@ -138,9 +142,6 @@ class HelpPopup(QtWidgets.QDialog):
         self.ui.setupUi(self)
         text = open('help.html').read()
         self.ui.textBrowser.setHtml(text)
-        #text = open('help.md').read()
-        #self.ui.textBrowser.
-        #self.ui.textBrowser.setMarkdown(text)
 
     def keyPressEvent(self, event):
         if event.key():
@@ -206,6 +207,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.script_active = False
         self.reconnect_active = False
         self.rescan_active = False
+        self.plotter_active = False
         self.all_ports = []
         self.cwd = os.getcwd()
         self.log_dir = "\\logs\\"
@@ -215,9 +217,20 @@ class MainWindow(QtWidgets.QMainWindow):
         self.currentIndex = 0
         self.lastLine = ""
         self.history = []
-        
-        #self.input_char = self.ui.
+        self.connect_ui()
+        self.config_commands()
+        self.load_settings()
+        self.input_char = self.ui.lineEdit_receivedText.text()
+        self.info_char = self.ui.lineEdit_infoText.text()
+        self.warning_char = self.ui.lineEdit_warningText.text()
+        self.error_char = self.ui.lineEdit_errorText.text()
+        self.output_char = self.ui.lineEdit_sentText.text()
+        self.update_ports()
+        self.command_char = self.ui.lineEdit_commandChar.text()
+        self.auto_rescan_toggled()
 
+    def connect_ui(self): 
+        self.setWindowIcon(QtGui.QIcon('img/SK_Icon.png'))
         self.ui.terminalport.setPlaceholderText(terminal_placeholder)
         self.ui.button_clear.clicked.connect(self.clear_terminal)
         self.ui.button_send.clicked.connect(self.send_clicked)
@@ -229,16 +242,23 @@ class MainWindow(QtWidgets.QMainWindow):
         self.ui.button_saveScript.clicked.connect(lambda: self.handle_script(save=""))
         self.ui.button_connect.clicked.connect(self.connect)
         self.ui.button_viewLogs.clicked.connect(lambda: self.handle_log(open = ""))
+        self.ui.button_viewLatest.clicked.connect(self.handle_log)
         for rate in baudRates:
             self.ui.combobox_baud.addItem(str(rate))
         self.ui.combobox_baud.setCurrentIndex(8)  # 115200
-        self.ui.tabWidget.setCurrentIndex(0)
+        self.ui.tabWidget.setCurrentIndex(0) # set focus to terminal
         self.ui.lineEdit_input.setFocus()
-        self.ui.checkbox_timestamp.setEnabled(True)
-        self.ui.checkbox_timestamp.setCheckable(True)
+        #self.ui.checkbox_timestamp.setEnabled(True)
+        self.ui.checkbox_timestamp.setCheckable(True) # disable for now
 
+    def config_commands(self): 
         self.parser = Parser()
         cmd_connect = Command('com', self.connect, default_kw='target')
+        cmd_connect.add_argument('baud', 'baud', str)
+        cmd_connect.add_argument('parity', 'parity', str, default="NONE")
+        cmd_connect.add_argument("xonxoff", 'xonxoff', bool, True)
+        cmd_connect.add_argument("rtscts", 'rtscts', bool, True)
+        cmd_connect.add_argument("dsrdtr", 'dsrdtr', bool, True)
         cmd_connect.add_argument('?', 'show', bool, True)
         cmd_connect.add_argument('auto', 'auto', bool, True)
         self.parser.add_command(cmd_connect)
@@ -251,10 +271,11 @@ class MainWindow(QtWidgets.QMainWindow):
         self.parser.add_command(Command("save", self.save_settings))
         self.parser.add_command(Command("auto", self.ui.checkbox_autoReconnect.toggle))
         self.parser.add_command(Command("con", self.connect))
-        cmd_log = Command("log", self.handle_log, help=log_help)
+        cmd_log = Command("log", self.handle_log)
         cmd_log.add_argument('n', 'name', str)
         cmd_log.add_argument('o', 'open', str, default="")
         cmd_log.add_argument('a', 'archive', str, default="")
+        cmd_log.add_argument('h', "help", bool, True)
         cmd_baud = Command("baud", self.update_baud, 'target_rate', str, default_required=True)
         cmd_script = Command("script", self.handle_script)
         cmd_script.add_argument("o", 'opens', str, default="")
@@ -263,7 +284,7 @@ class MainWindow(QtWidgets.QMainWindow):
         cmd_script.add_argument("t", 'tab', bool, default=True)
         cmd_script.add_argument("n", 'new', str, default="")
         cmd_script.add_argument("d", 'delete', str, default = "")
-        cmd_script.add_argument("h", "help", bool, True)
+        cmd_script.add_argument("h", 'help', bool, True)
         cmd_script.add_argument("ls", "list", bool, True)
         cmd_save = Command('saves', self.save_setting)
         cmd_save.add_argument("n", 'keyword', str)
@@ -272,15 +293,17 @@ class MainWindow(QtWidgets.QMainWindow):
         self.parser.add_command(cmd_script)
         self.parser.add_command(cmd_baud)
         self.parser.add_command(cmd_log)
-        self.load_settings()
-        self.input_char = self.ui.lineEdit_receivedText.text()
-        self.info_char = self.ui.lineEdit_infoText.text()
-        self.warning_char = self.ui.lineEdit_warningText.text()
-        self.error_char = self.ui.lineEdit_errorText.text()
-        self.output_char = self.ui.lineEdit_sentText.text()
-        self.update_ports()
-        self.command_char = self.ui.lineEdit_commandChar.text()
-        self.auto_rescan_toggled()
+        cmd_plot = Command("plot", self.handle_plot)
+        cmd_plot.add_argument('l', 'len', int)
+        cmd_plot.add_argument("kv", 'kv', bool, default=True)
+        cmd_plot.add_argument("a", 'array', bool, default=True)
+        cmd_plot.add_argument("e", 'end', bool, True)
+        cmd_plot.add_argument("c", 'clear', bool, True)
+        cmd_plot.add_argument("h", 'help', bool, True)
+        cmd_plot.add_argument("r", 'resume', bool, True)
+        cmd_plot.add_argument("p", 'pause', bool, True)
+        cmd_plot.add_argument("t", 'targets', str)
+        self.parser.add_command(cmd_plot)
 
     def keyPressEvent(self, keypress: QtGui.QKeyEvent) -> None:
         key = keypress.key()
@@ -383,12 +406,13 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def add_text(self, text:str, type=TYPE_INPUT):  # add text to terminal
         if "#" in text: 
-            lines = text.splitlines()
-            print("possible CMD: ", lines)
-            for line in lines: 
-                if line.startswith("#"): 
-                    self.parser.parse(line[1:])
-            return
+            if type == TYPE_INPUT or type == TYPE_OUTPUT: 
+                lines = text.splitlines()
+                print("possible CMD: ", lines)
+                for line in lines: 
+                    if line.startswith("#"): 
+                        self.parser.parse(line[1:])
+                    return
         self.ui.terminalport.moveCursor(QTextCursor.End)
         def add(text_to_add:str): # add subfunction
             if self.ui.checkbox_timestamp.isChecked(): 
@@ -400,12 +424,14 @@ class MainWindow(QtWidgets.QMainWindow):
             self.ui.terminalport.setTextColor(colorBlack)
             add(text)
             loggingTools.addLine(text)
+            if self.plotter_active: 
+                self.ui.widget_plot.update(text)
             if self.script_active:
                 self.script_worker.incoming.emit(text)
-            if self.ui.checkBox_graphData.isChecked():
-                self.ui.widget_plot.parseBulkData(text)
             return
         elif type == TYPE_OUTPUT:
+            if self.plotter_active: 
+                self.ui.widget_plot.update(text)
             text = self.output_char + text
             vprint(text, color=CBLUE)
             self.ui.terminalport.setTextColor(colorBlue)
@@ -461,11 +487,9 @@ class MainWindow(QtWidgets.QMainWindow):
                     return
         result = self.parser.parse(text)
         if result != "" and result != "KEYWORD INVALID": 
-            self.debug_text(result, type=TYPE_ERROR)
+            self.add_text(result, type=TYPE_ERROR)
         if result != "KEYWORD INVALID":
             return
-        #if self.parser.parse(text) == "":
-        #    return
         text += '\n'
         if self.is_connected:
             SH.sendString(text)
@@ -503,7 +527,7 @@ class MainWindow(QtWidgets.QMainWindow):
             self.ui.combobox_port.addItem(port)
         if self.target_port in self.all_ports:
             self.ui.combobox_port.setCurrentText(self.target_port)
-            if self.reconnect_active: 
+            if self.reconnect_active and not self.is_connected: 
                 self.connect(self.target_port[3:])
 
     def auto_reconnect_toggled(self):
@@ -538,10 +562,24 @@ class MainWindow(QtWidgets.QMainWindow):
         else: 
             self.debug_text(f"Baud Rate {baud} Invalid!")
          
-    def connect(self, target="", intentional=True, auto=False, show=False):
+    def connect(self, target="", baud = None, parity = None, xonxoff = None, dsrdtr = None, rtscts = None, intentional=True, auto=False, show=False):
+        if parity == None:
+            parity = self.ui.comboBox_parity.currentText() 
+        if xonxoff == None: 
+            xonxoff = self.ui.checkBox_xonxoff.isChecked()
+        if dsrdtr == None: 
+            dsrdtr = self.ui.checkBox_dsrdtr.isChecked()
+        if rtscts == None:
+            rtscts = self.ui.checkBox_rtscts.isChecked()
         if show: 
             self.ui.combobox_port.setFocus()
             return
+        if baud: 
+            self.update_baud(baud)
+        self.ui.checkBox_rtscts.setChecked(rtscts)
+        self.ui.checkBox_xonxoff.setChecked(xonxoff)
+        self.ui.checkBox_dsrdtr.setChecked(dsrdtr)
+        self.ui.comboBox_parity.setCurrentText(parity)
         vprint("Connecting to:", target, color=CGREEN)
         if intentional:
             vprint('self.current_port: ', str(self.current_port), CGREEN)
@@ -567,13 +605,12 @@ class MainWindow(QtWidgets.QMainWindow):
                 dprint("Port from Dropdown:", self.target_port)
 
         if self.is_connected == False:
-            if (SH.makeConnection(port=self.target_port, baud=self.active_baud)):
-                    
+            if (SH.makeConnection(port=self.target_port, baud=self.active_baud, parity = parity, xonxoff=xonxoff, rtscts=rtscts, dsrdtr=dsrdtr)):
                 self.is_connected = True
                 self.current_port = self.target_port
                 self.debug_text(f"Connected to {self.target_port}", TYPE_INFO)
                 self.add_text(
-                    f"Connected To {self.target_port} at {self.active_baud}", TYPE_INFO)
+                    f"Connected to {self.target_port} baud:{self.active_baud} parity:{parity}", TYPE_INFO)
                 self.ui.combobox_port.setCurrentText(self.target_port)
                 self.ui.terminalport.setEnabled(True)
                 self.ui.terminalport.setStyleSheet(
@@ -600,7 +637,7 @@ class MainWindow(QtWidgets.QMainWindow):
             vprint("Changing Ports")
             self.disconnect()
             self.connect(target=self.target_port[3:])
-        else:
+        elif not auto:
             self.debug_text("WARNING: Already Connected!")
             self.disconnect()
 
@@ -633,7 +670,10 @@ class MainWindow(QtWidgets.QMainWindow):
             self.debug_text("WARNING: Already Disconnected!", TYPE_WARNING)
             vprint("ERROR: NOT CONNECTED")
 
-    def handle_log(self, open = False, archive = None, name = None): 
+    def handle_log(self, open = False, archive = None, name = None, help=False):
+        if help == True: 
+            self.add_text(log_help, TYPE_INFO) 
+            return
         if open != False: 
             if open == "":
                 loggingTools.LogViewPopup(self)
@@ -653,7 +693,7 @@ class MainWindow(QtWidgets.QMainWindow):
             return
         else: 
             loggingTools.LogViewPopup(self, latest=True)
-        
+
     def open_log(self, *args):
         print(args, type(args))
         if len(args) == 0: 
@@ -740,6 +780,9 @@ class MainWindow(QtWidgets.QMainWindow):
                 self.debug_text(f"Loaded: {script_path}")
                 if run: 
                     self.start_script()
+                else: 
+                    self.ui.tabWidget.setCurrentIndex(1)
+                    self.ui.textEdit_script.setFocus(True)
             else: 
                 self.debug_text(f"ERROR: script {script_path} not found", TYPE_ERROR)
                 return 
@@ -827,6 +870,51 @@ class MainWindow(QtWidgets.QMainWindow):
         self.ui.button_send.setDisabled(False)
         self.ui.lineEdit_input.setFocus()
         self.scriptActive = False
+
+    def handle_plot(self, help = False, kv = False, array = False, targets = None, end = False, len = 100, pause = False, clear = False, resume = False):
+        print("PLT TYPE", self.ui.widget_plot.graph_type)
+        if help:
+            self.add_text(plot_help, TYPE_INFO)
+            self.add_text("")
+            return
+        if len: 
+            self.ui.lineEdit_size.setText(str(len))
+        if kv: 
+            self.ui.comboBox_type.setCurrentText("Key-Value")
+            self.plotter_active = True
+            self.ui.lineEdit_keys.setText(str(targets))
+            self.ui.widget_plot.add_kv_graph(targets=targets, len=len)
+            self.ui.tabWidget.setCurrentIndex(2)
+            return
+        if array: 
+            self.ui.comboBox_type.setCurrentText("Array")
+            self.plotter_active = True
+            self.ui.lineEdit_keys.setText(str(targets))
+            self.ui.widget_plot.add_array_graph(targets=targets, len=len)
+            self.ui.tabWidget.setCurrentIndex(2)
+            return
+        if clear: 
+            self.plotter_active = False
+            self.ui.widget_plot.clear_plot()
+        if pause: 
+            self.plotter_active = False
+            self.ui.widget_plot.pause()
+        if resume: 
+            self.ui.widget_plot.resume()
+
+    def start_plot(self, size = 200): 
+        self.ui.tabWidget.setCurrentIndex(2)
+        if self.plotter_active == False: 
+            self.ui.widget_plot.clear()
+            self.plotter_active = True
+            self.ui.lineEdit_size.setText(str(size))
+            self.ui.widget_plot.addLineGraph(size)
+            return
+        else: 
+            vprint("PLOT ALREADY STARTED")
+        
+    def end_plot(self): 
+        self.plotter_active = False
 
 vprint.enabled = False
 dprint.enabled = False

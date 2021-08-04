@@ -1,4 +1,4 @@
-#delay=100
+#delay=200
 #name=send
 #loop=1
 send1

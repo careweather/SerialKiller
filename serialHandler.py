@@ -4,6 +4,8 @@ from time import sleep
 import os
 import subprocess
 
+from serial.serialutil import PARITY_EVEN, PARITY_MARK, PARITY_ODD, PARITY_SPACE
+
 
 _platform = platform.system()
 ser = serial.Serial(timeout=1)
@@ -15,8 +17,6 @@ def sendString(toSend=""):
     except Exception as e:
         print("Error Sending Data: ", e)
 
-
-
 # USE THIS IF THAT ^^^ Doesnt work
 def getPorts_linux():
     stream = os.popen('py -m serial.tools.list_ports -q')
@@ -26,8 +26,6 @@ def getPorts_linux():
     serialPorts = inputStream.rsplit('\n')
     serialPorts = list(filter(None, serialPorts))
     return serialPorts
-
-
 
 def getPorts(): 
     if _platform == "Windows": 
@@ -40,16 +38,26 @@ def getPorts():
     else: 
         return getPorts_linux()
     
-    
 
-
-
-
-def makeConnection(port=None, baud=115200):
+def makeConnection(port=None, baud=115200, parity = "NONE", xonxoff = False, rtscts=False, dsrdtr = False):
     try:
         ser.baudrate = baud
         ser.port = port
-        #print(f'Connecting to: {port} at baud rate {baud}')
+        if parity != "NONE": 
+            if parity == "EVEN":
+                ser.parity = PARITY_EVEN
+            elif parity == "ODD": 
+                ser.parity = PARITY_ODD
+            elif parity == "MARK": 
+                ser.parity = PARITY_MARK
+            elif parity == "SPACE": 
+                ser.parity = PARITY_SPACE
+        if rtscts: 
+            ser.rtscts = True
+        if dsrdtr: 
+            ser.dsrdtr = True
+        if xonxoff: 
+            ser.xonxoff = True
         ser.close()
         ser.open()
         if(ser.isOpen()):

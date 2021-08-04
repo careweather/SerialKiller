@@ -36,7 +36,7 @@ class Command:
         args = input.split("-")
         #print('args: ' , str(args), type(args))
 
-        if 'h' in args and self.help:
+        if 'h' in args and self.help != None:
             print(f"HELP FOR {self.keyword}:", self.help)
             return self.help
 
@@ -60,7 +60,13 @@ class Command:
                     #dprint("token valid")
                     this_arg = self.args[tok[0]]
                     if len(tok) > 1: 
-                        value = this_arg['type'](tok[1])
+                        if this_arg['type'] == bool: 
+                            if tok[1] in ['F', 'f', '0']: 
+                                value = False
+                            else: 
+                                value = True
+                        else: 
+                            value = this_arg['type'](tok[1])
                     elif this_arg['default'] != None: 
                         value = this_arg['default']
                     else: 
@@ -97,7 +103,6 @@ class Parser:
     def add_command(self, command:Command): 
         self.commands.append(command)
         
-
     def debug(self): 
         global DEBUG_PRINT
         DEBUG_PRINT = True

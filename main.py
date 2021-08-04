@@ -2,7 +2,6 @@ import subprocess
 import sys
 try:
     from PyQt5 import QtGui, QtWidgets
-    import serialHandler as SH
 except Exception as E:
     print('''
     -- ERROR --
@@ -31,25 +30,6 @@ def update_UI():
         if not result: 
             print("Success")
 
-
-_verbose = False
-_debug = False
-
-
-
-
-def _dprint(input, *args, color = ""): # for debugging the program
-    pass
-    #global _debug
-    
-
-
-def _vprint(input, *args, color = ""): # verbose prints stuff to terminal 
-    pass
-    #global _verbose
-    
-
-
 def dprint(input, *args, color = "", enabled = False): 
     if enabled: 
         dprint.enable = True
@@ -71,10 +51,7 @@ def vprint(input, *args, color = "", enabled = None):
 vprint.enable = True
 
 def toggle_verbose(): 
-    vprint.enable = True
-    dprint.enable = True
-
-print("V:", _verbose, "D:", _debug)
+    pass
 
 argList = [  # THIS IS ALL COMMANDS AND ARGS
     {
@@ -100,17 +77,12 @@ def execute():
            if sysarg in argument['arg']:
                funct = argument['funct']
                funct()
-    
-    print("verbose", _verbose)
-    print("debug", _debug)
     app = QtWidgets.QApplication([sys.argv])
     main = MainWindow()
+    main.resize(550,700)
     main.show()
     status = app.exec_()
     sys.exit(status)
     
-    
-
-
 if __name__ == "__main__":
     execute()

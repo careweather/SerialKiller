@@ -1,4 +1,4 @@
-#delay=100
+#delay=1000
 #clear
 #name=example
 dcon

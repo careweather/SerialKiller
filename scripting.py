@@ -1,14 +1,8 @@
 from PyQt5.QtCore import QObject, QThread, pyqtSignal
 from PyQt5.QtGui import QIntValidator, QTextCursor
 from PyQt5 import QtGui, QtWidgets
-import subprocess
-import json
 import time 
 import os
-import sys
-from datetime import datetime
-import command
-
 
 class ScriptWorker(QObject):
     line = pyqtSignal(str)

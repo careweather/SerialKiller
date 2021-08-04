@@ -41,7 +41,6 @@ class LogViewer(QtWidgets.QWidget): ## GUI
     def keyPressEvent(self, event): # Escape key functionality 
         escape = 16777216 
         key = event.key()
-        #print(key)
         if (key == escape):
             self.close()
 
@@ -103,8 +102,6 @@ def LogViewPopup(self, filename = "", latest = False):
         return False
 
     ## NON-GUI FUNCTIONS --------------------
-
-
 def startLogger():
     global _started
     if not _started: 
@@ -151,15 +148,12 @@ def addLine(text):
     if '\n' in stringBuff: 
         logList = re.split('(\n)' , stringBuff)
         logList = stringBuff.splitlines(True)
-        #print(logList)
         stringBuff = ""
         for line in logList:
             if "\n" in line:
                 line = line.replace("\n", "")
-                #print(line)
                 logging.warning(line)
             else:
-                #print(line, "waiting for newline!")
                 stringBuff += line
 
 def archiveLog(name = ""):

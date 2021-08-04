@@ -1,4 +1,7 @@
+from random import randint
+from PyQt5.QtGui import QFont, QPen, QColor
 from PyQt5.QtWidgets import QApplication
+from numpy.random import rand
 import pyqtgraph.examples
 from pyqtgraph.Qt import QtGui, QtCore
 import numpy as np
@@ -8,335 +11,267 @@ import math
 import sys
 import re
 
+from pyqtgraph.functions import intColor
+
 # pyqtgraph.examples.run()
 
 # quit()
 # import initExample ## Add path to library (just for examples; you do not need this)
 
+"""Data Types: 
+Single Value:
+1
+4
+5
+
+Array:
+a:1,2,3,4,5,6,7,8
+a:5,4,3,2,1,4,2,1
+
+Key-Value: 
+a:1,b:2,c:3,d:4
+a:4,b:5,c:1,d:0
 """
-Data Types: 
-Bulk: a:1,2,3,4,5,6,7,8
-Stream: a:1,b:2,c:3,d:4
+DEBUG = True
 
-"""
-
-
-token_splits = r"[;,\t]"
-value_splits = r"[:=]"
-
-testStrs = [
-    'a=1;b=200;c=333;d=444',
-    'a:1,b:2,c:3,d=4,e',
-    'b=x,d=b,a=-1,e=-5',
-    'a=1f,b=22f,c=3,d=4a,e=-5d',
-    'dad = mad'
-]
-
-sines = [64, 67, 70, 73, 76, 80, 83, 86,
-         88, 91, 94, 97, 100, 102, 105, 107,
-         109, 111, 113, 115, 117, 119, 120, 122,
-         123, 124, 125, 126, 127, 127, 128, 128,
-         128, 128, 128, 127, 127, 126, 125, 124,
-         123, 122, 120, 119, 117, 115, 113, 111,
-         109, 107, 105, 102, 100, 97, 94, 91,
-         88, 86, 83, 80, 76, 73, 70, 67,
-         64, 61, 58, 55, 52, 48, 45, 42,
-         40, 37, 34, 31, 28, 26, 23, 21,
-         19, 17, 15, 13, 11, 9, 8, 6,
-         5, 4, 3, 2, 1, 1, 0, 0,
-         0, 0, 0, 1, 1, 2, 3, 4,
-         5, 6, 8, 9, 11, 13, 15, 17,
-         19, 21, 23, 26, 28, 31, 34, 37,
-         40, 42, 45, 48, 52, 55, 58, 61, ]
-
-
-plotTests = [
-    'a:0,b:0,c:0',
-    'a:1,b:0,c:5',
-    'a:2,b:0,c:1',
-    'a:3,b:0,c:5',
-    'a:4,b:0,c:1',
-    'a:5,b:0,c:5',
-    'a:4,b:0,c:1',
-    'a:3,b:0,c:0',
-    'a:2,b:0,c:0',
-    'a:1,b:0,c:0',
-    'a:0,b:0,c:0',
-]
-
-bulkTest = [
-    "a:1,2,3,4,5,6,7,8,9,10",
-    "a:0,2,4,6,8,10,8,6,4,2",
-    "a:1,2,3,4,5,6,7,8,9,10",
-    "a:1,2,3,4,5,6,7,8,9,10",
-            ]
-
-plotTests = []
-d = 0
-for v in sines:
-    d += 1
-    st = f"a:{v},b:{-v+64},c:{20*math.sin(d/6.28)}"
-    plotTests.append(st)
-
-
-
-verbose = True
-debug = True
-
-def dprint(input, *args): # for debugging the program
-    if debug:
+def dprint(input, *args, color = "", enabled = False): 
+    if DEBUG: 
         print(input, *args)
-
-
-def vprint(input, *args): # verbose prints stuff to terminal 
-    if verbose:
-        print(input, *args)
-
-TYPE_NONE = 0
-TYPE_STREAM = 1 
-TYPE_BULK = 2 
-
-class graphWidget(pg.GraphicsLayoutWidget):
-    def __init__(self, parent):
+    
+class lineGraph(pg.PlotItem): 
+    def __init__(self, parent, maxLen = 200):
         super().__init__()
-        self.graph_type = TYPE_NONE
+        self.setTitle("Graph")
+        self._parent = parent
+        self.lineDict = {}
+        self.all_curves = {}
+        self.total_len = maxLen
+        self.lastColor = 0
+        self.lastMaximum = 0
+        self.lastMinimum = 0
+        self.n_items = 0
+        self.startTime = time.time()
+        self.legend = pg.LegendItem(offset=(30,30))
+        self.legend.setParentItem(self)
+        
+    def add_data(self, item: str):
+        self.all_curves[item] = {}
+        self.all_curves[item]['y'] = np.zeros(shape = self.total_len)
+        self.all_curves[item]['x'] = np.zeros(shape = self.total_len)
+        thisColor = intColor(self.lastColor)
+        self.lastColor = self.lastColor + 4
+        self.lineDict[item]= self.plot(self.all_curves[item]['x'],self.all_curves[item]['y'], pen=thisColor)
+        self.legend.addItem(self.lineDict[item], name=item)
+        self.n_items = self.n_items + 1 
 
-        self.ptr = 0
+    def update_data_array(self, update_dict): 
+        for item in update_dict: 
+            print(item)
+            if item not in self.all_curves: 
+                self.add_data(item)
+            self.all_curves[item]['y'] = np.asarray(update_dict[item])
+            dprint('self.all_curves[item][y]: ' , str(self.all_curves[item]['y']), type(self.all_curves[item]['y']))
+            self.all_curves[item]['x'] = np.arange((len(update_dict[item])))
+            dprint('self.all_curves[item][x]: ' , str(self.all_curves[item]['x']), type(self.all_curves[item]['x']))
+            self.lineDict[item].setData(self.all_curves[item]['x'], self.all_curves[item]['y'])
+        
+
+    def update_data_kv(self, update_dict):
+        timestamp = time.time() - self.startTime
+        for item in update_dict: 
+            if update_dict[item] > self.lastMaximum: 
+                self.lastMaximum = update_dict[item]
+                self.setYRange(self.lastMinimum, self.lastMaximum)
+            if update_dict[item] < self.lastMinimum:  
+                self.lastMinimum = update_dict[item]
+                self.setYRange(self.lastMinimum, self.lastMaximum)
+            if item not in self.all_curves: 
+                self.add_data(item)
+            self.all_curves[item]['y'][-1] = update_dict[item]
+            self.all_curves[item]['x'][-1] = timestamp
+            self.all_curves[item]['y'] = np.roll(self.all_curves[item]['y'], 1)
+            self.all_curves[item]['x'] = np.roll(self.all_curves[item]['x'], 1)
+            self.lineDict[item].setData(self.all_curves[item]['x'], self.all_curves[item]['y'])
+           
+    
+class graphWidget(pg.GraphicsLayoutWidget):
+    def __init__(self, parent = None, targets = None, maxLen = 200):
+        super().__init__()
+        self.graph_type = None
+        self.targets = None
+        self.maxLen = maxLen
         self.n_lines = 0
-        self.previous_dict = {}
         self.current_dict = {}
-        self.data_dict = {}
-        self.curve_dict = {}
+        self.str_buffer = "" 
         self.started = False
-        self.v_list = []
-
-    def startLineGraph(self):
-        print("Starting Line Graph")
-        self.lineGraph = self.addPlot()
-        self.graph_type = TYPE_STREAM
-
-    def startStreamGraph(self, targets = ""):
-        print("Starting Stream Graph")
-        self.lineGraph = self.addPlot()
-        self.graph_type = TYPE_STREAM
-        self.targets = targets
-        self.data_list = []
-
-
-    def updateStreamGraph(self, input): 
-        dprint('input: ' , str(input), type(input))
-
-
-    def startBulkGraph(self, targets = ""): 
-        self.graph_type = TYPE_BULK
-        self.lineGraph = self.addPlot()
-        self.targets = targets 
-        self.data_list = []
-
-
-    def updateBulkGraph(self, input):
-        dprint('input: ' , str(input), type(input))
         
-    def setKeys(self, keys=""):
-        pass
+    def updateData(self, u_dict: dict): 
+       if self.graph_type == 'key-value':
+           self.graph.update_data_kv(u_dict)
+       elif self.graph_type == 'array': 
+           self.graph.update_data_array(u_dict)
 
-    def update(self, input):
-        if self.started == False:
-            self.startLineGraph()
-        self.parseLineData(input)
-        self.updateLineData()
-        self.updateLineGraph()
+    def parse_array(self, input:str):               #example input = "a:1,2,3,4,5;b=5,4,3,2,1"
+        input = input.replace("\n", "")
+        input = input.replace(" ", "")
+        tokens = re.split(r'[;|\t]', input)         #example tokens = ["a:1,2,3,4,5", "b:5,4,3,2,1"]
+        for token in tokens: 
+            sub_tokens = re.split(r'[=:]', token)   #example sub_tokens = ["a", "1,2,3,4,5"]
+            dprint("subTokens:", sub_tokens)
+            if self.targets != None: 
+                if sub_tokens[0] not in self.targets: 
+                    dprint(f"Key: {sub_tokens[0]} not in target keys!")
+                    continue
+            if len(sub_tokens) > 1: 
+                vals = []
+                values = re.split(r'[,]', sub_tokens[1]) #example values = ["1","2","3","4","5"]
+                for value in values: 
+                    try: 
+                        v = float(value) #example v = 1
+                        vals.append(v)
+                    except: 
+                        pass 
+                self.current_dict[sub_tokens[0]] = vals #example vals = [1,2,3,4,5]
+            else: 
+                dprint("Parse Error:", token)
+        dprint("current dict:", self.current_dict) 
 
-    def parseBulkData(self, input): 
-        tokens = re.split(r'[:;=]', input)
-        #print('tokens: ' , str(tokens), type(tokens))
-        key = tokens[0]
-        #print('key: ' , str(key), type(key))
-
-        vals = tokens[-1]
-        print('vals: ' , str(vals), type(vals))
-        try:
-            
-            vals = re.split(r'[,]', vals)
-            self.v_list = []
-            for val in vals:
-                try:
-                    self.v_list.append(float(val))
-                except Exception as E:
-                    print(E)
-            print('v_list: ' , str(self.v_list), type(self.v_list))
-        except Exception as E:
-            print(E) 
-        if not self.started:
-            self.startLineGraph()
-        self.lineGraph.clear()
-        self.lineGraph.plot(self.v_list)
-
-    def parseLineData(self, input):
-        tokens = re.split(token_splits, input)
+    def parse_kv(self, input:str): 
+        input = input.replace(" ", "")
+        tokens = re.split(r'[,;|\t]', input)
         for token in tokens:
-            if token:
-                pairs = re.split(value_splits, token)
-                if len(pairs) == 2:
-                    try:
-                        self.current_dict[pairs[0]] = float(pairs[1])
-                    except:
-                        pass
-                else:
-                    print("Wrong Pair Numbers, found: ", len(pairs))
-
-    def addNewLine(self, key):
-        self.n_lines += 1
-        self.data_dict[key] = np.zeros(256)
-        self.curve_dict[key] = self.lineGraph.plot(
-            self.data_dict[key], pen=self.n_lines*2)
-        label = pg.TextItem(key, color=self.n_lines*2,
-                            anchor=(self.n_lines, -1))
-        label.setTextWidth(25)
-        self.lineGraph.addItem(label)
-        # self.addItem(Label)
-
-    def updateLineData(self):
-        for key in self.current_dict.keys():
-            if key not in self.data_dict.keys():
-                self.addNewLine(key)
-            self.data_dict[key][-1] = self.current_dict[key]
-            self.data_dict[key] = np.roll(self.data_dict[key], -1)
-
-    def testSingleBulk(self): 
-        self.ptr += 1
-        if (self.ptr > len(bulkTest)-1):
-            self.ptr = 0
-        print('self.ptr: ' , str(self.ptr), type(self.ptr))
-        self.parseBulkData(bulkTest[self.ptr])
-
-
-    def testSingleLine(self):
-        if (self.ptr > len(plotTests)-1):
-            self.ptr = 0
-        self.parseLineData(plotTests[self.ptr])
-        self.updateLineData()
-        self.updateLineGraph()
-
-    def testUpdate(self):
-        self.startLineGraph()
-        for line in plotTests:
-            self.parseLineData(line)
-            self.updateLineData()
-            self.updateLineGraph()
-
-    def updateLineGraph(self):
-        for element in self.data_dict:
-            self.curve_dict[element].setData(self.data_dict[element][:-1])
-        self.ptr += 1
-
-
-runExamples = 1
-bulks = True
-
-def exe():
-    if not bulks: 
-        app = QApplication(sys.argv)
-        win = graphWidget(app)
-        win.show()
-        win.startLineGraph()
-        timer = pg.QtCore.QTimer()
-        timer.timeout.connect(win.testSingleLine)
-        timer.start((1/80)*1000)
-        # win.testUpdate()
-        status = app.exec_()
-        sys.exit(status)
-    else: 
-        app = QApplication(sys.argv)
-        win = graphWidget(app)
-        win.show()
-        timer = pg.QtCore.QTimer()
-        timer.timeout.connect(win.testSingleBulk)
-        timer.start(1000)
-        status = app.exec_()
-        sys.exit(status)
+            pairs = re.split(r'[:=]', token, 1)
+            if self.targets != None: 
+                if pairs[0] not in self.targets: 
+                    print(f"Key: {tokens[0]} not in target keys!")
+                    continue
+            if len(pairs)> 1:
+                key = pairs[0].replace(" ", "")
+                value = pairs[1].replace(" ", "")
+                try: 
+                    self.current_dict[key] = float(value)
+                except: 
+                    continue
+                
+    def update(self, input:str): 
+        if self.graph_type == None: 
+            dprint("ERROR: NO GRAPH STARTED")
+            return
+        dprint(self.graph_type)
+        self.str_buffer = self.str_buffer + input
+        if "\n" in self.str_buffer: 
+            if self.graph_type == "key-value": 
+                self.parse_kv(self.str_buffer)
+            if self.graph_type == "array":
+                self.parse_array(self.str_buffer)
+            if self.graph_type == "paused": 
+                return
+            self.str_buffer = ""
+            self.updateData(self.current_dict)
         
+    def pause(self): 
+        self.prev_type = self.graph_type
+        dprint("Paused", self.prev_type)
+        self.graph_type = "paused"
 
+    def resume(self): 
+        if self.graph_type == "paused": 
+            dprint("Resuming", self.prev_type)
+            self.graph_type = self.prev_type
 
-        #status = app.exec_()
-        #sys.exit(status)
+    def clear_plot(self): 
+        dprint("clearing...")
+        if self.graph_type != None: 
+            print("CLEARED")
+            #self.graph.all_curves = {}
+            self.removeItem(self.graph)
+            self.graph_type = None
+            
 
+    def add_kv_graph(self, targets = None, len = 100): 
+        print('self.type: ' , str(self.graph_type), type(self.graph_type))
+        self.targets = targets
+        if self.graph_type == None:
+            self.graph_type = 'key-value'
+            self.graph = lineGraph(self, maxLen=len)
+            self.addItem(self.graph)
+
+    def add_array_graph(self, targets = None, len = 100): 
+        print('self.type: ' , str(self.graph_type), type(self.graph_type))
+        if self.graph_type == None: 
+            dprint("Adding Array Graph:")
+            self.graph_type = 'array'
+            if targets:
+                targets = targets.replace(" ", "")
+                self.targets = re.split(r'[,]', targets)
+                dprint("TARGETS: ", targets)
+            else:
+                targets = None
+            self.graph = lineGraph(self, len)
+            self.addItem(self.graph)
+
+sine_val = 0
+def test_graph(graph_type = 'h'):
+    import random
+    import math
+
+    test_dict = {}
+    print("RUNNING GRAPH TEST", graph_type)
+    app = QApplication(sys.argv)
+    win = graphWidget()
+
+    def update_array(): 
+        rand1 = random.randint(0,3)
+        rand2 = random.randint(0,4)
+        test_val = f"a:1,2,{rand1 + rand2},4,{rand1*rand2}; b=5,4,{rand1*2},2,1\n"
+        win.update(test_val)
+        
+    def update_test(): 
+        global sine_val
+        sine_val = sine_val + .1 
+        noise = random.uniform(-.6,.6)
+        nF = math.sin(sine_val*noise)*.1
+        test_dict['x'] = 1+ math.sin(sine_val)
+        test_dict['s'] = (1 + math.sin(sine_val)) + (noise*nF)
+        win.updateData(test_dict)
+    
+    timer = pg.QtCore.QTimer()
+    if graph_type == 'b': 
+        win.add_array_graph()
+        timer.timeout.connect(update_array)
+    else: 
+        win.add_kv_graph()
+        timer.timeout.connect(update_test)
+        app.processEvents()
+
+    timer.start(100)
+    win.show()
+    sys.exit(app.exec_())
+    
 
 if __name__ == '__main__':
-    if runExamples:
-        pyqtgraph.examples.run()
-    else:
-        exe()
+    for arg in sys.argv[1:]: 
+        print("arg: ", arg)
+        if arg == "-t": 
+            pyqtgraph.examples.run()
+            quit()
+        elif arg == '-h': 
+            print("HELP")
+            quit()
+        elif arg == '-b': 
+            test_graph('b')
+            quit()
+    test_graph('h')
+    quit()
 
-    # def newTrace(self, key = ""):
-    #     print("new trace:", key)
-    #     self.key=[]
-    #     self.valLists.append(self.key)
 
-    # def updateData(self):
-    #     #print("Val dict",self.valDict)
-    #     for key in self.valDict:
-    #         value = self.valDict[key]
-    #         #print('key:' , str(key), type(key))
-    #         #print('val:' , value, type(value))
-    #         if key not in self.bigD:
-    #             self.newTrace(key)
-    #             self.bigD[key] = list()
-    #         l = self.bigD[key]
-    #         #print("l", l, type(l))
-    #         #print("big d", self.bigD)
-    #         self.bigD[key].append(self.valDict[key])
-
-     #  def parseKeyVal(self, input):
-#         #print("parsing")
-#         tokens = re.split(token_splits, input)
-#         #self.updateData()
-#         for token in tokens:
-#             if token:
-#                 pairs = re.split(value_splits, token)
-#                 #print("token", token)
-#                 if len(pairs) > 1:
-#                     try:
-#                         self.valDict[pairs[0]] = [pairs[1]]
-#                     except:
-#                         pass
-#         self.updateData()
-    # def update(self):
-    #     self.data1[:-1] = self.data1[1:]
-    #     self.data2[:-1] = self.data2[1:]
-    #     #print(self.valDict['a'])
-
-    #     #self.data1 = np.append(self.data1, self.valDict)
-    #     #self.data1[-1] = np.sin(self.ptr/2)
-    #     #self.data1 = np.append(self.data1, self.valDict['a'])
-    #     self.data1 = np.insert(self.data1, 1, self.valDict['a'])
-    #     print(self.data1)
-    #     self.data2[-1] = np.sin(self.ptr/1.9)
-    #     self.curve2.setData(self.data2)
-    #     self.curve1.setData(self.data1)
-    #     self.ptr += 1
-
-    # def start(self):
-    #     pass
-
-    # def close(self):
-    #     pass
-
-    # def test(self):
-    #     print("test")
-    #     for teststr in plotThese:
-    #         self.parseKeyVal(teststr)
-    #     print("Big D",self.bigD)
-    #     listof = list(self.bigD.items())
-    #     array = np.array(listof)
-    #     print("array",array)
 
 
 # # -*- coding: utf-8 -*-
 # """
 # Various methods of drawing scrolling plots.
 # """
-# import initExample ## Add path to library (just for examples; you do not need this)
+# #import initExample ## Add path to library (just for examples; you do not need this)
 
 # import pyqtgraph as pg
 # from pyqtgraph.Qt import QtCore, QtGui
@@ -360,14 +295,14 @@ if __name__ == '__main__':
 #                             # (see also: np.roll)
 #     data1[-1] = np.random.normal()
 #     curve1.setData(data1)
-
+    
 #     ptr1 += 1
 #     curve2.setData(data1)
 #     curve2.setPos(ptr1, 0)
-
+    
 
 # # 2) Allow data to accumulate. In these examples, the array doubles in length
-# #    whenever it is full.
+# #    whenever it is full. 
 # win.nextRow()
 # p3 = win.addPlot()
 # p4 = win.addPlot()
@@ -415,13 +350,13 @@ if __name__ == '__main__':
 #     now = pg.ptime.time()
 #     for c in curves:
 #         c.setPos(-(now-startTime), 0)
-
+    
 #     i = ptr5 % chunkSize
 #     if i == 0:
 #         curve = p5.plot()
 #         curves.append(curve)
 #         last = data5[-1]
-#         data5 = np.empty((chunkSize+1,2))
+#         data5 = np.empty((chunkSize+1,2))        
 #         data5[0] = last
 #         while len(curves) > maxChunks:
 #             c = curves.pop(0)
