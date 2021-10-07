@@ -1,6 +1,0 @@
-NO_PORT|01:15:13.815|	 ->hello
-NO_PORT|01:15:15.910|	 ->everyone
-NO_PORT|01:15:17.222|	 ->whats up
-NO_PORT|01:15:29.766|	 ->niceeee
-NO_PORT|01:15:30.630|	 ->ok
-NO_PORT|01:15:31.990|	 ->cool

@@ -1,106 +1,136 @@
 <h1>SERIAL KILLER QUICK HELP</h1>
+
 <p>More full documentation is avaliable in the github repo linked below.</p>
-<p>Certain functions are accessable via "terminal style" commands.<br />Enter the keyword directly into the "To Device" text box.</p>
+
+<p>Certain functions are accessable via &quot;terminal style&quot; commands.<br />
+Enter the keyword directly into the &quot;To Device&quot; text box.</p>
+
 <h2>TERMINAL COMMANDS:</h2>
-<p><strong>com -</strong> Connect to a port<br />Args:&nbsp;<br />[port number] connect to port COM[port number]<br />-auto&nbsp;</p>
-<table border="1" cellspacing="1" cellpadding="0">
-<thead>
-<tr>
-<th>key</th>
-<th>Args</th>
-<th>Function</th>
-<th>Example</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>help</td>
-<td>none</td>
-<td>open help</td>
-<td>help</td>
-</tr>
-<tr>
-<td>con</td>
-<td>none</td>
-<td>connect to the selected port</td>
-<td>con</td>
-</tr>
-<tr>
-<td>dcon</td>
-<td>none</td>
-<td>disconnect from the selected port</td>
-<td>dcon</td>
-</tr>
-<tr>
-<td>clear</td>
-<td>none</td>
-<td>clear the terminal</td>
-<td>clear</td>
-</tr>
-<tr>
-<td>script</td>
-<td>none<br />-[name]<br />-o<br />-s<br />-s -[name]<br />-t<br />-h</td>
-<td>run the script in the script tab<br />run "name".txt (if it exists in the script dir)<br />open and run a file from the script dir<br />save the current script as ... <br />save the current script as "name".txt<br />jump to the script editor<br />print script help</td>
-<td>script<br />script -example <br />script -o<br />script -s <br />script -s -example<br />script -t<br />script -h</td>
-</tr>
-<tr>
-<td>log</td>
-<td>
-<p>none<br />-o<br />-n -[name]<br />-a<br />-h</p>
-</td>
-<td>open the latest log file<br />open a log file from the log directory<br />name the current port in the log file<br />archive the current log<br />print log help</td>
-<td>log<br />log -o<br />log -n -arduino1<br />log -a<br />log -h</td>
-</tr>
-<tr>
-<td>auto</td>
-<td>none</td>
-<td>toggle auto reconnect</td>
-<td>auto</td>
-</tr>
-<tr>
-<td>scan</td>
-<td>none</td>
-<td>scan/display open ports</td>
-<td>scan</td>
-</tr>
-<tr>
-<td>com</td>
-<td>[port#]</td>
-<td>connect to com"port#"</td>
-<td>com20</td>
-</tr>
-<tr>
-<td>baud</td>
-<td>[baud]</td>
-<td>change baud rate to "baud"</td>
-<td>baud9600</td>
-</tr>
-<tr>
-<td>new</td>
-<td>none</td>
-<td>open another instance of Serial Killer</td>
-<td>new</td>
-</tr>
-<tr>
-<td>quit</td>
-<td>none</td>
-<td>close the program</td>
-<td>quit</td>
-</tr>
-</tbody>
-</table>
+
+<p><u><strong>help</strong></u></p>
+
+<p style="margin-left:40px">Open this help window. Example &quot;help&quot;</p>
+
+<p><u><strong>clear</strong></u></p>
+
+<p style="margin-left:40px">clear the terminal&nbsp;</p>
+
+<p><u><strong>scan</strong></u></p>
+
+<p style="margin-left:40px">scan for avaliable ports. Ex: &quot;scan&quot;</p>
+
+<p><u><strong>con</strong></u></p>
+
+<p style="margin-left:40px">Connect to the selected ports. Ex: &quot;con&quot;</p>
+
+<p><u><strong>dcon&nbsp;</strong></u></p>
+
+<p style="margin-left:40px">Disconnect from the active port. Ex: &quot;dcon&quot;</p>
+
+<p><u><strong>auto</strong></u></p>
+
+<p style="margin-left:40px">toggle the auto-reconnect. Ex: &quot;auto&quot;</p>
+
+<p><strong><u>com [port#]</u></strong></p>
+
+<p style="margin-left:40px">Connect to com&quot;port#&quot;. Ex: com 50 (connects to com50)<br />
+<strong>Optional args: </strong></p>
+
+<p style="margin-left:40px"><strong>-baud [baudrate]&nbsp;</strong>use baudrate [baudrate]. Ex: com 50 -baud 9600</p>
+
+<p style="margin-left:40px"><strong>-xonxoff&nbsp;</strong>enable xonxoff control. Ex: com 50 -xonxoff</p>
+
+<p style="margin-left:40px"><strong>-rtscts&nbsp;</strong>enable rtscts. Ex: com 50 -rtscts&nbsp;</p>
+
+<p style="margin-left:40px"><strong>-dsrdtr&nbsp;</strong>enable dsrdtr. Ex: com 50 -dsrdtr</p>
+
+<p style="margin-left:40px"><strong>-auto&nbsp;</strong>enable auto-reconnect&nbsp;</p>
+
+<p><u><strong>log</strong></u></p>
+
+<p style="margin-left:40px">Open the latest log file. Ex: log</p>
+
+<p style="margin-left:40px"><strong>Optional args:</strong></p>
+
+<p style="margin-left:40px"><strong>-o&nbsp;</strong>open a log file from the log directory. Ex: log -o</p>
+
+<p style="margin-left:40px"><strong>-a&nbsp;</strong>archive the latest file and start a new one. Ex: log -a</p>
+
+<p style="margin-left:40px"><strong>-n [name] </strong>name the current port &quot;name&quot;. Ex: log -n myName</p>
+
+<p style="margin-left:40px"><strong>-h&nbsp;</strong>display help for logs&nbsp;</p>
+
+<p><u><strong>script</strong></u></p>
+
+<p style="margin-left:40px">run a script. Ex: script&nbsp;</p>
+
+<p style="margin-left:40px">optional arguments:&nbsp;</p>
+
+<p style="margin-left:40px"><strong>-o [name]&nbsp;</strong>open a script from the script directory. If a name is provided, it will be the one selected. Ex: script -o myscript</p>
+
+<p style="margin-left:40px">-<strong>r&nbsp;</strong>run the script after opening&nbsp;</p>
+
+<p style="margin-left:40px"><strong>-s [name]&nbsp;</strong>save the current script. If a name is provided, it will be saved as &quot;name&quot;.txt. Ex: script -s myscript&nbsp;</p>
+
+<p style="margin-left:40px"><strong>-t&nbsp;</strong>switch over to the script tab. Ex: script -t</p>
+
+<p style="margin-left:40px"><strong>-n [name]&nbsp;</strong>create a new script. If a name is provided, it will be automatically saved as that name. Ex: script -n myscript</p>
+
+<p style="margin-left:40px"><strong>-h&nbsp;</strong>prints help for the script command. Ex: script -h</p>
+
+<p>&nbsp;</p>
+
+<p>&nbsp;</p>
+
 <h2>Command Conflicts:</h2>
-<p>If there are possible conflicts between commands and messages to send to a device, a command char can be used to distinguish commands.<br />For example, "$" would mean that only commands that begin with $ are accepted ($help, $new, etc...).<br />Set a command char with:</p>
+
+<p>If there are possible conflicts between commands and messages to send to a device, a command char can be used to distinguish commands.<br />
+For example, &quot;$&quot; would mean that only commands that begin with $ are accepted ($help, $new, etc...).<br />
+Set a command char with:</p>
+
 <blockquote>
 <p>Adv. Settings &gt; Commands</p>
 </blockquote>
+
 <h2>Logging</h2>
+
 <h2>Scripts</h2>
+
 <p>A script is an easy way to automate an interface with a device.</p>
-<p>Each new line of the script is run as an input in the "to device" line.</p>
-<h3><br />Forced commands:&nbsp;</h3>
-<p>Lines that start with a "#" are forced to be interpreted as commands.<br />Scripts extend the standard Serial Killer commands with script-specific functions.</p>
-<p><br />#delay[number] : set the delay between lines to [number]. Example: #delay200: wait 200ms between lines</p>
-<p>#loop[number] : loops the section between itself and #endloop&nbsp;</p>
-<p>#endloop: ends the loop&nbsp;</p>
-<p>#stop: stops the script at this line</p>
+
+<p>Each new line of the script is run as an input in the &quot;to device&quot; text box. If lines are NOT commands, they are sent to the serial device after a delay time. This is to give the serial device time to respond or do something.&nbsp;</p>
+
+<p>Type line will be evaluated and sent one after the other.&nbsp;</p>
+
+<p><br />
+Forced commands:&nbsp;<br />
+Lines that start with a &quot;#&quot; are forced to be interpreted as commands.<br />
+Scripts extend the standard Serial Killer commands with script-specific functions:</p>
+
+<p>#name=[name]: saves the script as &quot;name&quot;.txt every time it is run.&nbsp;<br />
+#delay=[number] : set the delay between lines to [number]. Ex: #delay=200: wait 200ms between lines<br />
+#loop=[number] : loops the section between itself and #endloop. If a number is provided, it will loop [number] of times.<br />
+If no number is provided &quot;ex. #loop&quot;. It will loop infinitely.&nbsp;<br />
+#endloop: ends the loop above<br />
+#stop: stops the script at this line</p>
+
+<p>Example script:&nbsp;</p>
+
+<blockquote>
+<p><em>#name=myscript<br />
+#delay=500<br />
+i am a script!!!<br />
+#loop=10<br />
+hello<br />
+world<br />
+#endloop<br />
+#clear</em></p>
+</blockquote>
+
+<p>This script saves itself as &quot;myscript.txt&quot; to the script directory.&nbsp;<br />
+It then sends &quot;i am a script!!!&quot; and delays 500 milliseconds<br />
+It then sends &quot;hello&quot;, then delays 500 milliseconds<br />
+It then sends &quot;world&quot;, then delays 500 milliseconds.&nbsp;<br />
+It repeats sending &quot;hello&quot; and &quot;world&quot; 4 additional times.&nbsp;<br />
+It then clears the terminal.&nbsp;</p>
+    

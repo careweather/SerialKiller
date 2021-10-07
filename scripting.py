@@ -4,9 +4,6 @@ from PyQt5 import QtGui, QtWidgets
 import time 
 import os
 
-
-
-
 class ScriptWorker(QObject):
     line = pyqtSignal(str)
     saveName = pyqtSignal(dict)
@@ -14,6 +11,7 @@ class ScriptWorker(QObject):
     waiting = pyqtSignal(bool)
     _wait = pyqtSignal(bool)
     incoming = pyqtSignal(str)
+    printline = pyqtSignal(str)
 
     def __init__(self, text: str, delay = 100):
         super().__init__()
@@ -22,14 +20,12 @@ class ScriptWorker(QObject):
         self.script = text.splitlines(False)
         self.numbLines = len(self.script)
         self.currentLine = 0
-        print(self.script)
-        print("n lines:", self.numbLines)
         self._active = True
-        self.incoming.connect(self.input)
-        self.waiting = False
         self.loopStart = 0
         self.loopNumb = 0
         self.loopActive = False
+        self.inp:str = None 
+        self.use_python = False
 
     def subScript(self, name):
         name = name + ".txt"
@@ -59,7 +55,7 @@ class ScriptWorker(QObject):
 
     def handle(self, text:str): 
         print("handling", text)
-        text = text.replace(" ", "")
+        #text = text.replace(" ", "")
         if text.startswith("delay="): 
             try: 
                 self.delay = int(text[6:])/1000
@@ -85,53 +81,109 @@ class ScriptWorker(QObject):
                 self.loopNumb -= 1
                 self.currentLine = self.loopStart
             return True
+        elif text.startswith("wait"): 
+            print("waiting....")
         elif text == "stop": 
             self._active = False
             self.finished.emit(True)
         else:
             return False
 
-    def wait_input(self):
-        print("waiting....")
-        self._wait = False
-        while 1: 
-            if self._wait == True: 
-                print("returning")
-                return
-            else:
-                time.sleep(.1)
-                continue
+    def save(self, name:str):
+        self.send(f"script -s {name}")
         
+
+
+    def wait_(self, target = None, d_type = str):
+        if target is not None:
+            print("waiting for target: ", target)
+        else: 
+            print("waiting....")
+        self.waiting.emit(True)
+        self.inp = None
+        time.sleep(.005)
+        if target is not None:
+            while target not in str(self.inp) and self._active:
+                print("waiting for", target, f"inp({self.inp})", type(self.inp))
+                time.sleep(.05)
+        else:    
+            while self.inp is None and self._active:
+                print("waiting...")
+                time.sleep(.5)
+        print("INPUT TO THREAD:", self.inp)
+        return self.inp
+        
+    def send(self, input = None): 
+        time.sleep(self.delay)
+        self.line.emit(input)
 
     def update_delay(self, delay="100"):
         delay = int(delay)
+        print("updating delay",delay)
         self.delay = delay/1000
+    
+    def print(self, *inputs):
+        print("PRINTING:", inputs)
+        output = ""
+        for input in inputs: 
+            output += str(input)
+        self.printline.emit(output)
+
+    def read(self, lines:list):
+        program = ""
+        for line in lines: 
+            line = str(line)
+            if ">>" in line: 
+                line = line.replace(">>", "self.send(\"")
+                line += "\")"
+            if "send(" in line: 
+                line = line.replace("send(", "self.send(")
+            
+            if "print(" in line:
+                line = line.replace("print", "self.print")
+            if "wait(" in line:
+                line = line.replace("wait", "self.wait_")
+            if "delay(" in line:
+                line = line.replace("delay", "self.update_delay")
+            if "save(" in line:
+                line = line.replace("save", "self.save")
+            program += line + '\n'
+        print("PROGRAM:", program)
+        exec(program)
 
     def run(self):
         while self._active:
-            while self.currentLine != self.numbLines and self._active: 
-                sline = self.script[self.currentLine]
-                send = True
-                is_command = False
-                print("line: ", sline, "line number:", self.currentLine, "send", send)
-                if sline:
-                    if sline[0] == "#":
-                        is_command = True
-                        if self.handle(sline[1:]):
-                            #print("is command")
-                            send = False 
-                    elif sline[:2] == "//": # comment
-                        #print("COMMENT:" ,sline[2:]) 
-                        is_command = True
-                        send = False 
-                if send == True:
-                    self.line.emit(sline)
-                if is_command == False:
-                    time.sleep(self.delay)
-                    #self.currentLine += 1
-                self.currentLine += 1
-            self.finished.emit(True)
-            return
+            if self.use_python: 
+                self.read(self.script)
+                self.finished.emit(True)
+                return
+            else:
+                while self.currentLine != self.numbLines and self._active: 
+                    sline = self.script[self.currentLine]
+                    send_line = True
+                    is_command = False
+                    print("line: ", sline, "line number:", self.currentLine, "send", send_line)
+                    if sline:
+                        if sline[0] == "#":
+                            is_command = True
+                            if self.handle(sline[1:]):
+                                #print("is command")
+                                send_line = False 
+                        if sline[0] == "@":
+                            exec(sline[1:])
+                            send_line = False
+                        elif sline[:2] == "//": # comment
+                            #print("COMMENT:" ,sline[2:]) 
+                            is_command = True
+                            send_line = False 
+                    if send_line == True:
+                        self.line.emit(sline)
+                    if is_command == False:
+                        time.sleep(self.delay)
+                        #self.currentLine += 1
+                    self.currentLine += 1
+                self.finished.emit(True)
+                return
                 
     def stop(self):
         print("stopping script")

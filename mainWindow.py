@@ -8,7 +8,7 @@ import os
 from main import vprint, dprint
 from PyQt5.QtWidgets import QFileDialog, QTableWidgetItem
 import loggingTools
-from scripting2 import ScriptWorker
+from scripting import ScriptWorker
 from parser_f import Parser, Command
 from gui.GUI_MAIN import Ui_MainWindow  # Local
 from gui.GUI_HELP import Ui_Help

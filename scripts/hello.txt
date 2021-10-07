@@ -1,6 +1,6 @@
-#name = hello
-#delay=200
-#loop=10
+#name=hello
+#delay=100
+#loop
 hello
 world
 #endloop

@@ -1,34 +1,11 @@
+#
+# MAIN PROGRAM FOR SERIAL KILLER: 
+#
+
 import subprocess
 import sys
-try:
-    from PyQt5 import QtGui, QtWidgets
-except Exception as E:
-    print('''
-    -- ERROR --
-    Missing some Lib Dependancies!''')
-    print(E)
-    print('''
-    Make sure the following packages are installed:
-    pyqtgraph   - pip install pyqtgraph
-    pyqt5       - pip install pyqt5
-    pyqt5-tools - pip install pyqt5-tools
-    pySerial    - pip install pyserial''')
-    quit()
 
-updateCommands = [
-    "pyuic5 -o gui/GUI_MAIN.py ui_files/mainWindow.ui",
-    "pyuic5 -o gui/GUI_LOG.py ui_files/logViewer.ui",
-    "pyuic5 -o gui/GUI_HELP.py ui_files/helpPopup.ui"
-]
 
-ENDC = '\033[0m '
-
-def update_UI():
-    print("UPDATING FROM UI FILE")
-    for command in updateCommands:
-        result = subprocess.call(command, shell=True)
-        if not result: 
-            print("Success")
 
 def dprint(input, *args, color = "", enabled = False): 
     if enabled: 
@@ -50,17 +27,46 @@ def vprint(input, *args, color = "", enabled = None):
 
 vprint.enable = True
 
-def toggle_verbose(): 
-    pass
+
+
+
+
+
+try:
+    import mainWindow
+    from PyQt5 import QtGui, QtWidgets
+except Exception as E:
+    print("ERROR", E)
+    u_in = input("Install them now? (y/n):")
+    if u_in in ['y', 'Y']: 
+        import installer
+        installer.install_dependancies()
+        print("Re-run to begin...")
+        quit()
+    else: 
+        print("EXITING...")
+        quit()
+
+
+updateCommands = [
+    "pyuic5 -o gui/GUI_MAIN.py ui_files/mainWindow.ui",
+    "pyuic5 -o gui/GUI_LOG.py ui_files/logViewer.ui",
+    "pyuic5 -o gui/GUI_HELP.py ui_files/helpPopup.ui"
+]
+
+ENDC = '\033[0m '
+
+def update_UI():
+    print("UPDATING FROM UI FILE")
+    for command in updateCommands:
+        result = subprocess.call(command, shell=True)
+        if not result: 
+            print("Success")
 
 argList = [  # THIS IS ALL COMMANDS AND ARGS
     {
         'arg': ['-u', '-update'],
         'funct': update_UI,
-    },
-     {
-        'arg': ['-v', '-verbose'],
-        'funct': toggle_verbose,
     },
     {
         'arg': ['-q', '-quit'],
@@ -69,7 +75,6 @@ argList = [  # THIS IS ALL COMMANDS AND ARGS
 ]
 
 def execute():
-    from mainWindow import MainWindow   
     print("STARTING SERIAL KILLER")
     for sysarg in sys.argv[1:]:
         print("Argument", sysarg)
@@ -78,7 +83,7 @@ def execute():
                funct = argument['funct']
                funct()
     app = QtWidgets.QApplication([sys.argv])
-    main = MainWindow()
+    main = mainWindow.MainWindow()
     main.resize(550,700)
     main.show()
     status = app.exec_()
