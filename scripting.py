@@ -162,7 +162,7 @@ class ScriptWorker(QObject):
                     sline = self.script[self.currentLine]
                     send_line = True
                     is_command = False
-                    print("line: ", sline, "line number:", self.currentLine, "send", send_line)
+                    #print("line: ", sline, "line number:", self.currentLine, "send", send_line)
                     if sline:
                         if sline[0] == "#":
                             is_command = True

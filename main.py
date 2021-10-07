@@ -6,7 +6,6 @@ import subprocess
 import sys
 
 
-
 def dprint(input, *args, color = "", enabled = False): 
     if enabled: 
         dprint.enable = True
@@ -26,11 +25,6 @@ def vprint(input, *args, color = "", enabled = None):
         print(ENDC, end="", flush=True)
 
 vprint.enable = True
-
-
-
-
-
 
 try:
     import mainWindow

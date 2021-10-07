@@ -1,6 +1,7 @@
 #name=hello
-#delay=100
-#loop
+#dcon
+#loop=5
 hello
 world
 #endloop
+#clear
