@@ -1,6 +1,6 @@
 #name=rssi
-#delay=50
-//#plot -kv -t Rssi,
-#loop=50
+#delay=100
+#plot -kv -t Rssi
+#loop=2000
 rssi
 #endloop

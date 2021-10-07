@@ -1,13 +1,14 @@
 # run this to update from GUI> pyuic5 -o GUI_MAIN.py ui_files/SK2_MainWindow.ui ; pyuic5 -o GUI_LOG.py ui_files/logViewer.ui
+from logging import log
 import subprocess
 import json
 import time 
 from datetime import datetime
 import os
 from main import vprint, dprint
-from PyQt5.QtWidgets import QFileDialog
+from PyQt5.QtWidgets import QFileDialog, QTableWidgetItem
 import loggingTools
-from scripting import ScriptWorker
+from scripting2 import ScriptWorker
 from parser_f import Parser, Command
 from gui.GUI_MAIN import Ui_MainWindow  # Local
 from gui.GUI_HELP import Ui_Help
@@ -102,9 +103,9 @@ ARGUMENTS:
 -h\tdisplay this help message'''
 
 plot_help = '''PLOT HELP
-(none)\topen the last log file avaliable
--kw\tstart the plotter in keyword-argument mode
--a\tstart the plotter in archive mode
+-kv\tstart the plotter in keyword-value mode
+-a\tstart the plotter in array mode
+-t [targets,]\tset the graph target values
 -l [length]\tset a max length of 'length'
 -p\tpause the plot
 -r\tresume plotting
@@ -217,6 +218,8 @@ class MainWindow(QtWidgets.QMainWindow):
         self.currentIndex = 0
         self.lastLine = ""
         self.history = []
+        self.keyCmds = {}
+        self.keyboard_enabled = False
         self.connect_ui()
         self.config_commands()
         self.load_settings()
@@ -243,6 +246,16 @@ class MainWindow(QtWidgets.QMainWindow):
         self.ui.button_connect.clicked.connect(self.connect)
         self.ui.button_viewLogs.clicked.connect(lambda: self.handle_log(open = ""))
         self.ui.button_viewLatest.clicked.connect(self.handle_log)
+        self.ui.button_startGraph.clicked.connect(self.start_plot_clicked)
+        self.ui.button_clearKeyboard.clicked.connect(self.clearTable)
+        self.ui.label_keyboardControl.hide()
+        self.ui.lineEdit_keyboard.hide()
+        self.ui.lineEdit_keyboard.textEdited.connect(self.keyboardControl)
+        self.ui.button_keyboard_control.clicked.connect(self.keyboard_control_clicked)
+        self.ui.tableWidget_controls.itemSelectionChanged.connect(self.tableEdited)
+        self.ui.tableWidget_controls.setRowCount(1)
+        self.ui.tableWidget_controls.setColumnWidth(0,50)
+        self.ui.button_browse.clicked.connect(self.set_log_path)
         for rate in baudRates:
             self.ui.combobox_baud.addItem(str(rate))
         self.ui.combobox_baud.setCurrentIndex(8)  # 115200
@@ -263,6 +276,7 @@ class MainWindow(QtWidgets.QMainWindow):
         cmd_connect.add_argument('auto', 'auto', bool, True)
         self.parser.add_command(cmd_connect)
         self.parser.add_command(Command("quit", quit))
+        self.parser.add_command(Command("keyclear", self.clearTable))
         self.parser.add_command(Command("clear", self.clear_terminal))
         self.parser.add_command(Command("help", self.open_help))
         self.parser.add_command(Command("scan", self.update_ports))
@@ -293,6 +307,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.parser.add_command(cmd_script)
         self.parser.add_command(cmd_baud)
         self.parser.add_command(cmd_log)
+        
         cmd_plot = Command("plot", self.handle_plot)
         cmd_plot.add_argument('l', 'len', int)
         cmd_plot.add_argument("kv", 'kv', bool, default=True)
@@ -305,8 +320,14 @@ class MainWindow(QtWidgets.QMainWindow):
         cmd_plot.add_argument("t", 'targets', str)
         self.parser.add_command(cmd_plot)
 
+        cmd_table_add = Command("key", self.addTableItem, default_kw='key', default_required=True)
+        cmd_table_add.add_argument("s", "send", type=str, required=True)
+        self.parser.add_command(cmd_table_add)
+
     def keyPressEvent(self, keypress: QtGui.QKeyEvent) -> None:
         key = keypress.key()
+        if self.ui.tableWidget_controls.hasFocus():
+            print("table focus:", key)
         modifiers = int(keypress.modifiers())
         #dprint("key", key, "modifiers", modifiers)
         if self.ui.lineEdit_input.hasFocus():
@@ -341,7 +362,7 @@ class MainWindow(QtWidgets.QMainWindow):
             return
         elif key == KEY_R_ANGLE and modifiers == MOD_CTRL: #Ctrl + >
             current_tab = self.ui.tabWidget.currentIndex()
-            if current_tab < 3: 
+            if current_tab < 4: 
                 self.ui.tabWidget.setCurrentIndex(current_tab+1)
                 return
         elif self.ui.combobox_port.hasFocus():
@@ -351,12 +372,69 @@ class MainWindow(QtWidgets.QMainWindow):
                 return
         elif key == KEY_S and modifiers == MOD_CTRL: 
             self.save_settings()
-        
+        return super().keyPressEvent(keypress)
+
+    def tableEdited(self): 
+        if self.ui.tableWidget_controls.currentRow() == self.ui.tableWidget_controls.rowCount()-1:
+            self.ui.tableWidget_controls.setRowCount(self.ui.tableWidget_controls.rowCount()+1)
+        self.keyCmds = self.getKeyCmds()
+
+    def clearTable(self): 
+        self.ui.tableWidget_controls.setRowCount(0)
+        self.ui.tableWidget_controls.setRowCount(1)
+
+    def addTableItem(self, key, send): 
+        dprint("key:", key, "send", send, "\n")
+        indx = self.ui.tableWidget_controls.rowCount() - 1
+        self.ui.tableWidget_controls.setRowCount(indx + 2)
+        self.ui.tableWidget_controls.setItem(indx, 0, QTableWidgetItem(str(key)))
+        self.ui.tableWidget_controls.setItem(indx, 1, QTableWidgetItem(str(send)))
+      
+    def keyboard_control_clicked(self, force = -1): 
+        dprint("keyboard_en", self.keyboard_enabled)
+        if self.keyboard_enabled == False: 
+            self.keyboard_enabled = True
+            self.ui.button_keyboard_control.setText("Enabled")
+            self.ui.button_keyboard_control.setStyleSheet(f"background-color:{_colorGreen}")
+            self.ui.label_keyboardControl.show()
+            self.ui.lineEdit_keyboard.show()
+            self.ui.lineEdit_keyboard.setFocus()
+        elif self.keyboard_enabled == True: 
+            self.keyboard_enabled = False
+            self.ui.button_keyboard_control.setText("Disabled")
+            self.ui.button_keyboard_control.setStyleSheet(f"background-color:{_colorYellow}")
+            self.ui.lineEdit_input.setFocus()
+            self.ui.label_keyboardControl.hide()
+            self.ui.lineEdit_keyboard.hide()
+
+    def getKeyCmds(self):
+        keyCmds = {}
+        for row in range(self.ui.tableWidget_controls.rowCount()):
+            if self.ui.tableWidget_controls.item(row,0) is not None: 
+                if self.ui.tableWidget_controls.item(row,1) is not None: 
+                    keyCmds[self.ui.tableWidget_controls.item(row,0).text()] = self.ui.tableWidget_controls.item(row,1).text()
+        #print(keyCmds)
+        return keyCmds
+
+    def keyboardControl(self):
+        key = self.ui.lineEdit_keyboard.text()
+        cmds = self.getKeyCmds()
+        self.ui.lineEdit_keyboard.clear()
+        if key in cmds: 
+            cmd = cmds[key]
+            if cmd: 
+                print("key:", key, "cmd:", cmds[key])
+                self.ui.lineEdit_input.setText(cmds[key])
+                self.send_clicked()
+            
     def load_settings(self): # import and apply settings from json
         try:
             with open("user_settings.json", "r") as file:
                 user_settings = json.load(file)
                 self.ui.lineEdit_commandChar.setText(user_settings['commandChar'])
+                self.ui.lineEdit_logPath.setText(user_settings['logpath'])
+                if os.path.exists(user_settings['logpath']): 
+                    loggingTools.setLogPath(user_settings['logpath'])
                 self.ui.checkbox_autoscroll.setChecked(user_settings["autoscroll"])
                 self.ui.checkbox_autoReconnect.setChecked(user_settings["autoreconnect"])
                 all_ports = [self.ui.combobox_port.itemText(i) for i in range(self.ui.combobox_port.count())]
@@ -369,6 +447,9 @@ class MainWindow(QtWidgets.QMainWindow):
                 self.ui.lineEdit_sentText.setText(user_settings['output_char'])
                 if (user_settings["port"] in all_ports):
                     self.ui.combobox_port.setCurrentText(user_settings["port"])
+                keys = user_settings['keys']
+                for key in keys: 
+                    self.addTableItem(key, keys[key])
 
         except Exception as E:  # needed for the first time the program is run.
             print(E)
@@ -399,6 +480,7 @@ class MainWindow(QtWidgets.QMainWindow):
         user_settings['info_char'] = self.ui.lineEdit_infoText.text()
         user_settings['error_char'] = self.ui.lineEdit_errorText.text()
         user_settings['warning_char'] = self.ui.lineEdit_warningText.text()
+        user_settings['keys'] = self.getKeyCmds()
         vprint("[SAVING SETTINGS]\n", user_settings, color=CGREEN)
         with open("user_settings.json", "w") as file:
             json.dump(user_settings, file)
@@ -426,8 +508,8 @@ class MainWindow(QtWidgets.QMainWindow):
             loggingTools.addLine(text)
             if self.plotter_active: 
                 self.ui.widget_plot.update(text)
-            if self.script_active:
-                self.script_worker.incoming.emit(text)
+            if self.script_active and len(text) > 2:
+                self.script_worker.inp = text.strip()
             return
         elif type == TYPE_OUTPUT:
             if self.plotter_active: 
@@ -720,6 +802,17 @@ class MainWindow(QtWidgets.QMainWindow):
         elif not (loggingTools.LogViewPopup(self, filename=arg)):
             self.debug_text(f"ERROR: Log {arg} not found!", type=TYPE_ERROR)
 
+    def set_log_path(self): 
+        log_path = QtWidgets.QFileDialog.getExistingDirectory(self, 'Select Folder')
+        print("New Log Path:", log_path)
+        if log_path: 
+            loggingTools.setLogPath(log_path)
+            self.ui.lineEdit_logPath.setText(log_path)
+            self.save_setting("logpath", log_path)
+        else: 
+            print("NO LOG PATH FOUND")
+        return
+
     def get_file(self, start="", location="", title="Open"):
         options = QFileDialog.Options()
         dprint('start: ', str(start))
@@ -783,6 +876,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 else: 
                     self.ui.tabWidget.setCurrentIndex(1)
                     self.ui.textEdit_script.setFocus(True)
+                    return
             else: 
                 self.debug_text(f"ERROR: script {script_path} not found", TYPE_ERROR)
                 return 
@@ -844,6 +938,8 @@ class MainWindow(QtWidgets.QMainWindow):
             self.script_worker.moveToThread(self.script_thread)
             self.script_thread.started.connect(self.script_worker.run)
             self.script_worker.line.connect(self.script_line)
+            self.script_worker.printline.connect(self.script_print)
+            self.script_worker.waiting.connect(self.script_wait)
             self.script_worker.finished.connect(self.end_script)
             self.script_thread.start()
         else:
@@ -855,8 +951,13 @@ class MainWindow(QtWidgets.QMainWindow):
         self.send_clicked()
         self.ui.lineEdit_input.setText(line)
         self.ui.lineEdit_input.setDisabled(True)
+    
+    def script_print(self, line:str):
+        print("script print:", line)
+        self.add_text(line, TYPE_INFO)
 
-    def script_wait(self): 
+    def script_wait(self, val): 
+        #self.script_thread.wait(5000)
         pass
 
     def end_script(self):
@@ -871,29 +972,56 @@ class MainWindow(QtWidgets.QMainWindow):
         self.ui.lineEdit_input.setFocus()
         self.scriptActive = False
 
+    def start_plot_clicked(self): 
+        if self.plotter_active: 
+            self.handle_plot(clear=True)
+            return
+        else: 
+            size = self.ui.lineEdit_size.text()
+            try: 
+                size = int(size)
+            except: 
+                size = 100 
+            targets = self.ui.lineEdit_keys.text()
+            if self.ui.comboBox_type.currentText() == "Key-Value": 
+                self.handle_plot(kv=True, targets=targets, len=size)
+            if self.ui.comboBox_type.currentText() == "Array": 
+                self.handle_plot(array=True, targets=targets, len=size)
+
     def handle_plot(self, help = False, kv = False, array = False, targets = None, end = False, len = 100, pause = False, clear = False, resume = False):
-        print("PLT TYPE", self.ui.widget_plot.graph_type)
         if help:
             self.add_text(plot_help, TYPE_INFO)
             self.add_text("")
             return
         if len: 
             self.ui.lineEdit_size.setText(str(len))
-        if kv: 
-            self.ui.comboBox_type.setCurrentText("Key-Value")
-            self.plotter_active = True
+        if kv or array: 
+            self.ui.button_startGraph.setStyleSheet(f"background-color:{_colorGreen}")
+            self.ui.lineEdit_size.setEnabled(False)
+            self.ui.lineEdit_keys.setEnabled(False)
+            self.ui.comboBox_type.setEnabled(False)
             self.ui.lineEdit_keys.setText(str(targets))
-            self.ui.widget_plot.add_kv_graph(targets=targets, len=len)
             self.ui.tabWidget.setCurrentIndex(2)
+            self.ui.button_startGraph.setText("Stop Graph")
+            self.plotter_active = True
+        if kv: 
+            self.debug_text(f"Started Plot in Key-Value mode")
+            self.ui.comboBox_type.setCurrentText("Key-Value")
+            self.ui.widget_plot.add_kv_graph(targets=targets, len=len)
             return
         if array: 
             self.ui.comboBox_type.setCurrentText("Array")
-            self.plotter_active = True
             self.ui.lineEdit_keys.setText(str(targets))
             self.ui.widget_plot.add_array_graph(targets=targets, len=len)
-            self.ui.tabWidget.setCurrentIndex(2)
             return
         if clear: 
+            self.ui.button_startGraph.setStyleSheet(f"")
+            self.ui.button_startGraph.setText("Start Graph")
+            self.ui.lineEdit_size.setEnabled(True)
+            self.ui.lineEdit_keys.setEnabled(True)
+            self.ui.comboBox_type.setEnabled(True)
+            self.ui.comboBox_type.setCurrentText("None")
+            self.ui.lineEdit_keys.setText("")
             self.plotter_active = False
             self.ui.widget_plot.clear_plot()
         if pause: 

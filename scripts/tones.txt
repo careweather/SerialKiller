@@ -1,0 +1,5 @@
+delay(3)
+save("tones")
+send("#keyclear")
+send("#key 1 -s tone261,*")
+

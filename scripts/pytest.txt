@@ -1,0 +1,8 @@
+delay(1000)
+send("ok")
+x = wait("nice")
+print("x=", x)
+for i in range(5):
+	print(i)
+send("ok im done")
+wait("ok")

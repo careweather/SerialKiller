@@ -43,6 +43,9 @@
   <property name="windowTitle">
    <string>Serial Killer</string>
   </property>
+  <property name="styleSheet">
+   <string notr="true">alternate-background-color: rgb(255, 255, 127);</string>
+  </property>
   <property name="toolButtonStyle">
    <enum>Qt::ToolButtonTextOnly</enum>
   </property>
@@ -64,39 +67,6 @@
          </property>
         </widget>
        </item>
-       <item row="0" column="3">
-        <widget class="QPushButton" name="button_send">
-         <property name="minimumSize">
-          <size>
-           <width>50</width>
-           <height>0</height>
-          </size>
-         </property>
-         <property name="maximumSize">
-          <size>
-           <width>80</width>
-           <height>16777215</height>
-          </size>
-         </property>
-         <property name="text">
-          <string>Send</string>
-         </property>
-        </widget>
-       </item>
-       <item row="1" column="1">
-        <widget class="QLabel" name="label_debug">
-         <property name="font">
-          <font>
-           <family>Segoe UI</family>
-           <pointsize>9</pointsize>
-           <bold>true</bold>
-          </font>
-         </property>
-         <property name="text">
-          <string>--</string>
-         </property>
-        </widget>
-       </item>
        <item row="1" column="0">
         <widget class="QLabel" name="label_10">
          <property name="minimumSize">
@@ -113,6 +83,68 @@
          </property>
          <property name="text">
           <string>Debug:</string>
+         </property>
+        </widget>
+       </item>
+       <item row="0" column="3">
+        <widget class="QPushButton" name="button_send">
+         <property name="minimumSize">
+          <size>
+           <width>80</width>
+           <height>0</height>
+          </size>
+         </property>
+         <property name="maximumSize">
+          <size>
+           <width>80</width>
+           <height>16777215</height>
+          </size>
+         </property>
+         <property name="text">
+          <string>Send</string>
+         </property>
+        </widget>
+       </item>
+       <item row="1" column="3">
+        <widget class="QLineEdit" name="lineEdit_keyboard">
+         <property name="enabled">
+          <bool>true</bool>
+         </property>
+         <property name="maximumSize">
+          <size>
+           <width>80</width>
+           <height>16777215</height>
+          </size>
+         </property>
+         <property name="maxLength">
+          <number>2</number>
+         </property>
+        </widget>
+       </item>
+       <item row="1" column="2">
+        <widget class="QLabel" name="label_keyboardControl">
+         <property name="maximumSize">
+          <size>
+           <width>100</width>
+           <height>16777215</height>
+          </size>
+         </property>
+         <property name="text">
+          <string>Keyboard Control:</string>
+         </property>
+        </widget>
+       </item>
+       <item row="1" column="1">
+        <widget class="QLabel" name="label_debug">
+         <property name="font">
+          <font>
+           <family>Segoe UI</family>
+           <pointsize>9</pointsize>
+           <bold>true</bold>
+          </font>
+         </property>
+         <property name="text">
+          <string>--</string>
          </property>
         </widget>
        </item>
@@ -246,7 +278,7 @@
        <enum>QTabWidget::Rounded</enum>
       </property>
       <property name="currentIndex">
-       <number>3</number>
+       <number>1</number>
       </property>
       <property name="elideMode">
        <enum>Qt::ElideNone</enum>
@@ -437,11 +469,18 @@
          <widget class="QTextEdit" name="textEdit_script">
           <property name="font">
            <font>
-            <family>Segoe UI</family>
-            <pointsize>9</pointsize>
+            <family>Courier</family>
+            <pointsize>10</pointsize>
             <italic>false</italic>
-            <bold>false</bold>
+            <bold>true</bold>
            </font>
+          </property>
+          <property name="styleSheet">
+           <string notr="true">background-color: rgb(24, 24, 24);
+color: rgb(236, 236, 236);</string>
+          </property>
+          <property name="cursorWidth">
+           <number>1</number>
           </property>
           <property name="placeholderText">
            <string>Type each command on a new line here</string>
@@ -454,6 +493,91 @@
            <string>Delay:</string>
           </property>
          </widget>
+        </item>
+       </layout>
+      </widget>
+      <widget class="QWidget" name="tab_2">
+       <attribute name="title">
+        <string>Keyboard</string>
+       </attribute>
+       <layout class="QGridLayout" name="gridLayout_14">
+        <item row="0" column="0">
+         <widget class="QLabel" name="label_14">
+          <property name="text">
+           <string>Keyboard Control:</string>
+          </property>
+         </widget>
+        </item>
+        <item row="1" column="0" colspan="3">
+         <widget class="QTableWidget" name="tableWidget_controls">
+          <property name="rowCount">
+           <number>2</number>
+          </property>
+          <attribute name="horizontalHeaderMinimumSectionSize">
+           <number>20</number>
+          </attribute>
+          <attribute name="horizontalHeaderDefaultSectionSize">
+           <number>100</number>
+          </attribute>
+          <row/>
+          <row/>
+          <column>
+           <property name="text">
+            <string>Key</string>
+           </property>
+           <property name="textAlignment">
+            <set>AlignCenter</set>
+           </property>
+          </column>
+          <column>
+           <property name="text">
+            <string>Send</string>
+           </property>
+          </column>
+         </widget>
+        </item>
+        <item row="0" column="1">
+         <widget class="QPushButton" name="button_keyboard_control">
+          <property name="styleSheet">
+           <string notr="true">background-color: rgb(232, 232, 0);</string>
+          </property>
+          <property name="text">
+           <string>Disabled</string>
+          </property>
+         </widget>
+        </item>
+        <item row="0" column="2">
+         <spacer name="horizontalSpacer_8">
+          <property name="orientation">
+           <enum>Qt::Horizontal</enum>
+          </property>
+          <property name="sizeHint" stdset="0">
+           <size>
+            <width>40</width>
+            <height>20</height>
+           </size>
+          </property>
+         </spacer>
+        </item>
+        <item row="3" column="2">
+         <widget class="QPushButton" name="button_clearKeyboard">
+          <property name="text">
+           <string>Clear</string>
+          </property>
+         </widget>
+        </item>
+        <item row="3" column="0" colspan="2">
+         <spacer name="horizontalSpacer_9">
+          <property name="orientation">
+           <enum>Qt::Horizontal</enum>
+          </property>
+          <property name="sizeHint" stdset="0">
+           <size>
+            <width>40</width>
+            <height>20</height>
+           </size>
+          </property>
+         </spacer>
         </item>
        </layout>
       </widget>
@@ -667,7 +791,7 @@
              <x>0</x>
              <y>0</y>
              <width>470</width>
-             <height>184</height>
+             <height>178</height>
             </rect>
            </property>
            <attribute name="label">
@@ -773,7 +897,7 @@
             <rect>
              <x>0</x>
              <y>0</y>
-             <width>470</width>
+             <width>246</width>
              <height>184</height>
             </rect>
            </property>
@@ -1250,8 +1374,8 @@
             <rect>
              <x>0</x>
              <y>0</y>
-             <width>470</width>
-             <height>184</height>
+             <width>148</width>
+             <height>153</height>
             </rect>
            </property>
            <attribute name="label">

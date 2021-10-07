@@ -4,6 +4,9 @@ from PyQt5 import QtGui, QtWidgets
 import time 
 import os
 
+
+
+
 class ScriptWorker(QObject):
     line = pyqtSignal(str)
     saveName = pyqtSignal(dict)
@@ -21,14 +24,12 @@ class ScriptWorker(QObject):
         self.currentLine = 0
         print(self.script)
         print("n lines:", self.numbLines)
-        
         self._active = True
         self.incoming.connect(self.input)
         self.waiting = False
         self.loopStart = 0
         self.loopNumb = 0
         self.loopActive = False
-
 
     def subScript(self, name):
         name = name + ".txt"
@@ -45,10 +46,16 @@ class ScriptWorker(QObject):
         else:
             print("does not exist") 
 
-
+    def eval(self, line):
+        print("evaluating", line)
+        
     def input(self, text): 
         self.waiting = False
         print("handled from script:", text)
+
+    def handle_eval(self, text:str):
+        print("eval:", text)
+        exec(text)
 
     def handle(self, text:str): 
         print("handling", text)
@@ -63,16 +70,17 @@ class ScriptWorker(QObject):
             print("saving as name", text[5:])
             self.line.emit(f"script -s {text[5:]}")
             return True
-        elif text == "wait": 
-            self.wait()
-            return True
-        elif text.startswith("loop="): 
-            self.loopNumb = int(text[5:])
-            self.loopStart = self.currentLine
-            print("looping: ", self.loopNumb)
-            return True
+        elif text.startswith("loop"):
+            if len(text) == 4: 
+                self.loopNumb = -1
+                return True
+            if text[4] == '=':
+                self.loopNumb = int(text[5:])
+                self.loopStart = self.currentLine
+                return True
         elif text == "endloop": 
-            print("loop numb:", self.loopNumb)
+            if self.loopNumb == -1: 
+                self.currentLine = self.loopStart
             if self.loopNumb > 1: 
                 self.loopNumb -= 1
                 self.currentLine = self.loopStart
@@ -83,10 +91,20 @@ class ScriptWorker(QObject):
         else:
             return False
 
+    def wait_input(self):
+        print("waiting....")
+        self._wait = False
+        while 1: 
+            if self._wait == True: 
+                print("returning")
+                return
+            else:
+                time.sleep(.1)
+                continue
+        
 
     def update_delay(self, delay="100"):
         delay = int(delay)
-        print("updating delay",delay)
         self.delay = delay/1000
 
     def run(self):
@@ -100,13 +118,12 @@ class ScriptWorker(QObject):
                     if sline[0] == "#":
                         is_command = True
                         if self.handle(sline[1:]):
-                            print("is command")
+                            #print("is command")
                             send = False 
                     elif sline[:2] == "//": # comment
-                        print("COMMENT:" ,sline[2:]) 
+                        #print("COMMENT:" ,sline[2:]) 
                         is_command = True
                         send = False 
-                
                 if send == True:
                     self.line.emit(sline)
                 if is_command == False:
@@ -120,8 +137,6 @@ class ScriptWorker(QObject):
         print("stopping script")
         self._active = False
         
-
-
 if __name__ == "__main__": 
     import main
     main.execute()

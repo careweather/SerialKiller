@@ -1,6 +1,6 @@
 #name=graph
 #delay=50
-plot -kv -l 25 -t a
+plot -kv -l 25
 #loop=10
 a=1.5; b=1
 a=1.2; b=2

@@ -1,0 +1,7 @@
+#name = stepper
+#delay=1500
+#loop=5
+rot180
+rot181
+rot0
+#endloop

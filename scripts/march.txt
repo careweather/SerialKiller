@@ -1,0 +1,14 @@
+#name=march
+#delay=500
+#loop=3
+tone98,400
+#endloop
+#loop=2
+#delay=250
+tone69,200
+#delay=125
+tone116,125
+#delay=500
+tone96,400
+#endloop
+#script -t
