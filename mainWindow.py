@@ -385,7 +385,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def addTableItem(self, key, send): 
         dprint("key:", key, "send", send, "\n")
-        indx = self.ui.tableWidget_controls.rowCount() - 1
+        indx = self.ui.tableWidget_controls.rowCount() - 1 
         self.ui.tableWidget_controls.setRowCount(indx + 2)
         self.ui.tableWidget_controls.setItem(indx, 0, QTableWidgetItem(str(key)))
         self.ui.tableWidget_controls.setItem(indx, 1, QTableWidgetItem(str(send)))
