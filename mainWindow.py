@@ -13,7 +13,7 @@ from parser_f import Parser, Command
 from gui.GUI_MAIN import Ui_MainWindow  # Local
 from gui.GUI_HELP import Ui_Help
 from PyQt5.QtCore import QObject, QThread, flush, pyqtSignal
-from PyQt5.QtGui import QIntValidator, QTextCursor
+from PyQt5.QtGui import QIntValidator, QTextCursor,QSyntaxHighlighter
 from PyQt5 import QtGui, QtWidgets
 import serialHandler as SH
 
@@ -241,6 +241,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.ui.checkBox_autoRescan.clicked.connect(self.auto_rescan_toggled)
         self.ui.checkbox_autoReconnect.stateChanged.connect(self.auto_reconnect_toggled)
         self.ui.button_runScript.clicked.connect(self.start_script)
+        self.ui.button_saveSettings.clicked.connect(self.save_settings)
         self.ui.button_loadScript.clicked.connect(lambda: self.handle_script(opens=""))
         self.ui.button_saveScript.clicked.connect(lambda: self.handle_script(save=""))
         self.ui.button_connect.clicked.connect(self.connect)
@@ -276,6 +277,7 @@ class MainWindow(QtWidgets.QMainWindow):
         cmd_connect.add_argument('auto', 'auto', bool, True)
         self.parser.add_command(cmd_connect)
         self.parser.add_command(Command("quit", quit))
+        self.parser.add_command(Command("keystart", lambda: self.keyboard_control_clicked(force = 1)))
         self.parser.add_command(Command("keyclear", self.clearTable))
         self.parser.add_command(Command("clear", self.clear_terminal))
         self.parser.add_command(Command("help", self.open_help))
@@ -322,6 +324,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
         cmd_table_add = Command("key", self.addTableItem, default_kw='key', default_required=True)
         cmd_table_add.add_argument("s", "send", type=str, required=True)
+        
         self.parser.add_command(cmd_table_add)
 
     def keyPressEvent(self, keypress: QtGui.QKeyEvent) -> None:
@@ -390,8 +393,11 @@ class MainWindow(QtWidgets.QMainWindow):
         self.ui.tableWidget_controls.setItem(indx, 0, QTableWidgetItem(str(key)))
         self.ui.tableWidget_controls.setItem(indx, 1, QTableWidgetItem(str(send)))
       
-    def keyboard_control_clicked(self, force = -1): 
+    def keyboard_control_clicked(self, force = 0): 
         dprint("keyboard_en", self.keyboard_enabled)
+        if force: 
+            dprint("KEYBOARD FORCE")
+            self.keyboard_enabled = False
         if self.keyboard_enabled == False: 
             self.keyboard_enabled = True
             self.ui.button_keyboard_control.setText("Enabled")
@@ -938,7 +944,7 @@ class MainWindow(QtWidgets.QMainWindow):
             self.script_worker.moveToThread(self.script_thread)
             self.script_thread.started.connect(self.script_worker.run)
             self.script_worker.line.connect(self.script_line)
-            self.script_worker.printline.connect(self.script_print)
+            self.script_worker.print_line.connect(self.script_print)
             self.script_worker.waiting.connect(self.script_wait)
             self.script_worker.finished.connect(self.end_script)
             self.script_thread.start()

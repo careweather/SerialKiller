@@ -1,4 +1,4 @@
-#delay=100
+#delay=500
 #name=send
 #loop=5
 send hi1

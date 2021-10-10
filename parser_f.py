@@ -1,6 +1,6 @@
 
-
 DEBUG_PRINT = False
+
 
 def dprint(input, *args): 
     if DEBUG_PRINT: 
@@ -33,13 +33,8 @@ class Command:
 
     def execute(self, input:str):
         dprint('input: ' , str(input), type(input))
-        args = input.split("-")
+        args = input.split(" -")
         #print('args: ' , str(args), type(args))
-
-        if 'h' in args and self.help != None:
-            print(f"HELP FOR {self.keyword}:", self.help)
-            return self.help
-
         func_args = {} # dict to eventually be passed to a function
 
         if self.default != False: # first part is the default option
@@ -52,9 +47,10 @@ class Command:
         tokens = []
         for arg in args:
             dprint("argument:", arg)
-            tok = arg.strip().split(" " , 2)
+            tok = arg.split(" " , 1)
             dprint('tok: ' , str(tok), type(tok))
             if tok[0]:
+                tok[0] = tok[0].replace("-", "")
                 tokens.append(tok[0])
                 if tok[0] in self.args: 
                     #dprint("token valid")

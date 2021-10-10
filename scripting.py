@@ -6,12 +6,9 @@ import os
 
 class ScriptWorker(QObject):
     line = pyqtSignal(str)
-    saveName = pyqtSignal(dict)
     finished = pyqtSignal(int)
     waiting = pyqtSignal(bool)
-    _wait = pyqtSignal(bool)
-    incoming = pyqtSignal(str)
-    printline = pyqtSignal(str)
+    print_line = pyqtSignal(str)
 
     def __init__(self, text: str, delay = 100):
         super().__init__()
@@ -27,73 +24,9 @@ class ScriptWorker(QObject):
         self.inp:str = None 
         self.use_python = False
 
-    def subScript(self, name):
-        name = name + ".txt"
-        print("inserting other script", name)
-        cwd = os.getcwd()
-        script_path = cwd + "\scripts\\" + name
-        print('script_dir: ' , str(script_path), type(script_path))
-        if os.path.exists(script_path):
-            with open(script_path, 'r') as File:
-                newlines = File.read().splitlines()
-                self.numbLines += len(newlines)
-                self.script = self.script[:self.currentLine+1] + newlines + self.script[self.currentLine:]
-                print("modified script:",self.script)
-        else:
-            print("does not exist") 
-
-    def eval(self, line):
-        print("evaluating", line)
-        
-    def input(self, text): 
-        self.waiting = False
-        print("handled from script:", text)
-
-    def handle_eval(self, text:str):
-        print("eval:", text)
-        exec(text)
-
-    def handle(self, text:str): 
-        print("handling", text)
-        #text = text.replace(" ", "")
-        if text.startswith("delay="): 
-            try: 
-                self.delay = int(text[6:])/1000
-            except Exception as E: 
-                print("ERROR SETTING DELAY:", E)
-            return True
-        elif text.startswith("name="): 
-            print("saving as name", text[5:])
-            self.line.emit(f"script -s {text[5:]}")
-            return True
-        elif text.startswith("loop"):
-            if len(text) == 4: 
-                self.loopNumb = -1
-                return True
-            if text[4] == '=':
-                self.loopNumb = int(text[5:])
-                self.loopStart = self.currentLine
-                return True
-        elif text == "endloop": 
-            if self.loopNumb == -1: 
-                self.currentLine = self.loopStart
-            if self.loopNumb > 1: 
-                self.loopNumb -= 1
-                self.currentLine = self.loopStart
-            return True
-        elif text.startswith("wait"): 
-            print("waiting....")
-        elif text == "stop": 
-            self._active = False
-            self.finished.emit(True)
-        else:
-            return False
-
     def save(self, name:str):
         self.send(f"script -s {name}")
         
-
-
     def wait_(self, target = None, d_type = str):
         if target is not None:
             print("waiting for target: ", target)
@@ -127,7 +60,10 @@ class ScriptWorker(QObject):
         output = ""
         for input in inputs: 
             output += str(input)
-        self.printline.emit(output)
+        self.print_line.emit(output)
+    
+    def pause(self, milliseconds:int):
+        time.sleep(milliseconds/1000) 
 
     def read(self, lines:list):
         program = ""
@@ -138,11 +74,10 @@ class ScriptWorker(QObject):
                 line += "\")"
             if "send(" in line: 
                 line = line.replace("send(", "self.send(")
-            
             if "print(" in line:
                 line = line.replace("print", "self.print")
             if "wait(" in line:
-                line = line.replace("wait", "self.wait_")
+                line = line.replace("wait", "self.wait_", 1)
             if "delay(" in line:
                 line = line.replace("delay", "self.update_delay")
             if "save(" in line:
@@ -150,6 +85,44 @@ class ScriptWorker(QObject):
             program += line + '\n'
         print("PROGRAM:", program)
         exec(program)
+
+    def evaluate(self, line_input:str): 
+        if line_input:
+            if line_input.startswith("#"): # Command 
+                cmds = line_input.split("#")[1:]
+                for cmd in cmds: 
+                    print('cmd: ' , str(cmd), type(cmd))
+                    if cmd.startswith("name="): 
+                        self.line.emit(f"script -s {cmd[5:]}")
+                    elif cmd.startswith("delay="): 
+                        self.delay = int(cmd[6:])/1000
+                    elif cmd == "stop": 
+                        self.finished.emit(True)
+                        self._active = False
+                    elif cmd.startswith("info="):
+                        self.print(cmd[5:])
+                    elif cmd.startswith("loop="): 
+                        self.loopNumb = int(cmd[5:])
+                        self.loopStart=self.currentLine
+                    elif cmd.startswith("pause="):
+                        self.pause(int(cmd[6:]))
+                    elif cmd.startswith("loop"):
+                            self.loopNumb = -1
+                            self.loopStart = self.currentLine
+                    elif cmd.startswith("endloop"): 
+                        if self.loopNumb == -1:
+                            self.currentLine = self.loopStart
+                        else: 
+                            self.loopNumb -= 1
+                            if self.loopNumb: 
+                                self.currentLine = self.loopStart
+                    else:
+                        self.line.emit(f"#{cmd}")
+            elif line_input.startswith("//"): # Comment 
+                print("Comment: ", line_input[2:])
+            else: 
+                self.send(line_input)
+                
 
     def run(self):
         while self._active:
@@ -160,27 +133,8 @@ class ScriptWorker(QObject):
             else:
                 while self.currentLine != self.numbLines and self._active: 
                     sline = self.script[self.currentLine]
-                    send_line = True
-                    is_command = False
-                    #print("line: ", sline, "line number:", self.currentLine, "send", send_line)
                     if sline:
-                        if sline[0] == "#":
-                            is_command = True
-                            if self.handle(sline[1:]):
-                                #print("is command")
-                                send_line = False 
-                        if sline[0] == "@":
-                            exec(sline[1:])
-                            send_line = False
-                        elif sline[:2] == "//": # comment
-                            #print("COMMENT:" ,sline[2:]) 
-                            is_command = True
-                            send_line = False 
-                    if send_line == True:
-                        self.line.emit(sline)
-                    if is_command == False:
-                        time.sleep(self.delay)
-                        #self.currentLine += 1
+                        self.evaluate(sline)
                     self.currentLine += 1
                 self.finished.emit(True)
                 return

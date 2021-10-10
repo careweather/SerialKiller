@@ -1,7 +1,7 @@
 #name=stepkeys
-#delay=100
-#keyclear
-#key -k 4 -s a-3
-#key -k 6 -s a+3
-#key -k 8 -s e+3
-#key -k 2 -s e-3
+#keyclear #clear
+#key 4 -s a+5
+#key 6 -s a-5
+#key 8 -s e+5
+#key 2 -s e-5
+#info=Key Control Written! #keystart
