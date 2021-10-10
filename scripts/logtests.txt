@@ -1,6 +1,0 @@
-#name=logtests
-#delay=10
-#loop=1000
-l.init
-#endloop
-#clear

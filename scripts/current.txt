@@ -1,7 +1,0 @@
-#name=current
-#delay=5
-#plot -c
-?
-#delay=100
-#plot -kv -t P
-print100; samp50

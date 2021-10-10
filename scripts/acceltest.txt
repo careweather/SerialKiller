@@ -1,7 +1,0 @@
-#name = acceltest
-#delay=1000
-a.set0;a.speed=10;a=160;
-a?;a.speed=20
-a?;a.speed=30
-a?;a.speed=40
-a?;a.speed=50

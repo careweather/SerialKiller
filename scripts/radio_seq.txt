@@ -1,6 +1,0 @@
-#name=radio_seq
-#delay=100
-clear
-//r.read 0x36; r.read 0x37
-//r.read 0x38
-r.read0x3b

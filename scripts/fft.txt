@@ -1,6 +1,0 @@
-#clear
-#name = fft
-#com 51 -auto
-t70
-#plot -c
-#plot -a -t FFT

@@ -1,6 +1,0 @@
-#name=rssi
-#delay=100
-#plot -kv -t Rssi
-#loop=2000
-rssi
-#endloop

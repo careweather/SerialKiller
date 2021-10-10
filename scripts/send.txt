@@ -1,9 +1,0 @@
-#delay=500
-#name=send
-#loop=5
-send hi1
-send hi2
-send hi3
-send hi4
-#endloop
-clear

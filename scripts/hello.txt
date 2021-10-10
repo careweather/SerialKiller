@@ -1,7 +1,0 @@
-#name=hello
-#dcon
-#loop=5
-hello
-world
-#endloop
-#clear

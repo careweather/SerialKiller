@@ -1,2 +1,0 @@
-#name=rotator
-a.home

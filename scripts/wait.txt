@@ -1,4 +1,0 @@
-#name=wait
-#delay=100
-hi
-#wait

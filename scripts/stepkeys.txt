@@ -1,7 +1,0 @@
-#name=stepkeys
-#keyclear #clear
-#key 4 -s a+5
-#key 6 -s a-5
-#key 8 -s e+5
-#key 2 -s e-5
-#info=Key Control Written! #keystart

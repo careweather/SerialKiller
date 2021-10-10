@@ -1,7 +1,0 @@
-#name = steps
-a.set0;e.set0;a.speed=100;e.speed=100;
-#delay=2000
-#loop=5
-a+30;e-30;
-a-30;e-30;
-#endloop

@@ -1,9 +1,0 @@
-#name=keytest
-#delay=100
-#keyclear
-#key a -s wow
-#key s -s hello_world
-#key d -s nice!
-#key x -s a+25
-#script -t
-#save

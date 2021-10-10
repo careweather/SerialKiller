@@ -1,4 +1,0 @@
-#name=keyboard
-#delay=50
-key -k x -s hello
-key -k a -s wow

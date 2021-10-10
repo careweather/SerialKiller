@@ -1,6 +1,0 @@
-#name=stepkiller
-#delay=1000
-a.set0;e.set0;
-a.rot90;e.rot90
-a.angle;e.angle
-a.rot0;e.rot0;

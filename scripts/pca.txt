@@ -1,8 +1,0 @@
-#name=pca
-#delay=100
-ping
-write 0 , 0b1111 1110
-#loop=10
-write 1, 0b0000 0001
-#wait
-#endloop
