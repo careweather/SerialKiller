@@ -2,12 +2,13 @@ import subprocess
 
 from sys import platform
 
+lib_deps = ['numpy', 'pandas', 'pyqt5', 'pyqt5-tools', 'pyqtgraph', 'pyserial', 'colorama', 'datetime']
+
 def install_dependancies():
     if platform == "linux" or platform == "linux2": 
         clear_cmd = "clear"
     elif platform == "win32":
         clear_cmd = "cls"
-    lib_deps = ['numpy', 'pandas', 'pyqt5', 'pyqt5-tools', 'pyqtgraph', 'pyserial', 'colorama', 'datetime']
     subprocess.call(clear_cmd, shell=True)
     for library in lib_deps:
         print(f"--INSTALLING {library}...")

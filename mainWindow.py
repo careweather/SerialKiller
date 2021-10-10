@@ -69,8 +69,6 @@ CWHITE  = '\33[37m'
 BOLD = '\033[1m'
 UNDERLINE = '\033[4m'
 
-
-
 script_help = '''
 **** SCRIPT HELP ****
 Press ESCAPE or CTRL+C to stop a script mid-execution
@@ -332,7 +330,6 @@ class MainWindow(QtWidgets.QMainWindow):
         if self.ui.tableWidget_controls.hasFocus():
             print("table focus:", key)
         modifiers = int(keypress.modifiers())
-        #dprint("key", key, "modifiers", modifiers)
         if self.ui.lineEdit_input.hasFocus():
             if key == KEY_ENTER:  # send
                 self.send_clicked()
@@ -438,9 +435,12 @@ class MainWindow(QtWidgets.QMainWindow):
             with open("user_settings.json", "r") as file:
                 user_settings = json.load(file)
                 self.ui.lineEdit_commandChar.setText(user_settings['commandChar'])
-                self.ui.lineEdit_logPath.setText(user_settings['logpath'])
                 if os.path.exists(user_settings['logpath']): 
                     loggingTools.setLogPath(user_settings['logpath'])
+                    new_log_path = user_settings['logpath']
+                else: 
+                    new_log_path = loggingTools.log_path
+                self.ui.lineEdit_logPath.setText(new_log_path)
                 self.ui.checkbox_autoscroll.setChecked(user_settings["autoscroll"])
                 self.ui.checkbox_autoReconnect.setChecked(user_settings["autoreconnect"])
                 all_ports = [self.ui.combobox_port.itemText(i) for i in range(self.ui.combobox_port.count())]
@@ -859,7 +859,6 @@ class MainWindow(QtWidgets.QMainWindow):
             self.add_text(script_help, TYPE_INFO)
             return
         if list: 
-            #cwd = os.getcwd()
             scripts = os.listdir(self.cwd + "/scripts/")
             for script in scripts: 
                 self.add_text(script, TYPE_INFO)
@@ -867,16 +866,17 @@ class MainWindow(QtWidgets.QMainWindow):
         if opens != None: 
             if opens == '': 
                 script_path = self.get_file(self.script_dir)
+                if script_path == "": 
+                    return
             else:
                 script_path = self.script_dir + opens + '.txt' 
             print(script_path)
             if os.path.exists(script_path): 
-                print("exists")
                 with open(script_path, 'r') as File:
                     text = File.read()
                     print(text)
                     self.ui.textEdit_script.setPlainText(text)
-                self.debug_text(f"Loaded: {script_path}")
+                self.debug_text(f"Loaded: scripts/{opens}.txt")
                 if run: 
                     self.start_script()
                 else: 
@@ -884,7 +884,7 @@ class MainWindow(QtWidgets.QMainWindow):
                     self.ui.textEdit_script.setFocus(True)
                     return
             else: 
-                self.debug_text(f"ERROR: script {script_path} not found", TYPE_ERROR)
+                self.debug_text(f"ERROR: scripts/{opens}.txt not found", TYPE_ERROR)
                 return 
         if save != None: 
             if save == '': 

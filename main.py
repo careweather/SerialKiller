@@ -1,13 +1,11 @@
 #
-# MAIN PROGRAM FOR SERIAL KILLER: 
+# MAIN PROGRAM FOR SERIAL KILLER:
 #
-
 import subprocess
 import sys
 
-
-def dprint(input, *args, color = "", enabled = False): 
-    if enabled: 
+def dprint(input, *args, color="", enabled=False):
+    if enabled:
         dprint.enable = True
     if dprint.enable:
         print(color, end="", flush=True)
@@ -16,13 +14,14 @@ def dprint(input, *args, color = "", enabled = False):
 
 dprint.enable = True
 
-def vprint(input, *args, color = "", enabled = None):
-    if enabled: 
+def vprint(input, *args, color="", enabled=None):
+    if enabled:
         vprint.enable = True
     if vprint.enable:
         print(color, end="", flush=True)
         print(input, *args, end="", flush=True)
         print(ENDC, end="", flush=True)
+
 
 vprint.enable = True
 
@@ -30,17 +29,19 @@ try:
     import mainWindow
     from PyQt5 import QtGui, QtWidgets
 except Exception as E:
-    print("ERROR", E)
-    u_in = input("Install them now? (y/n):")
-    if u_in in ['y', 'Y']: 
-        import installer
+    print("\n\nERROR:", E)
+    import installer
+    print("You might be missing one of these modules:")
+    for lib in installer.lib_deps:
+        print("\t-", lib)
+    u_in = input("Install them now? (y/n): ")
+    if u_in in ['y', 'Y']:
         installer.install_dependancies()
-        print("Re-run to begin...")
+        print("\nRe-run main.py to begin...")
         quit()
-    else: 
+    else:
         print("EXITING...")
         quit()
-
 
 updateCommands = [
     "pyuic5 -o gui/GUI_MAIN.py ui_files/mainWindow.ui",
@@ -50,12 +51,14 @@ updateCommands = [
 
 ENDC = '\033[0m '
 
+
 def update_UI():
     print("UPDATING FROM UI FILE")
     for command in updateCommands:
         result = subprocess.call(command, shell=True)
-        if not result: 
+        if not result:
             print("Success")
+
 
 argList = [  # THIS IS ALL COMMANDS AND ARGS
     {
@@ -68,20 +71,22 @@ argList = [  # THIS IS ALL COMMANDS AND ARGS
     },
 ]
 
+
 def execute():
     print("STARTING SERIAL KILLER")
     for sysarg in sys.argv[1:]:
         print("Argument", sysarg)
         for argument in argList:
-           if sysarg in argument['arg']:
-               funct = argument['funct']
-               funct()
+            if sysarg in argument['arg']:
+                funct = argument['funct']
+                funct()
     app = QtWidgets.QApplication([sys.argv])
     main = mainWindow.MainWindow()
-    main.resize(550,700)
+    main.resize(550, 700)
     main.show()
     status = app.exec_()
     sys.exit(status)
-    
+
+
 if __name__ == "__main__":
     execute()
