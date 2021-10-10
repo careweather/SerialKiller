@@ -1,0 +1,8 @@
+#dcon #delay=500 #name=example
+hello! I am a script
+edit me in the script tab
+for more script info type "help"
+here. I'll do it for you
+#pause=1000
+#help
+

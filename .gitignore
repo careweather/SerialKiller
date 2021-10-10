@@ -1,5 +1,7 @@
 logs/*.txt
 scripts/*.txt
+!scripts/example.txt
+!logs/example.txt
 **/.vscode
 **/__pycache__
 user_settings.json

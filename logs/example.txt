@@ -1,0 +1,2 @@
+NO_PORT|02:18:20.740|	 Log archived by user
+NO_PORT|02:18:29.026|	 >>hello! I am a log! 
