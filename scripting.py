@@ -93,7 +93,7 @@ class ScriptWorker(QObject):
                 for cmd in cmds: 
                     print('cmd: ' , str(cmd), type(cmd))
                     if cmd.startswith("name="): 
-                        self.line.emit(f"script -s {cmd[5:]}")
+                        self.line.emit(f"script -s {cmd[5:].strip()}")
                     elif cmd.startswith("delay="): 
                         self.delay = int(cmd[6:])/1000
                     elif cmd == "stop": 

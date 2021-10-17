@@ -6,15 +6,16 @@ from PyQt5.QtWidgets import QFileDialog
 from PyQt5 import QtWidgets 
 import logging 
 import re
-
+from installer import install_dependancies
+from main import install_directory
 
 today = date.today()
 stringBuff = ""
-cwd = os.getcwd()
-log_path = f'{cwd}/logs/'
+log_path = f'{install_directory}/logs'
 log_name = f'log-{today}'
 log_extension = '.txt'
 file_name = log_path + log_name + log_extension
+print("log filename:", file_name)
 _started = False 
 
 port = ""
@@ -174,7 +175,7 @@ def archiveLog(name = ""):
     addLine("Log archived by user\n")
     return new_name
 
-setPort()
+#setPort()
 
 # I have this because Im an idiot and run this program often, thinking it's main...
 if __name__ == '__main__':

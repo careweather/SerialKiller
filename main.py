@@ -3,6 +3,9 @@
 #
 import subprocess
 import sys
+import os 
+
+install_directory = os.path.split(os.path.abspath(__file__))[0] # path of the install folder 
 
 def dprint(input, *args, color="", enabled=False):
     if enabled:

@@ -4,5 +4,6 @@ edit me in the script tab
 for more script info type "help"
 here. I'll do it for you
 #pause=1000
+#info=i am infooo
 #help
 

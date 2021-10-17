@@ -19,20 +19,17 @@ def sendString(toSend=""):
 
 # USE THIS IF THAT ^^^ Doesnt work
 def getPorts_linux():
-    stream = os.popen('py -m serial.tools.list_ports -q')
-    stream = subprocess.call()
+    stream = os.popen('python3 -m serial.tools.list_ports -q')
     inputStream = stream.read()
     inputStream = inputStream.replace(" ", "")
-    serialPorts = inputStream.rsplit('\n')
+    serialPorts = inputStream.split('\n')
     serialPorts = list(filter(None, serialPorts))
     return serialPorts
 
 def getPorts(): 
     if _platform == "Windows": 
-        #print('_platform:' , str(_platform), type(_platform))
         r = subprocess.Popen("powershell [System.IO.Ports.SerialPort]::getportnames()", shell=True, stdout=subprocess.PIPE)
         s = r.stdout.read().decode('utf-8')
-        #s = s.decode('utf-8')
         lines = s.splitlines()
         return lines
     else: 

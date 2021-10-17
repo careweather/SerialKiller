@@ -5,7 +5,7 @@ import json
 import time 
 from datetime import datetime
 import os
-from main import vprint, dprint
+from main import vprint, dprint, install_directory
 from PyQt5.QtWidgets import QFileDialog, QTableWidgetItem
 import loggingTools
 from scripting import ScriptWorker
@@ -78,6 +78,7 @@ ARGUMENTS:
 -o [name]\t open a script. Optional: open "name".txt
 -r \t run the script you are opening
 -s [name] \t save current script. Optional: as "name".txt
+-d [name] \t delete a script. Optional: delete "name".txt if it exists. 
 -n [name]\t start new script. Optional: include "name" line
 -t \t jump to script tab
 -ls \t display all scripts in the script dir
@@ -163,7 +164,7 @@ class RescanWorker(QObject):  # THIS RESCANS FOR CHANGING PORTS. ASYNC
                     lastPorts = ports
                     vprint(str(ports) + "\n", color=CGREEN)
                     self.updatedPorts.emit(ports)
-                time.sleep(.5)
+                time.sleep(2)
             except Exception as E:
                 print("Rescan worker Error", E)
                 self.disconnected.emit(False)
@@ -208,9 +209,9 @@ class MainWindow(QtWidgets.QMainWindow):
         self.rescan_active = False
         self.plotter_active = False
         self.all_ports = []
-        self.cwd = os.getcwd()
-        self.log_dir = "\\logs\\"
-        self.script_dir = self.cwd + "\\scripts\\"
+        self.cwd = install_directory
+        self.log_dir = "/logs/"
+        self.script_dir = self.cwd + "/scripts/"
         self.current_port = ''  # Port Currently Active
         self.historyIndex = 0
         self.currentIndex = 0
@@ -284,6 +285,8 @@ class MainWindow(QtWidgets.QMainWindow):
         self.parser.add_command(Command("new", self.new_window))
         self.parser.add_command(Command("save", self.save_settings))
         self.parser.add_command(Command("auto", self.ui.checkbox_autoReconnect.toggle))
+        cmd_connect_numb = Command("con", self.connect, default_kw='target')
+        self.parser.add_command(cmd_connect_numb)
         self.parser.add_command(Command("con", self.connect))
         cmd_log = Command("log", self.handle_log)
         cmd_log.add_argument('n', 'name', str)
@@ -367,7 +370,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 return
         elif self.ui.combobox_port.hasFocus():
             if key == KEY_ENTER: 
-                self.connect(target = self.ui.combobox_port.currentText()[3:])
+                self.connect(target = self.ui.combobox_port.currentText())
                 self.ui.lineEdit_input.setFocus()
                 return
         elif key == KEY_S and modifiers == MOD_CTRL: 
@@ -586,7 +589,11 @@ class MainWindow(QtWidgets.QMainWindow):
         self.add_text(text, type=TYPE_OUTPUT)
 
     def new_window(self):
-        subprocess.call('start pythonw.exe .\main.py', shell=True)
+        import platform
+        if platform.system() == 'Windows':
+            subprocess.call(f'start pythonw.exe .\main.py', shell=True)
+        elif platform.system() == 'Linux':
+            subprocess.call(f'python3 {install_directory}/main.py', shell=True) 
 
     def debug_text(self, text="", type=TYPE_INFO):
         if type == TYPE_WARNING:
@@ -650,7 +657,7 @@ class MainWindow(QtWidgets.QMainWindow):
         else: 
             self.debug_text(f"Baud Rate {baud} Invalid!")
          
-    def connect(self, target="", baud = None, parity = None, xonxoff = None, dsrdtr = None, rtscts = None, intentional=True, auto=False, show=False):
+    def connect(self, target:str="", baud = None, parity = None, xonxoff = None, dsrdtr = None, rtscts = None, intentional=True, auto=False, show=False):
         if parity == None:
             parity = self.ui.comboBox_parity.currentText() 
         if xonxoff == None: 
@@ -672,12 +679,21 @@ class MainWindow(QtWidgets.QMainWindow):
         if intentional:
             vprint('self.current_port: ', str(self.current_port), CGREEN)
             if target:
-                if target.isnumeric():
-                    target = "COM" + target
+                print(f"TARGET: ({target})")
+                if target in self.all_ports: 
+                    pass 
+                elif target.isnumeric():
+                    if "COM" + target in self.all_ports: 
+                        target = "COM" + target
+                    elif int(target) <= len(self.all_ports):
+                        target = self.all_ports[int(target)]
                 elif target == '?': 
                     self.ui.combobox_port.showPopup()
                     self.ui.combobox_port.setFocus()
                     return
+                elif target[0] == "#" and target[1:].isnumeric(): 
+                    target = self.all_ports[int(target[1:])]
+                    print("TARGET NUMBER", target)
                 else:
                     self.debug_text(
                         f"ERROR: Invalid Port Name: COM{target}", TYPE_ERROR)
@@ -863,7 +879,7 @@ class MainWindow(QtWidgets.QMainWindow):
             for script in scripts: 
                 self.add_text(script, TYPE_INFO)
             return
-        if opens != None: 
+        if opens != None:
             if opens == '': 
                 script_path = self.get_file(self.script_dir)
                 if script_path == "": 
