@@ -184,7 +184,6 @@ class SerialWorker(QObject):  # THIS FETCHES SERIAL DATA. ASYNC.
         while self._active:
             try:
                 serial_data = SH.getSerialString()
-                #serial_data = SH.getLine()
                 if serial_data:
                     vprint(serial_data, color = "")
                     self.out.emit(serial_data)

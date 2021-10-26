@@ -91,7 +91,6 @@ class ScriptWorker(QObject):
             if line_input.startswith("#"): # Command 
                 cmds = line_input.split("#")[1:]
                 for cmd in cmds: 
-                    print('cmd: ' , str(cmd), type(cmd))
                     if cmd.startswith("name="): 
                         self.line.emit(f"script -s {cmd[5:].strip()}")
                     elif cmd.startswith("delay="): 

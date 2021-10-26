@@ -28,10 +28,13 @@ def getPorts_linux():
 
 def getPorts(): 
     if _platform == "Windows": 
-        r = subprocess.Popen("powershell [System.IO.Ports.SerialPort]::getportnames()", shell=True, stdout=subprocess.PIPE)
-        s = r.stdout.read().decode('utf-8')
-        lines = s.splitlines()
-        return lines
+        stream = os.popen("wmic path Win32_SerialPort Get DeviceID")
+        tokens = stream.read().splitlines()
+        return_ports = []
+        for token in tokens: 
+            if token.startswith("COM"):
+                return_ports.append(token.strip())
+        return return_ports
     else: 
         return getPorts_linux()
     
@@ -85,10 +88,8 @@ def getSerialString():
     else:
         return None
 
-
 def closePort():
     ser.close()
-
 
 if __name__ == '__main__':
     import main

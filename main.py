@@ -62,30 +62,47 @@ def update_UI():
         if not result:
             print("Success")
 
+def force_install():
+    import installer
+    installer.install_dependancies()
+    quit()
 
-argList = [  # THIS IS ALL COMMANDS AND ARGS
-    {
-        'arg': ['-u', '-update'],
-        'funct': update_UI,
-    },
-    {
-        'arg': ['-q', '-quit'],
-        'funct': quit,
-    },
-]
+def print_help():
+    help = """
+    Useage:
 
+    -u --update     update python GUI files from the UI files
+    -q --quit       quit immediately (usually run with update)
+    -i --install    force install dependancies
+    -h --help       show this. You're already here. 
+
+    for other help, type "help" in the output text box
+    """
+    print(help)
+    quit()
+
+arg_list = {
+    '-u': update_UI,
+    '--update':update_UI,
+    '-q':quit,
+    '--quit':quit,
+    '-i': force_install, 
+    '--install':force_install,
+    '-h': print_help,
+    '--help':print_help,
+}
 
 def execute():
     print("STARTING SERIAL KILLER")
     for sysarg in sys.argv[1:]:
-        print("Argument", sysarg)
-        for argument in argList:
-            if sysarg in argument['arg']:
-                funct = argument['funct']
-                funct()
+        if sysarg in arg_list: 
+            arg_list[sysarg]()
+        else: 
+            dprint(f"ERROR: ARG {sysarg} INVALID\n", color='\33[31m')
+        
     app = QtWidgets.QApplication([sys.argv])
     main = mainWindow.MainWindow()
-    main.resize(550, 700)
+    main.resize(600, 700)
     main.show()
     status = app.exec_()
     sys.exit(status)
