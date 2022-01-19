@@ -199,13 +199,6 @@
        <layout class="QGridLayout" name="gridLayout_3">
         <item row="0" column="0" colspan="4">
          <widget class="QTextEdit" name="terminalport">
-          <property name="font">
-           <font>
-            <family>Segoe UI</family>
-            <pointsize>9</pointsize>
-            <kerning>true</kerning>
-           </font>
-          </property>
           <property name="cursor" stdset="0">
            <cursorShape>IBeamCursor</cursorShape>
           </property>
@@ -216,7 +209,11 @@
            <bool>false</bool>
           </property>
           <property name="styleSheet">
-           <string notr="true">background-color: rgb(200, 200, 200);</string>
+           <string notr="true">color: rgb(255, 255, 255);
+background-color: rgb(50, 50, 50);</string>
+          </property>
+          <property name="frameShape">
+           <enum>QFrame::StyledPanel</enum>
           </property>
           <property name="verticalScrollBarPolicy">
            <enum>Qt::ScrollBarAlwaysOn</enum>
@@ -660,7 +657,7 @@ color: rgb(255, 255, 255);</string>
            <number>1</number>
           </property>
           <property name="currentIndex">
-           <number>0</number>
+           <number>1</number>
           </property>
           <widget class="QWidget" name="toolBoxPagePorts">
            <property name="geometry">
@@ -773,9 +770,9 @@ color: rgb(255, 255, 255);</string>
            <property name="geometry">
             <rect>
              <x>0</x>
-             <y>0</y>
-             <width>246</width>
-             <height>184</height>
+             <y>-18</y>
+             <width>453</width>
+             <height>212</height>
             </rect>
            </property>
            <attribute name="label">
@@ -1064,6 +1061,16 @@ color: rgb(255, 255, 255);</string>
               </property>
               <property name="placeholderText">
                <string>n/a</string>
+              </property>
+             </widget>
+            </item>
+            <item row="7" column="1">
+             <widget class="QFontComboBox" name="fontComboBox"/>
+            </item>
+            <item row="7" column="0">
+             <widget class="QLabel" name="label_15">
+              <property name="text">
+               <string>Terminal Font</string>
               </property>
              </widget>
             </item>

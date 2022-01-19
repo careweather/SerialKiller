@@ -3,7 +3,9 @@
 #
 import subprocess
 import sys
-import os 
+import os
+
+from PyQt5.QtGui import QIcon 
 
 install_directory = os.path.split(os.path.abspath(__file__))[0] # path of the install folder 
 
@@ -102,6 +104,7 @@ def execute():
         
     app = QtWidgets.QApplication([sys.argv])
     main = mainWindow.MainWindow()
+    main.setWindowIcon(QIcon("img/SK_Icon.png"))
     main.resize(600, 700)
     main.show()
     status = app.exec_()

@@ -21,6 +21,7 @@ class ScriptWorker(QObject):
         self.loopStart = 0
         self.loopNumb = 0
         self.loopActive = False
+        self.totalLoops = 0
         self.inp:str = None 
         self.use_python = False
 
@@ -88,9 +89,14 @@ class ScriptWorker(QObject):
 
     def evaluate(self, line_input:str): 
         if line_input:
-            if line_input.startswith("#"): # Command 
+            if "@L" in line_input: 
+                line_input = line_input.replace("@L", str(self.totalLoops - self.loopNumb))
+            if "#" in line_input: # Command 
                 cmds = line_input.split("#")[1:]
-                for cmd in cmds: 
+                for cmd in cmds:
+                    if "#L" in line_input: 
+                        line_input.replace("#L", str(self.loopNumb))
+                        self.send(line_input)
                     if cmd.startswith("name="): 
                         self.line.emit(f"script -s {cmd[5:].strip()}")
                     elif cmd.startswith("delay="): 
@@ -102,6 +108,7 @@ class ScriptWorker(QObject):
                         self.print(cmd[5:])
                     elif cmd.startswith("loop="): 
                         self.loopNumb = int(cmd[5:])
+                        self.totalLoops = self.loopNumb
                         self.loopStart=self.currentLine
                     elif cmd.startswith("pause="):
                         self.pause(int(cmd[6:]))

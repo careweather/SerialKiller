@@ -13,11 +13,6 @@ import re
 
 from pyqtgraph.functions import intColor
 
-# pyqtgraph.examples.run()
-
-# quit()
-# import initExample ## Add path to library (just for examples; you do not need this)
-
 """Data Types: 
 Single Value:
 1
@@ -59,7 +54,7 @@ class lineGraph(pg.PlotItem):
         self.all_curves[item]['y'] = np.zeros(shape = self.total_len)
         self.all_curves[item]['x'] = np.zeros(shape = self.total_len)
         thisColor = intColor(self.lastColor)
-        self.lastColor = self.lastColor + 4
+        self.lastColor += 100
         self.lineDict[item]= self.plot(self.all_curves[item]['x'],self.all_curves[item]['y'], pen=thisColor)
         self.legend.addItem(self.lineDict[item], name=item)
         self.n_items = self.n_items + 1 
@@ -200,11 +195,17 @@ class graphWidget(pg.GraphicsLayoutWidget):
             print("CLEARED")
             self.graph.all_curves = {}
             self.graph.lineDict = {}
-            self.removeItem(self.graph)
-            self.graph_type = None
+            self.graph.clearPlots()
             
+            self.removeItem(self.graph)
+            self.graph = None
 
-    def add_kv_graph(self, targets = None, len = 100): 
+            self.targets = None
+            self.graph_type = None
+
+            self.current_dict = {}
+            
+    def add_kv_graph(self, targets:str = None, len = 100): 
         print('self.type: ' , str(self.graph_type), type(self.graph_type))
         if targets: 
             targets = targets.replace(" ", "")

@@ -13,7 +13,7 @@ from parser_f import Parser, Command
 from gui.GUI_MAIN import Ui_MainWindow  # Local
 from gui.GUI_HELP import Ui_Help
 from PyQt5.QtCore import QObject, QThread, flush, pyqtSignal
-from PyQt5.QtGui import QIntValidator, QTextCursor,QSyntaxHighlighter
+from PyQt5.QtGui import QIntValidator, QTextCursor,QSyntaxHighlighter, QFont
 from PyQt5 import QtGui, QtWidgets
 import serialHandler as SH
 
@@ -41,7 +41,7 @@ colorYellow = QtGui.QColor(166, 157, 0)
 colorBlue = QtGui.QColor(0, 0, 255)
 colorLightBlue = QtGui.QColor(105, 207, 255)
 colorWhite = QtGui.QColor(255, 255, 255)
-colorDarkGrey = QtGui.QColor(50, 50, 50)
+colorDarkGrey = QtGui.QColor(79, 79, 79)
 colorLightGrey = QtGui.QColor(225, 225, 225)
 
 _colorBlack = "rgb(0, 0, 0)"
@@ -164,7 +164,7 @@ class RescanWorker(QObject):  # THIS RESCANS FOR CHANGING PORTS. ASYNC
                     lastPorts = ports
                     vprint(str(ports) + "\n", color=CGREEN)
                     self.updatedPorts.emit(ports)
-                time.sleep(2)
+                time.sleep(.5)
             except Exception as E:
                 print("Rescan worker Error", E)
                 self.disconnected.emit(False)
@@ -214,6 +214,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.current_port = ''  # Port Currently Active
         self.historyIndex = 0
         self.currentIndex = 0
+        self.user_font = "Courier"
         self.lastLine = ""
         self.history = []
         self.keyCmds = {}
@@ -221,6 +222,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.connect_ui()
         self.config_commands()
         self.load_settings()
+        self.ui.terminalport.setFont(QFont(self.user_font, 10))
         self.input_char = self.ui.lineEdit_receivedText.text()
         self.info_char = self.ui.lineEdit_infoText.text()
         self.warning_char = self.ui.lineEdit_warningText.text()
@@ -228,6 +230,8 @@ class MainWindow(QtWidgets.QMainWindow):
         self.output_char = self.ui.lineEdit_sentText.text()
         self.update_ports()
         self.command_char = self.ui.lineEdit_commandChar.text()
+        self.use_newline = self.ui.checkBox_newline.isChecked()
+        self.use_return = self.ui.checkBox_return.isChecked()
         self.auto_rescan_toggled()
 
     def connect_ui(self): 
@@ -255,6 +259,8 @@ class MainWindow(QtWidgets.QMainWindow):
         self.ui.tableWidget_controls.setRowCount(1)
         self.ui.tableWidget_controls.setColumnWidth(0,50)
         self.ui.button_browse.clicked.connect(self.set_log_path)
+        self.ui.fontComboBox.currentFontChanged.connect(lambda: self.save_setting("font", self.ui.fontComboBox.currentFont().family()))
+        
         for rate in baudRates:
             self.ui.combobox_baud.addItem(str(rate))
         self.ui.combobox_baud.setCurrentIndex(8)  # 115200
@@ -453,6 +459,10 @@ class MainWindow(QtWidgets.QMainWindow):
                 self.ui.lineEdit_infoText.setText(user_settings['info_char'])
                 self.ui.lineEdit_warningText.setText(user_settings['warning_char'])
                 self.ui.lineEdit_sentText.setText(user_settings['output_char'])
+                self.ui.checkBox_return.setChecked(user_settings['use_return'])
+                self.ui.checkBox_newline.setChecked(user_settings['use_newline'])
+                self.user_font = user_settings['font']
+                self.ui.fontComboBox.setCurrentText(self.user_font)
                 if (user_settings["port"] in all_ports):
                     self.ui.combobox_port.setCurrentText(user_settings["port"])
                 keys = user_settings['keys']
@@ -488,7 +498,10 @@ class MainWindow(QtWidgets.QMainWindow):
         user_settings['info_char'] = self.ui.lineEdit_infoText.text()
         user_settings['error_char'] = self.ui.lineEdit_errorText.text()
         user_settings['warning_char'] = self.ui.lineEdit_warningText.text()
+        user_settings['use_newline'] = self.ui.checkBox_newline.isChecked()
+        user_settings['use_return'] = self.ui.checkBox_return.isChecked()
         user_settings['keys'] = self.getKeyCmds()
+        user_settings['font'] = self.ui.fontComboBox.currentFont().family()
         vprint("[SAVING SETTINGS]\n", user_settings, color=CGREEN)
         with open("user_settings.json", "w") as file:
             json.dump(user_settings, file)
@@ -511,7 +524,7 @@ class MainWindow(QtWidgets.QMainWindow):
             if self.ui.checkbox_autoscroll.isChecked():
                 self.ui.terminalport.ensureCursorVisible()
         if type == TYPE_INPUT:
-            self.ui.terminalport.setTextColor(colorBlack)
+            self.ui.terminalport.setTextColor(colorWhite)
             add(text)
             loggingTools.addLine(text)
             if self.plotter_active: 
@@ -524,7 +537,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 self.ui.widget_plot.update(text)
             text = self.output_char + text
             vprint(text, color=CBLUE)
-            self.ui.terminalport.setTextColor(colorBlue)
+            self.ui.terminalport.setTextColor(colorLightBlue)
             add(text)
             loggingTools.addLine(text)
             return
@@ -580,7 +593,12 @@ class MainWindow(QtWidgets.QMainWindow):
             self.add_text(result, type=TYPE_ERROR)
         if result != "KEYWORD INVALID":
             return
-        text += '\n'
+        if self.ui.checkBox_return.isChecked():
+            text += '\r'
+            #print("return")
+        if self.ui.checkBox_newline.isChecked():
+            text += '\n'
+        #print(repr(text))
         if self.is_connected:
             SH.sendString(text)
         else:
@@ -653,6 +671,7 @@ class MainWindow(QtWidgets.QMainWindow):
         if baud in baudRates: 
             self.debug_text(f"Baud Set to {baud}")
             self.ui.combobox_baud.setCurrentText(str(baud))
+            self.active_baud = baud
         else: 
             self.debug_text(f"Baud Rate {baud} Invalid!")
          
@@ -717,7 +736,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 self.ui.combobox_port.setCurrentText(self.target_port)
                 self.ui.terminalport.setEnabled(True)
                 self.ui.terminalport.setStyleSheet(
-                    f"background-color:{_colorWhite}")
+                    f"background-color:{_colorBlack}")
                 self.ui.button_connect.setStyleSheet(
                     f"background-color:{_colorGreen}")
                 self.ui.button_connect.setText("Disconnect")
@@ -766,7 +785,7 @@ class MainWindow(QtWidgets.QMainWindow):
             self.ui.button_connect.setStyleSheet(
                 f"background-color:{_colorYellow}")
             self.ui.terminalport.setStyleSheet(
-                f"background-color: {_colorLightGrey}")
+                f"background-color: {_colorDarkGrey}")
             if intentional:
                 self.ui.checkbox_autoReconnect.setChecked(False)
         else:
@@ -1022,7 +1041,7 @@ class MainWindow(QtWidgets.QMainWindow):
             self.ui.lineEdit_keys.setEnabled(False)
             self.ui.comboBox_type.setEnabled(False)
             self.ui.lineEdit_keys.setText(str(targets))
-            self.ui.tabWidget.setCurrentIndex(2)
+            self.ui.tabWidget.setCurrentIndex(3)
             self.ui.button_startGraph.setText("Stop Graph")
             self.plotter_active = True
         if kv: 

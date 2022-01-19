@@ -28,13 +28,12 @@ def getPorts_linux():
 
 def getPorts(): 
     if _platform == "Windows": 
-        stream = os.popen("wmic path Win32_SerialPort Get DeviceID")
-        tokens = stream.read().splitlines()
-        return_ports = []
-        for token in tokens: 
-            if token.startswith("COM"):
-                return_ports.append(token.strip())
-        return return_ports
+        stream = os.popen('py -m serial.tools.list_ports -q')
+        inputStream = stream.read()
+        inputStream = inputStream.replace(" ", "")
+        serialPorts = inputStream.split('\n')
+        serialPorts = list(filter(None, serialPorts))
+        return serialPorts
     else: 
         return getPorts_linux()
     
