@@ -4,37 +4,15 @@
 import subprocess
 import sys
 import os
+from sk_tools import *
 
 from PyQt5.QtGui import QIcon 
-
-install_directory = os.path.split(os.path.abspath(__file__))[0] # path of the install folder 
-
-def dprint(input, *args, color="", enabled=False):
-    if enabled:
-        dprint.enable = True
-    if dprint.enable:
-        print(color, end="", flush=True)
-        print(input, *args, end="", flush=True)
-        print(ENDC, end="", flush=True)
-
-dprint.enable = True
-
-def vprint(input, *args, color="", enabled=None):
-    if enabled:
-        vprint.enable = True
-    if vprint.enable:
-        print(color, end="", flush=True)
-        print(input, *args, end="", flush=True)
-        print(ENDC, end="", flush=True)
-
-
-vprint.enable = True
 
 try:
     import mainWindow
     from PyQt5 import QtGui, QtWidgets
 except Exception as E:
-    print("\n\nERROR:", E)
+    colorPrint("\nERROR", E, color = 'red')
     import installer
     print("You might be missing one of these modules:")
     for lib in installer.lib_deps:
@@ -53,8 +31,6 @@ updateCommands = [
     "pyuic5 -o gui/GUI_LOG.py ui_files/logViewer.ui",
     "pyuic5 -o gui/GUI_HELP.py ui_files/helpPopup.ui"
 ]
-
-ENDC = '\033[0m '
 
 
 def update_UI():

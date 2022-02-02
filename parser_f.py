@@ -1,11 +1,4 @@
-
-DEBUG_PRINT = False
-
-
-def dprint(input, *args): 
-    if DEBUG_PRINT: 
-        print(input, *args)
-
+from sk_tools import *
 
 class Command:
     def __init__(self, keyword:str, func, default_kw = None, default_type = str, default_required = False, help = None) -> None:

@@ -5,7 +5,6 @@ import json
 import time 
 from datetime import datetime
 import os
-from main import vprint, dprint, install_directory
 from PyQt5.QtWidgets import QFileDialog, QTableWidgetItem
 import loggingTools
 from scripting import ScriptWorker
@@ -16,6 +15,8 @@ from PyQt5.QtCore import QObject, QThread, flush, pyqtSignal
 from PyQt5.QtGui import QIntValidator, QTextCursor,QSyntaxHighlighter, QFont
 from PyQt5 import QtGui, QtWidgets
 import serialHandler as SH
+from sk_tools import * 
+from termcolor import cprint
 
 KEY_SHIFT = 33554432
 KEY_UP = 16777235
@@ -56,84 +57,10 @@ _colorLightGrey = "rgb(225, 225, 225)"
 
 baudRates = [1200, 1800, 2400, 4800, 9600, 19200, 38400, 57600, 115200, 256000]
 
-CBLACK  = '\33[30m'
-CRED    = '\33[31m'
-CGREEN  = '\33[32m'
-CYELLOW = '\33[33m'
-CBLUE   = '\33[34m'
-CCYAN   = '\033[96m' 
-CVIOLET = '\33[35m'
-CBEIGE  = '\33[36m'
-CWHITE  = '\33[37m'
-
-BOLD = '\033[1m'
-UNDERLINE = '\033[4m'
-
-script_help = '''
-**** SCRIPT HELP ****
-Press ESCAPE or CTRL+C to stop a script mid-execution
-
-ARGUMENTS:
-(none)\t run script in the script tab
--o [name]\t open a script. Optional: open "name".txt
--r \t run the script you are opening
--s [name] \t save current script. Optional: as "name".txt
--d [name] \t delete a script. Optional: delete "name".txt if it exists. 
--n [name]\t start new script. Optional: include "name" line
--t \t jump to script tab
--ls \t display all scripts in the script dir
--h\t display this help message
-
-SCRIPT SPECIFIC KEYWORDS:
-#name=[myName]\tsave the script as "myName".txt every time it's run
-#delay=[numb]\tchange the delay between lines to "numb" milliseconds
-#loop=[numb]\t\tloop until endloop [numb] times. 
-#endloop\t\tend loop and continue with script
-#wait\t\twait for serial input before continuing
-#stop\t\texit script at this line
-# '''
-
-log_help = '''LOG Help
-ARGUMENTS:
-(none)\topen the last log file avaliable
--o\topen a log file from the directory
--n [name]\tset the connection name to 'name'
--a [name]\tarchive the current log. Optional: archive as 'name'
--h\tdisplay this help message'''
-
-plot_help = '''PLOT HELP
--kv\tstart the plotter in keyword-value mode
--a\tstart the plotter in array mode
--t [targets,]\tset the graph target values
--l [length]\tset a max length of 'length'
--p\tpause the plot
--r\tresume plotting
--c\tclear the plotter (and stop the plot)
--h\tdisplay this help message'''
-
-terminal_placeholder = '''***Serial from device will appear here***
-
-Type "help" for detailed use instructions'''
-
 
 def get_timestamp(): 
     ts = datetime.now().strftime("%H:%M:%S.%f")[:-3]
     return ts
-    
-def add_timestamp(text:str): 
-    ts = get_timestamp()
-    lines = text.splitlines(True)
-    print('lines: ' , str(lines), type(lines))
-    ret = ""
-    if len(lines) > 1: 
-        for line in lines[:-1]: 
-            ret = ret + ts + "| " + line 
-        #ret += lines[-1]
-    else: 
-        for line in lines: 
-            ret = ret + ts + "| " + line 
-    print(ret)
-    return ret
 
 class HelpPopup(QtWidgets.QDialog):
     def __init__(self):
@@ -162,7 +89,7 @@ class RescanWorker(QObject):  # THIS RESCANS FOR CHANGING PORTS. ASYNC
                 ports = SH.getPorts()
                 if(ports != lastPorts):
                     lastPorts = ports
-                    vprint(str(ports) + "\n", color=CGREEN)
+                    vprint(str(ports) + "\n", color='green')
                     self.updatedPorts.emit(ports)
                 time.sleep(.5)
             except Exception as E:
@@ -208,7 +135,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.rescan_active = False
         self.plotter_active = False
         self.all_ports = []
-        self.cwd = install_directory
+        self.cwd = INSTALL_FOLDER
         self.log_dir = "/logs/"
         self.script_dir = self.cwd + "/scripts/"
         self.current_port = ''  # Port Currently Active
@@ -236,6 +163,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def connect_ui(self): 
         self.setWindowIcon(QtGui.QIcon('img/SK_Icon.png'))
+        self.ui.textEdit_script.setPlaceholderText(script_placeholder)
         self.ui.terminalport.setPlaceholderText(terminal_placeholder)
         self.ui.button_clear.clicked.connect(self.clear_terminal)
         self.ui.button_send.clicked.connect(self.send_clicked)
@@ -268,6 +196,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.ui.lineEdit_input.setFocus()
         #self.ui.checkbox_timestamp.setEnabled(True)
         self.ui.checkbox_timestamp.setCheckable(True) # disable for now
+        
 
     def config_commands(self): 
         self.parser = Parser()
@@ -407,7 +336,6 @@ class MainWindow(QtWidgets.QMainWindow):
     def keyboard_control_clicked(self, force = 0): 
         dprint("keyboard_en", self.keyboard_enabled)
         if force: 
-            dprint("KEYBOARD FORCE")
             self.keyboard_enabled = False
         if self.keyboard_enabled == False: 
             self.keyboard_enabled = True
@@ -430,7 +358,6 @@ class MainWindow(QtWidgets.QMainWindow):
             if self.ui.tableWidget_controls.item(row,0) is not None: 
                 if self.ui.tableWidget_controls.item(row,1) is not None: 
                     keyCmds[self.ui.tableWidget_controls.item(row,0).text()] = self.ui.tableWidget_controls.item(row,1).text()
-        #print(keyCmds)
         return keyCmds
 
     def keyboardControl(self):
@@ -446,7 +373,7 @@ class MainWindow(QtWidgets.QMainWindow):
             
     def load_settings(self): # import and apply settings from json
         try:
-            with open("user_settings.json", "r") as file:
+            with open("resc/user_settings.json", "r") as file:
                 user_settings = json.load(file)
                 self.ui.lineEdit_commandChar.setText(user_settings['commandChar'])
                 if os.path.exists(user_settings['logpath']): 
@@ -508,7 +435,7 @@ class MainWindow(QtWidgets.QMainWindow):
         user_settings['use_return'] = self.ui.checkBox_return.isChecked()
         user_settings['keys'] = self.getKeyCmds()
         user_settings['font'] = self.ui.fontComboBox.currentFont().family()
-        vprint("[SAVING SETTINGS]\n", user_settings, color=CGREEN)
+        vprint("[SAVING SETTINGS]\n", user_settings, color='green')
         with open("user_settings.json", "w") as file:
             json.dump(user_settings, file)
         self.debug_text("All Settings Saved")
@@ -525,7 +452,8 @@ class MainWindow(QtWidgets.QMainWindow):
         self.ui.terminalport.moveCursor(QTextCursor.End)
         def add(text_to_add:str): # add subfunction
             if self.ui.checkbox_timestamp.isChecked(): 
-                text_to_add = add_timestamp(text_to_add)
+                pass # TODO 
+                
             self.ui.terminalport.insertPlainText(text_to_add)  # add to terminal
             if self.ui.checkbox_autoscroll.isChecked():
                 self.ui.terminalport.ensureCursorVisible()
@@ -542,26 +470,26 @@ class MainWindow(QtWidgets.QMainWindow):
             if self.plotter_active: 
                 self.ui.widget_plot.update(text)
             text = self.output_char + text
-            vprint(text, color=CBLUE)
+            vprint(text, color='cyan')
             self.ui.terminalport.setTextColor(colorLightBlue)
             add(text)
             loggingTools.addLine(text)
             return
         elif type == TYPE_INFO:
             text = self.info_char + text + "\n"
-            vprint(text, color=CGREEN)
+            vprint(text, color='green')
             self.ui.terminalport.setTextColor(colorGreen)
             add(text)
             return
         elif type == TYPE_ERROR:
             text = self.error_char + text + "\n"
-            vprint(text, color=CRED)
+            vprint(text, color='red')
             self.ui.terminalport.setTextColor(colorRed)
             add(text)
             return
         elif type == TYPE_WARNING:
             text = self.warning_char + text + "\n"
-            vprint(text, color=CYELLOW)
+            vprint(text, color='yellow')
             self.ui.terminalport.setTextColor(colorYellow)
             add(text)
             return
@@ -583,8 +511,8 @@ class MainWindow(QtWidgets.QMainWindow):
     def send_clicked(self):
         text = self.ui.lineEdit_input.text()
         self.ui.lineEdit_input.clear()
-
         self.update_history(text)
+
         if ("$UTS") in text:
             text = text.replace("$UTS", str(int(time.time())))
         command_char = self.ui.lineEdit_commandChar.text()
@@ -604,10 +532,8 @@ class MainWindow(QtWidgets.QMainWindow):
             return
         if self.ui.checkBox_return.isChecked():
             text += '\r'
-            #print("return")
         if self.ui.checkBox_newline.isChecked():
             text += '\n'
-        #print(repr(text))
         if self.is_connected:
             SH.sendString(text)
         else:
@@ -619,7 +545,7 @@ class MainWindow(QtWidgets.QMainWindow):
         if platform.system() == 'Windows':
             subprocess.call(f'start pythonw.exe .\main.py', shell=True)
         elif platform.system() == 'Linux':
-            subprocess.call(f'python3 {install_directory}/main.py', shell=True) 
+            subprocess.call(f'python3 {INSTALL_FOLDER}/main.py', shell=True) 
 
     def debug_text(self, text="", type=TYPE_INFO):
         if type == TYPE_WARNING:
@@ -641,7 +567,7 @@ class MainWindow(QtWidgets.QMainWindow):
             self.all_ports = ports
         else: 
             self.all_ports = SH.getPorts()
-            vprint(f"Ports: {self.all_ports}\n", color = CGREEN)
+            vprint(f"Ports: {self.all_ports}\n", color = 'green')
             self.debug_text(f"Found Ports: {self.all_ports}")
         self.ui.combobox_port.clear()
         for port in self.all_ports:
@@ -702,9 +628,9 @@ class MainWindow(QtWidgets.QMainWindow):
         self.ui.checkBox_xonxoff.setChecked(xonxoff)
         self.ui.checkBox_dsrdtr.setChecked(dsrdtr)
         self.ui.comboBox_parity.setCurrentText(parity)
-        vprint("Connecting to:", target, color=CGREEN)
+        vprint("Connecting to:", target, color='green')
         if intentional:
-            vprint('self.current_port: ', str(self.current_port), CGREEN)
+            vprint('self.current_port: ', str(self.current_port), 'green')
             if target:
                 print(f"TARGET: ({target})")
                 if target in self.all_ports: 
@@ -1051,7 +977,7 @@ class MainWindow(QtWidgets.QMainWindow):
             self.ui.comboBox_type.setEnabled(False)
             self.ui.lineEdit_keys.setText(str(targets))
             self.ui.tabWidget.setCurrentIndex(3)
-            self.ui.button_startGraph.setText("Stop Graph")
+            self.ui.button_startGraph.setText("Stop Plot")
             self.plotter_active = True
         if kv: 
             self.debug_text(f"Started Plot in Key-Value mode")
@@ -1065,7 +991,7 @@ class MainWindow(QtWidgets.QMainWindow):
             return
         if clear: 
             self.ui.button_startGraph.setStyleSheet(f"")
-            self.ui.button_startGraph.setText("Start Graph")
+            self.ui.button_startGraph.setText("Start Plot")
             self.ui.lineEdit_size.setEnabled(True)
             self.ui.lineEdit_keys.setEnabled(True)
             self.ui.comboBox_type.setEnabled(True)

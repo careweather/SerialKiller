@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>512</width>
-    <height>630</height>
+    <width>595</width>
+    <height>754</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -181,7 +181,7 @@
        <enum>QTabWidget::Rounded</enum>
       </property>
       <property name="currentIndex">
-       <number>4</number>
+       <number>1</number>
       </property>
       <property name="elideMode">
        <enum>Qt::ElideNone</enum>
@@ -366,7 +366,7 @@ background-color: rgb(50, 50, 50);</string>
            </font>
           </property>
           <property name="styleSheet">
-           <string notr="true">background-color: rgb(10, 10, 10);
+           <string notr="true">background-color: rgb(15, 0, 102);
 color: rgb(255, 255, 255);</string>
           </property>
           <property name="tabStopDistance">
@@ -376,7 +376,7 @@ color: rgb(255, 255, 255);</string>
            <number>1</number>
           </property>
           <property name="placeholderText">
-           <string>Type each command on a new line here</string>
+           <string>&lt;replace me&gt;</string>
           </property>
          </widget>
         </item>
@@ -489,12 +489,89 @@ color: rgb(255, 255, 255);</string>
           </property>
          </widget>
         </item>
-        <item row="1" column="0">
+        <item row="3" column="0">
+         <widget class="QGroupBox" name="groupBox_plotActions">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+          <property name="maximumSize">
+           <size>
+            <width>16777215</width>
+            <height>45</height>
+           </size>
+          </property>
+          <property name="title">
+           <string/>
+          </property>
+          <layout class="QGridLayout" name="gridLayout_15">
+           <property name="leftMargin">
+            <number>5</number>
+           </property>
+           <property name="topMargin">
+            <number>5</number>
+           </property>
+           <property name="rightMargin">
+            <number>5</number>
+           </property>
+           <property name="spacing">
+            <number>5</number>
+           </property>
+           <item row="0" column="0">
+            <widget class="QPushButton" name="pushButton_helpGraph">
+             <property name="text">
+              <string>Help</string>
+             </property>
+            </widget>
+           </item>
+           <item row="0" column="1">
+            <spacer name="horizontalSpacer_8">
+             <property name="orientation">
+              <enum>Qt::Horizontal</enum>
+             </property>
+             <property name="sizeHint" stdset="0">
+              <size>
+               <width>40</width>
+               <height>20</height>
+              </size>
+             </property>
+            </spacer>
+           </item>
+           <item row="0" column="7">
+            <widget class="QPushButton" name="button_startGraph">
+             <property name="styleSheet">
+              <string notr="true">background-color: rgb(232, 232, 0);</string>
+             </property>
+             <property name="text">
+              <string>Start Plot</string>
+             </property>
+            </widget>
+           </item>
+           <item row="0" column="5">
+            <widget class="QPushButton" name="button_clearGraph">
+             <property name="text">
+              <string>Clear</string>
+             </property>
+            </widget>
+           </item>
+           <item row="0" column="6">
+            <widget class="QPushButton" name="pushButton_pauseGraph">
+             <property name="text">
+              <string>Pause</string>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </widget>
+        </item>
+        <item row="0" column="0">
          <widget class="QGroupBox" name="groupBox_4">
           <property name="minimumSize">
            <size>
             <width>0</width>
-            <height>60</height>
+            <height>0</height>
            </size>
           </property>
           <property name="maximumSize">
@@ -504,14 +581,14 @@ color: rgb(255, 255, 255);</string>
            </size>
           </property>
           <property name="title">
-           <string>Plot Settings</string>
+           <string/>
           </property>
           <layout class="QGridLayout" name="gridLayout_12">
            <property name="leftMargin">
             <number>5</number>
            </property>
            <property name="topMargin">
-            <number>5</number>
+            <number>3</number>
            </property>
            <property name="rightMargin">
             <number>5</number>
@@ -522,31 +599,7 @@ color: rgb(255, 255, 255);</string>
            <property name="spacing">
             <number>5</number>
            </property>
-           <item row="0" column="6">
-            <widget class="QLineEdit" name="lineEdit_size">
-             <property name="maximumSize">
-              <size>
-               <width>80</width>
-               <height>16777215</height>
-              </size>
-             </property>
-            </widget>
-           </item>
-           <item row="0" column="0">
-            <widget class="QLabel" name="label_2">
-             <property name="text">
-              <string>Type:</string>
-             </property>
-            </widget>
-           </item>
-           <item row="0" column="2">
-            <widget class="QLabel" name="label_9">
-             <property name="text">
-              <string>Keys:</string>
-             </property>
-            </widget>
-           </item>
-           <item row="0" column="4">
+           <item row="1" column="6">
             <spacer name="horizontalSpacer_4">
              <property name="orientation">
               <enum>Qt::Horizontal</enum>
@@ -559,28 +612,33 @@ color: rgb(255, 255, 255);</string>
              </property>
             </spacer>
            </item>
-           <item row="0" column="3">
-            <widget class="QLineEdit" name="lineEdit_keys">
-             <property name="placeholderText">
-              <string>ex: key1,key2,key3</string>
+           <item row="1" column="4">
+            <widget class="QLineEdit" name="lineEdit_size">
+             <property name="maximumSize">
+              <size>
+               <width>60</width>
+               <height>16777215</height>
+              </size>
              </property>
             </widget>
            </item>
-           <item row="0" column="1">
+           <item row="0" column="4">
+            <widget class="QLabel" name="label_11">
+             <property name="text">
+              <string># Points:</string>
+             </property>
+            </widget>
+           </item>
+           <item row="1" column="1">
             <widget class="QComboBox" name="comboBox_type">
              <item>
               <property name="text">
-               <string>None</string>
-              </property>
-             </item>
-             <item>
-              <property name="text">
-               <string>Single Value</string>
-              </property>
-             </item>
-             <item>
-              <property name="text">
                <string>Key-Value</string>
+              </property>
+             </item>
+             <item>
+              <property name="text">
+               <string>Single-Value</string>
               </property>
              </item>
              <item>
@@ -590,17 +648,51 @@ color: rgb(255, 255, 255);</string>
              </item>
             </widget>
            </item>
-           <item row="0" column="7">
-            <widget class="QPushButton" name="button_startGraph">
+           <item row="0" column="1">
+            <widget class="QLabel" name="label_2">
              <property name="text">
-              <string>Start Graph</string>
+              <string>Type:</string>
              </property>
             </widget>
            </item>
-           <item row="0" column="5">
-            <widget class="QLabel" name="label_11">
+           <item row="1" column="3">
+            <widget class="QLineEdit" name="lineEdit_keys">
+             <property name="placeholderText">
+              <string>ex: key1,key2,key3</string>
+             </property>
+            </widget>
+           </item>
+           <item row="0" column="3">
+            <widget class="QLabel" name="label_9">
              <property name="text">
-              <string>Points</string>
+              <string>Keys (comma separate):</string>
+             </property>
+            </widget>
+           </item>
+           <item row="1" column="5">
+            <widget class="QComboBox" name="comboBox">
+             <property name="minimumSize">
+              <size>
+               <width>79</width>
+               <height>0</height>
+              </size>
+             </property>
+             <item>
+              <property name="text">
+               <string>Max/Min</string>
+              </property>
+             </item>
+             <item>
+              <property name="text">
+               <string>Max/Min Visible</string>
+              </property>
+             </item>
+            </widget>
+           </item>
+           <item row="0" column="5">
+            <widget class="QLabel" name="label_16">
+             <property name="text">
+              <string>Limits:</string>
              </property>
             </widget>
            </item>
@@ -664,8 +756,8 @@ color: rgb(255, 255, 255);</string>
             <rect>
              <x>0</x>
              <y>0</y>
-             <width>470</width>
-             <height>194</height>
+             <width>175</width>
+             <height>123</height>
             </rect>
            </property>
            <attribute name="label">
@@ -770,9 +862,9 @@ color: rgb(255, 255, 255);</string>
            <property name="geometry">
             <rect>
              <x>0</x>
-             <y>-18</y>
-             <width>453</width>
-             <height>212</height>
+             <y>0</y>
+             <width>553</width>
+             <height>318</height>
             </rect>
            </property>
            <attribute name="label">
@@ -1081,8 +1173,8 @@ color: rgb(255, 255, 255);</string>
             <rect>
              <x>0</x>
              <y>0</y>
-             <width>454</width>
-             <height>210</height>
+             <width>451</width>
+             <height>209</height>
             </rect>
            </property>
            <attribute name="label">
@@ -1258,8 +1350,8 @@ color: rgb(255, 255, 255);</string>
             <rect>
              <x>0</x>
              <y>0</y>
-             <width>148</width>
-             <height>153</height>
+             <width>146</width>
+             <height>144</height>
             </rect>
            </property>
            <attribute name="label">
@@ -1492,7 +1584,7 @@ color: rgb(255, 255, 255);</string>
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>512</width>
+     <width>595</width>
      <height>22</height>
     </rect>
    </property>

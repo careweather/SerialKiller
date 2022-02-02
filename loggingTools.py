@@ -7,11 +7,11 @@ from PyQt5 import QtWidgets
 import logging
 import re
 from installer import install_dependancies
-from main import install_directory
+from sk_tools import * 
 
 today = date.today()
 stringBuff = ""
-log_path = f'{install_directory}/logs'
+log_path = f'{INSTALL_FOLDER}/logs/'
 log_name = f'log-{today}'
 log_extension = '.txt'
 file_name = log_path + log_name + log_extension
@@ -29,7 +29,7 @@ class LogViewer(QtWidgets.QWidget):  # GUI
         self.ui = Ui_logViewer()
         self.ui.setupUi(self)
         text = open(self.logFile).read()
-        last_modified = datetime.datetime.fromtimestamp(
+        last_modified = datetime.fromtimestamp(
             os.path.getmtime(self.logFile))
         self.ui.label_lastUpdated.setText(str(last_modified.strftime('%c')))
         self.ui.logFileWindow.insertPlainText(text)
@@ -112,7 +112,6 @@ def LogViewPopup(self, filename="", latest=False):
         return False
 
     # NON-GUI FUNCTIONS --------------------
-
 
 def startLogger():
     global _started
