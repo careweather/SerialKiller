@@ -89,11 +89,16 @@ class ScriptWorker(QObject):
 
     def evaluate(self, line_input:str): 
         if line_input:
+            if line_input.startswith("//"):
+                #self.print(line_input[2:])
+                return
             if "@L" in line_input: 
                 line_input = line_input.replace("@L", str(self.totalLoops - self.loopNumb))
-            if "#" in line_input: # Command 
+            if line_input.startswith("#"): # Command 
                 cmds = line_input.split("#")[1:]
                 for cmd in cmds:
+                    if cmd == "":
+                        continue
                     if "#L" in line_input: 
                         line_input.replace("#L", str(self.loopNumb))
                         self.send(line_input)
@@ -124,8 +129,6 @@ class ScriptWorker(QObject):
                                 self.currentLine = self.loopStart
                     else:
                         self.line.emit(f"#{cmd}")
-            elif line_input.startswith("//"): # Comment 
-                print("Comment: ", line_input[2:])
             else: 
                 self.send(line_input)
                 

@@ -330,8 +330,14 @@ class MainWindow(QtWidgets.QMainWindow):
 
         cmd_table_add = Command("key", self.addTableItem, default_kw='key', default_required=True)
         cmd_table_add.add_argument("s", "send", type=str, required=True)
-        
         self.parser.add_command(cmd_table_add)
+
+        cmd_key_clear = Command("keyclear", self.clearTable)
+        self.parser.add_command(cmd_key_clear)
+
+        self.parser.add_command(Command("keyctrl", self.keyboard_control_clicked))
+
+        
 
     def keyPressEvent(self, keypress: QtGui.QKeyEvent) -> None:
         key = keypress.key()
@@ -508,7 +514,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.debug_text("All Settings Saved")
 
     def add_text(self, text:str, type=TYPE_INPUT):  # add text to terminal
-        if "#" in text: 
+        if text.startswith("#"):
             if type == TYPE_INPUT or type == TYPE_OUTPUT: 
                 lines = text.splitlines()
                 print("possible CMD: ", lines)
@@ -577,7 +583,10 @@ class MainWindow(QtWidgets.QMainWindow):
     def send_clicked(self):
         text = self.ui.lineEdit_input.text()
         self.ui.lineEdit_input.clear()
+
         self.update_history(text)
+        if ("$UTS") in text:
+            text = text.replace("$UTS", str(int(time.time())))
         command_char = self.ui.lineEdit_commandChar.text()
         if command_char and text:
             vprint('command_char: ', str(command_char))
