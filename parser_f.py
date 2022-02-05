@@ -24,7 +24,7 @@ class Command:
         strs = 0 
         return strs 
 
-    def execute(self, input:str):
+    def execute(self, input:str) -> str:
         dprint('input: ' , str(input), type(input))
         args = input.split(" -")
         #print('args: ' , str(args), type(args))

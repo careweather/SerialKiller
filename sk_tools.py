@@ -38,20 +38,22 @@ COLOR_GREEN = QColor(24, 160, 0)
 COLOR_RED = QColor(218, 0, 0)
 COLOR_DARK_YELLOW = QColor(138, 140, 0)
 
-def colorPrint(*args, _color = 'white', **kwargs):
+COLOR_YELLOW = QColor(166, 157, 0)
+
+def colorPrint(*args, color = 'white', **kwargs):
     pstr = ""
     for arg in args:
         pstr += str(arg)
-    cprint(pstr, color=_color, **kwargs)
+    cprint(pstr, color=color, **kwargs)
 
 
 def dprint(*args, color='white', **kwargs):
     if DEBUG_ENABLED:
-        colorPrint(*args, _color = color, **kwargs)
+        colorPrint(*args, color = color, **kwargs)
 
 def vprint(*args, color='white', **kwargs):
     if VERBOSE_ENABLED:
-        colorPrint(*args, _color = color, **kwargs)
+        colorPrint(*args, color = color, **kwargs)
 
 def colorToStyleSheet(color:QColor)->str:
     fmtcolor = f"rgb({color.red()}, {color.green()}, {color.blue()})"
