@@ -92,8 +92,8 @@ class ScriptWorker(QObject):
             if line_input.startswith("//"):
                 #self.print(line_input[2:])
                 return
-            if "@L" in line_input: 
-                line_input = line_input.replace("@L", str(self.totalLoops - self.loopNumb))
+            if "$LOOP" in line_input: 
+                line_input = line_input.replace("$LOOP", str(self.totalLoops - self.loopNumb))
             if line_input.startswith("#"): # Command 
                 cmds = line_input.split("#")[1:]
                 for cmd in cmds:

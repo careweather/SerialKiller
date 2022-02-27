@@ -4,15 +4,14 @@
 import subprocess
 import sys
 import os
-from sk_tools import *
-
-from PyQt5.QtGui import QIcon 
 
 try:
+    from sk_tools import *
+    from PyQt5.QtGui import QIcon
     import mainWindow
     from PyQt5 import QtGui, QtWidgets
 except Exception as E:
-    colorPrint("\nERROR", E, color = 'red')
+    colorPrint("\nERROR", E, color='red')
     import installer
     print("You might be missing one of these modules:")
     for lib in installer.lib_deps:
@@ -26,7 +25,7 @@ except Exception as E:
         print("EXITING...")
         quit()
 
-updateCommands = [
+gui_update_commands = [
     "pyuic5 -o gui/GUI_MAIN.py ui_files/mainWindow.ui",
     "pyuic5 -o gui/GUI_LOG.py ui_files/logViewer.ui",
     "pyuic5 -o gui/GUI_HELP.py ui_files/helpPopup.ui"
@@ -35,49 +34,74 @@ updateCommands = [
 
 def update_UI():
     print("UPDATING FROM UI FILE")
-    for command in updateCommands:
+    for command in gui_update_commands:
+        cprint(f"{command}", 'white', end="  \t", flush=True)
         result = subprocess.call(command, shell=True)
         if not result:
-            print("Success")
+            cprint("SUCCESS", 'green')
+
 
 def force_install():
     import installer
     installer.install_dependancies()
     quit()
 
+
+cl_args = {}
+
 def print_help():
-    help = """
-    Useage:
+    print("Useage:")
 
-    -u --update     update python GUI files from the UI files
-    -q --quit       quit immediately (usually run with update)
-    -i --install    force install dependancies
-    -h --help       show this. You're already here. 
-
-    for other help, type "help" in the output text box
-    """
-    print(help)
+    for arg in cl_args:
+        print(f"\t{arg}\t{cl_args[arg]['help']}")
+    
     quit()
 
-arg_list = {
-    '-u': update_UI,
-    '--update':update_UI,
-    '-q':quit,
-    '--quit':quit,
-    '-i': force_install, 
-    '--install':force_install,
-    '-h': print_help,
-    '--help':print_help,
+
+cl_args = {
+    '-u': {
+        'func': update_UI,
+        'help': "update from the latest .ui files"
+    },
+    '-q': {
+        'func': quit,
+        'help': 'quit immediately'
+    },
+    '-i': {
+        'func': force_install,
+        'help': 'force install all dependancies'
+    },
+    '-h': {
+        'func': print_help,
+        'help': 'print this help message'
+    }
 }
+
+# arg_list = {
+#     '-u': update_UI,
+#     '--update': update_UI,
+#     '-q': quit,
+#     '--quit': quit,
+#     '-i': force_install,
+#     '--install': force_install,
+#     '-h': print_help,
+#     '--help': print_help,
+# }
+
 
 def execute():
     print("STARTING SERIAL KILLER")
-    for sysarg in sys.argv[1:]:
-        if sysarg in arg_list: 
-            arg_list[sysarg]()
-        else: 
-            dprint(f"ERROR: ARG {sysarg} INVALID\n", color='\33[31m')
-        
+
+
+    for arg in sys.argv[1:]:
+        if arg in cl_args:
+            this_arg = cl_args[arg]
+            if 'func' in this_arg:
+                this_arg['func']()
+        else:
+            cprint(f"\nERROR: CL ARG '{arg}' NOT VALID", 'red')
+            quit()
+
     app = QtWidgets.QApplication([sys.argv])
     main = mainWindow.MainWindow()
     main.setWindowIcon(QIcon("img/SK_Icon.png"))

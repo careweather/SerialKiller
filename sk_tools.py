@@ -59,9 +59,7 @@ def colorToStyleSheet(color:QColor)->str:
     fmtcolor = f"rgb({color.red()}, {color.green()}, {color.blue()})"
     return fmtcolor
 
-script_placeholder = '''Each newline is a sent to the device. 
-Lines starting with # are used for configuration
-Type "script -h" for more info'''
+
 
 terminal_placeholder = '''***Serial from device will appear here***
 
@@ -85,11 +83,11 @@ ARGUMENTS:
 -a [name]\tarchive the current log. Optional: archive as 'name'
 -h\tdisplay this help message'''
 
-script_help = '''
+script_help = '''\
 **** SCRIPT HELP ****
 Press ESCAPE or CTRL+C to stop a script mid-execution
 
-ARGUMENTS:
+COMMAND ARGUMENTS:
 (none)\t run script in the script tab
 -o [name]\t open a script. Optional: open "name".txt
 -r \t run the script you are opening
@@ -101,10 +99,21 @@ ARGUMENTS:
 -h\t display this help message
 
 SCRIPT SPECIFIC KEYWORDS:
-#name=[myName]\tsave the script as "myName".txt every time it's run
-#delay=[numb]\tchange the delay between lines to "numb" milliseconds
-#loop=[numb]\t\tloop until endloop [numb] times. 
-#endloop\t\tend loop and continue with script
-#wait\t\twait for serial input before continuing
-#stop\t\texit script at this line
-# '''
+//\t\t\tComment. Ignored. 
+#name=[myName]\t\tsave the script as [myName].txt every time it's run.
+#delay=[numb]\t\tchange the delay between lines to [numb] milliseconds
+#loop=[numb]\t\t\tloop until endloop [numb] times. 
+#loop\t\t\tloop forever
+#endloop\t\t\tsignal the end of a loop
+$LOOP\t\treplaced with the loop number
+#pause=[numb]\t\tpause for [numb] milliseconds 
+#stop\t\tstop script at this line
+'''
+
+
+script_placeholder = script_help
+
+
+'''Each newline is a sent to the device. 
+Lines starting with # are used for configuration
+Type "script -h" for more info'''

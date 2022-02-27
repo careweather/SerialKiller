@@ -15,7 +15,6 @@ log_path = f'{INSTALL_FOLDER}/logs/'
 log_name = f'log-{today}'
 log_extension = '.txt'
 file_name = log_path + log_name + log_extension
-print("log filename:", file_name)
 _started = False
 
 port = ""
