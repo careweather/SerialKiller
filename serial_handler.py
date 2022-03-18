@@ -1,6 +1,7 @@
 import time
 import traceback
 from importlib import reload
+from numpy.core.fromnumeric import sort
 from pyqtgraph.widgets.TreeWidget import TreeWidget
 
 import serial
@@ -9,11 +10,17 @@ from serial.serialutil import (PARITY_EVEN, PARITY_MARK, PARITY_NONE,
                                PARITY_ODD, PARITY_SPACE)
 from termcolor import cprint
 
+from pprint import pprint
+
+import serial.tools.list_ports as list_ports
+
 from sk_tools import *
 
 SER_PRINT = 1
 
 baud_rates = serial.Serial.BAUDRATES
+
+ser = serial.Serial()
 
 
 def serial_debug(*args, color='yellow'):
@@ -33,153 +40,74 @@ class SerialPort(QObject):
     incoming: pyqtSignal = pyqtSignal(str)
     error: pyqtSignal = pyqtSignal(bool)
     disconnect_signal = pyqtSignal(bool)
-    ser = serial.Serial()
+    active = True
+    connected = False
 
     def __init__(self) -> None:
         super().__init__()
-        self.active = False
-        self.connected = False
-        self.port_name: str = None
-        # self.baud_rate = 115200
-        # self.xonxoff = False
-        # self.dsrdtr = False
-        # self.rtscts = False
-        # self.parity = PARITY_NONE
-
         self.last_activity = 0
         self.error_message = ""
+        self.connected = False
+        self.active = True
 
-    def connect(self, port: str, baud=115200,
-                xonxoff=False, rtscts=False,
-                dsrdtr=False, parity:str = "NONE"):
+    def connect(self,port: str,baud=115200,xonxoff=False,rtscts=False,dsrdtr=False,parity="NONE") -> bool:
+        if ser.isOpen():
+            ser.close()
+        
         try:
-            if self.ser.isOpen():
-                self.ser.close()
             self.connected = False
-            self.ser.port = port
-            self.ser.baudrate = baud
-            self.ser.rtscts = rtscts
-            self.ser.dsrdtr = dsrdtr
-            self.ser.rtscts = rtscts
-            self.ser.xonxoff = xonxoff
+            ser.port = port
+            ser.baudrate = baud
+            ser.rtscts = rtscts
+            ser.dsrdtr = dsrdtr
+            ser.rtscts = rtscts
+            ser.xonxoff = xonxoff
             if parity in parity_values:
-                parity = parity_values[parity]
-            else: return False
-
-            serial_debug("CONNECTING TO: ", port, " ", self.ser.get_settings(), color = 'yellow')
-            self.ser.close()
-            self.ser.open()
-            if self.ser.isOpen():
-                serial_debug("CONNECTED", color = 'green')
-                self.ser.flush()
-                self.connected = True
-                return True
+                ser.parity = parity_values[parity]
             else:
+                self.error_message = "INVALID PARIRY"
                 return False
+
+            ser.close()
+            ser.open()
+
+            if ser.isOpen():
+                self.connected = True
+                self.error_message = ""
+                ser.flush()
+                return True
+            return False
         except Exception as E:
             self.error_message = E
-            return False
+            ser.port = None
+            time.sleep(.1)
 
-    def disconnect(self):
-        
-        self.ser.close()
-        self.connected = False
+
+    def disconnect(self) -> bool:
+        ser.close()
+        if not ser.isOpen():
+            self.connected = False
+            return True
         return True
 
 
-    # def _connect(self):
-    #     serial_debug("ATTEMPTING CONNECTION: ")
-    #     try:
-    #         self.ser = serial.Serial(
-    #             timeout=100,
-    #             baudrate=self.baud_rate,
-    #             xonxoff=self.xonxoff,
-    #             rtscts=self.rtscts,
-    #             parity=self.parity,
-    #             dsrdtr=self.dsrdtr)
-
-    #         self.ser.port = self.port_name
-
-    #         self.ser.close()
-
-    #         self.ser.open()
-    #         if self.ser.is_open:
-    #             self.connected = True
-    #             self.error_message = ""
-    #             serial_debug(
-    #                 "CONNECTED:", self.ser.getSettingsDict(), color='green')
-    #             return True
-    #         serial_debug("NOT CONNECTED:",
-    #                      self.ser.getSettingsDict(), color='red')
-
-    #     except Exception as E:
-    #         serial_debug("ERROR CONNECTED:", self.ser.port,
-    #                      self.ser.getSettingsDict(), "\n", E, color='red')
-    #         self.error_message = E
-    #     self.connected = False
-    #     return False
-
-    # def connect(self, port: str, baud=None, xonxoff: bool = None, dsrdtr: bool = None, parity: str = None, rtscts: bool = None) -> bool:
-    #     if self.connected == True:
-    #         serial_debug("ALREADY CONNECTED", 'red')
-    #         return None
-
-    #     self.port_name = port
-    #     if baud != None:
-    #         self.baud_rate = int(baud)
-    #     if xonxoff != None:
-    #         self.xonxoff = xonxoff
-    #     if rtscts != None:
-    #         self.rtscts = rtscts
-    #     if dsrdtr != None:
-    #         self.dsrdtr = dsrdtr
-    #     if parity != None:
-    #         parity: str = parity.upper()
-    #         if parity not in parity_values:
-    #             serial_debug("ERROR PARITY:", parity, "INVALID", color='red')
-    #         else:
-    #             self.parity = parity_values[parity]
-    #     return self._connect()
-
-    # def disconnect(self) -> bool:
-    #     serial_debug("DISCONNECTING", self.ser.get_settings(), color='yellow')
-    #     self.ser.close()
-    #     self.connected = False
-    #     print("IS OPEN:", self.ser.isOpen())
-
-    #     return True
-
-    def port_lost(self):
-        serial_debug("PORT LOST", color='red')
-        #self.active = False
-        self.connected = False
-        self.disconnect_signal.emit(True)
-
     def send_text(self, text: str = None):
-        if self.connected:
-            serial_debug("->" + text, color='blue')
-            self.ser.write(text.encode('utf-8'))
-        else:
-            serial_debug(f'NOT CONNECTED ->', text, color='red')
+            if self.connected:
+                serial_debug("->" + text, color='blue')
+                ser.write(text.encode('utf-8'))
+            else:
+                serial_debug(f'NOT CONNECTED ->', text, color='red')
 
     def get_text(self) -> str:
-        if not self.ser.isOpen():
-            print(self.ser.isOpen())
-            self.ser.close()
-            time.sleep(.5)
-
-            self.ser.open()
-            return None
-        waiting = self.ser.inWaiting()
+        waiting = ser.inWaiting()
         if waiting:
             out_str = ""
-            for c in self.ser.read(waiting):
+            for c in ser.read(waiting):
                 out_str += chr(c)
             return out_str
         return None
 
     def run(self):
-        self.active = True
         while self.active:
             try:
                 text = self.get_text()
@@ -191,18 +119,158 @@ class SerialPort(QObject):
             except Exception as E:
                 self.error_message = E
                 dprint(f"ERR: {traceback.format_exc()}\n", color='red')
-                self.port_lost()
+                self.disconnect_signal.emit(False)
 
     def stop(self):
-        self.active = False
+        self.active = False        
+
+# class SerialPort(QObject):
+#     incoming: pyqtSignal = pyqtSignal(str)
+#     error: pyqtSignal = pyqtSignal(bool)
+#     disconnect_signal = pyqtSignal(bool)
+
+#     def __init__(self) -> None:
+#         super().__init__()
+#         self.active = False
+#         self.connected = False
+#         self.port_name: str = None
+#         self.last_activity = 0
+#         self.error_message = ""
+
+#     def connect(self, port: str, baud=115200,
+#                 xonxoff=False, rtscts=False,
+#                 dsrdtr=False, parity: str = "NONE"):
+#         try:
+#             if self.ser.isOpen():
+#                 self.ser.close()
+#             self.connected = False
+#             self.ser.port = port
+#             self.ser.baudrate = baud
+#             self.ser.rtscts = rtscts
+#             self.ser.dsrdtr = dsrdtr
+#             self.ser.rtscts = rtscts
+#             self.ser.xonxoff = xonxoff
+#             if parity in parity_values:
+#                 parity = parity_values[parity]
+#             else:
+#                 return False
+
+#             serial_debug("CONNECTING TO: ", port, " ",
+#                          self.ser.get_settings(), color='yellow')
+#             self.ser.close()
+#             self.ser.open()
+#             if self.ser.isOpen():
+#                 serial_debug("CONNECTED", color='green')
+#                 self.ser.flush()
+#                 self.connected = True
+#                 return True
+#             else:
+#                 return False
+#         except Exception as E:
+#             self.error_message = E
+#             return False
+
+#     def disconnect(self):
+#         self.ser.close()
+#         self.connected = False
+#         return True
+
+#     def port_lost(self):
+#         serial_debug("PORT LOST", color='red')
+#         #self.active = False
+#         self.connected = False
+#         self.disconnect_signal.emit(True)
+
+#     def send_text(self, text: str = None):
+#         if self.connected:
+#             serial_debug("->" + text, color='blue')
+#             self.ser.write(text.encode('utf-8'))
+#         else:
+#             serial_debug(f'NOT CONNECTED ->', text, color='red')
+
+#     def get_text(self) -> str:
+#         if not self.ser.isOpen():
+#             print(self.ser.isOpen())
+#             self.ser.close()
+#             time.sleep(.25)
+
+#             self.ser.open()
+#             return None
+#         waiting = self.ser.inWaiting()
+#         if waiting:
+#             out_str = ""
+#             for c in self.ser.read(waiting):
+#                 out_str += chr(c)
+#             return out_str
+#         return None
+
+#     def run(self):
+#         self.active = True
+#         while self.active:
+#             try:
+#                 text = self.get_text()
+#                 if text != None:
+#                     self.last_activity = time.perf_counter()
+#                     self.incoming.emit(text)
+#                 elif time.perf_counter() - self.last_activity > .5:  # Throttle polling if no activity within .5 sec
+#                     time.sleep(.005)
+#             except Exception as E:
+#                 self.error_message = E
+#                 dprint(f"ERR: {traceback.format_exc()}\n", color='red')
+#                 self.port_lost()
+
+#     def stop(self):
+#         self.active = False
+
+
+def get_serial_port_number(input: str) -> int:
+    port_numb = 0
+    if "COM" in input:
+        try:
+            port_numb = int(input.replace("COM", ""))
+        except:
+            port_numb = -1
+    if "dev/ttyS" in input:
+        try:
+            port_numb = int(input.split("dev/ttyS")[1])
+        except:
+            port_numb = -1
+
+    return port_numb
+
+
+def sort_ports(input: dict) -> dict:
+    result = {}
+    return sorted(input, key=lambda x: input[x]['numb'])
+
+
+def get_ports() -> dict:
+    '''Get the Serial Ports Availiable'''
+    ports = {}
+    for port in list_ports.comports():
+        ports[port.device] = {
+            'descr': str(port.description),
+            'name': str(port.name),
+            'mfgr': str(port.manufacturer),
+            'hwid': str(port.hwid),
+            'vid': str(port.vid),
+            'pid': str(port.pid),
+            's/n': str(port.serial_number),
+            'numb': get_serial_port_number(port.device)
+        }
+
+    sorted_ports = {}
+    for name in sorted(ports, key=lambda x: ports[x]['numb']):
+        sorted_ports[name] = ports[name]
+
+    return sorted_ports
 
 
 class RescanWorker(QObject):
-    disconnect = pyqtSignal(bool)
     new_ports = pyqtSignal(dict)
     active = True
 
-    def __init__(self, update_interval=2) -> None:
+    def __init__(self, update_interval=1.00) -> None:
         super().__init__()
         self.active = True
         self.update_interval = update_interval
@@ -210,18 +278,13 @@ class RescanWorker(QObject):
     def run(self):
         while self.active:
             try:
-                self.current_ports = getPorts()
-                self.new_ports.emit(self.current_ports)
+                self.new_ports.emit(get_ports())
                 time.sleep(self.update_interval)
             except Exception as E:
-                cprint("RESCAN WORKER ERROR:", E)
-                self.active = False
-                self.disconnect.emit(False)
+                dprint(f"ERR: {traceback.format_exc()}\n", color='red')
 
     def stop(self):
         self.active = False
-
-    pass
 
 
 if __name__ == "__main__":

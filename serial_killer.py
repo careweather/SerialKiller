@@ -4,7 +4,7 @@ import sys
 
 def update_ui_files():
     update_ui_commands = [
-        "pyuic5 -o gui/GUI_MAIN_WINDOW.py ui_files/serial_studio_main_window.ui",
+        "pyuic5 -o gui/GUI_MAIN_WINDOW.py ui_files/serial_killer_main_window.ui",
         "pyuic5 -o gui/GUI_LOG_POPUP.py ui_files/serial_killer_log_popup.ui",
         "pyuic5 -o gui/GUI_HELP_POPUP.py ui_files/serial_killer_help_popup.ui"
     ]
