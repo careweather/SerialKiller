@@ -1,12 +1,11 @@
 import datetime
 import os
-from datetime import date, datetime
+from datetime import datetime
 
 from PyQt5 import QtCore, QtWidgets
-from PyQt5.QtWidgets import QFileDialog
 
 from gui.GUI_LOG_POPUP import Ui_logViewer
-from sk_tools import *
+
 
 
 class Log_Viewer(QtWidgets.QWidget):

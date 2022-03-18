@@ -1,13 +1,7 @@
-from tkinter.constants import N
-from PyQt5.QtCore import QObject, QThread, pyqtSignal
-from PyQt5.QtGui import QIntValidator, QTextCursor
-from PyQt5 import QtGui, QtWidgets
+from PyQt5.QtCore import QObject, pyqtSignal
 import time 
-import os
 
 from sk_tools import *
-
-
 
 class ScriptWorker(QObject):
     line = pyqtSignal(list)

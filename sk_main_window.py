@@ -5,27 +5,22 @@ import time
 from datetime import datetime
 
 import PyQt5
-import serial
 from PyQt5 import QtCore, QtGui, QtWidgets
-from PyQt5.QtCore import (QByteArrayMatcher, QFile, QObject, QSaveFile,
-                          QThread, QTimer, flush, pyqtSignal)
-from PyQt5.QtGui import QFont, QIntValidator, QPalette, QTextCursor
+from PyQt5.QtCore import QThread, QTimer
+from PyQt5.QtGui import QTextCursor
 # library imports
 from PyQt5.QtWidgets import QFileDialog, QTableWidgetItem
-from pyqtgraph.widgets.TreeWidget import TreeWidget
-from serial.tools.list_ports_common import ListPortInfo
 
 # gui imports
 from gui.GUI_MAIN_WINDOW import Ui_MainWindow
-from serial_handler import RescanWorker, SerialPort, parity_values, baud_rates, ser
+from serial_handler import *
 from sk_commands import Command
+from sk_help import *
+from sk_help_popup import Help_Popup, open_help_popup
 from sk_log_popup import Log_Viewer, open_log_viewer
 from sk_logging import Logger
 from sk_scripting import ScriptWorker
 from sk_tools import *
-from sk_help import *
-
-from sk_help_popup import Help_Popup, open_help_popup
 
 
 class MainWindow(QtWidgets.QMainWindow):
@@ -39,26 +34,19 @@ class MainWindow(QtWidgets.QMainWindow):
     history_index = 1
     target_port: str = None
     key_cmds: dict = {}
-    serial_thread = QThread()
     script_thread = QThread()
     plot_started = False
+    is_connected = False
 
     def __init__(self, * args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
         self.last_save_time = time.perf_counter()
-        self.serial = SerialPort()
-
         self.cmd_list = []
         self.ui = Ui_MainWindow()
-        self.setAttribute(QtCore.Qt.WA_DeleteOnClose)
-
         self.current_settings = {}
-
         self.ui.setupUi(self)
         self.connect_ui()
-
         self.save_timer = QTimer()
-
         self.log = Logger(log_fmt=self.ui.lineEdit_log_format.text())
         self.create_settings()
         self.create_commands()
@@ -75,7 +63,7 @@ class MainWindow(QtWidgets.QMainWindow):
         key = event.key()
         modifier = event.modifiers()
 
-        # print(key, modifier) # Uncomment for key press debugging
+        #print(key, modifier)
         if self.ui.lineEdit_input.hasFocus():
             if key == QtCore.Qt.Key_Return or key == QtCore.Qt.Key_Enter:
                 self.send_clicked()
@@ -97,6 +85,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 self.end_script()
 
         if modifier == QtCore.Qt.ControlModifier:  # CTRL + ...
+
             if key == QtCore.Qt.Key_Period:  # CTRL + >
                 current_tab = self.ui.tabWidget.currentIndex()
                 if current_tab < self.ui.tabWidget.count():
@@ -114,6 +103,12 @@ class MainWindow(QtWidgets.QMainWindow):
 
             if key == QtCore.Qt.Key_S:
                 self.start_script()
+
+        elif modifier == (QtCore.Qt.ControlModifier | QtCore.Qt.ShiftModifier):
+            if key == QtCore.Qt.Key_C:
+                self.connect_clicked()
+            
+            
         return super().keyPressEvent(event)
 
 
@@ -122,7 +117,6 @@ class MainWindow(QtWidgets.QMainWindow):
 #               UI FUNCTIONS
 #
 ########################################################################
-
 
     def connect_ui(self):
         open_args = {'-o': None}
@@ -143,6 +137,8 @@ class MainWindow(QtWidgets.QMainWindow):
         self.ui.pushButton_clear.clicked.connect(self.clear_clicked)
         self.ui.pushButton_connect.clicked.connect(self.connect_clicked)
         self.ui.pushButton_pause_plot.clicked.connect(self.pause_plot)
+
+   
         self.ui.lineEdit_input.setFocus()
         self.ui.comboBox_baud.clear()
         bauds = [str(x) for x in baud_rates]
@@ -153,11 +149,12 @@ class MainWindow(QtWidgets.QMainWindow):
         self.ui.checkBox_auto_reconnect.toggled.connect(
             self.auto_reconnect_toggled)
         self.ui.tableWidget_keys.setRowCount(1)
-        self.ui.tableWidget_keys.currentItemChanged.connect(
+        self.ui.pushButton_clear_table.clicked.connect(self.clear_key_cmds)
+        self.ui.tableWidget_keys.cellChanged.connect(
             self.key_cmds_edited)
 
         self.ui.pushButton_run_script.clicked.connect(self.start_script)
-        self.ui.pushButton_save_script.clicked.connect(self.save_script)
+
         self.ui.pushButton_start_plot.clicked.connect(self.start_plot_clicked)
         self.ui.pushButton_start_plot.setStyleSheet(
             STYLE_SHEET_BUTTON_INACTIVE)
@@ -196,8 +193,8 @@ class MainWindow(QtWidgets.QMainWindow):
         return
 
     def add_text(self, *args, type: int = TYPE_RX):
-        self.ui.textEdit_terminal.moveCursor(QTextCursor.End)
-        text = ""
+        
+        text:str = ""
         for arg in args:
             text += str(arg)
 
@@ -237,7 +234,10 @@ class MainWindow(QtWidgets.QMainWindow):
             self.ui.textEdit_terminal.setTextColor(COLOR_LIGHT_YELLOW)
             self.ui.textEdit_terminal.insertPlainText(text)
 
-        self.ui.textEdit_terminal.moveCursor(QTextCursor.End)
+
+        if self.ui.checkBox_autoscroll.isChecked():
+            self.ui.textEdit_terminal.moveCursor(QTextCursor.End)
+            self.ui.textEdit_terminal.ensureCursorVisible()
 
     def debug_text(self, *args, color: QColor = COLOR_BLACK):
         label_text = ""
@@ -273,8 +273,8 @@ class MainWindow(QtWidgets.QMainWindow):
             return
 
         self.add_text(text, type=TYPE_TX)
-        if self.serial.connected:
-            self.serial.send_text(text)
+        if self.is_connected:
+            serial_send_string(text)
         else:
             self.debug_text("WARN: NOT CONNECTED", color=COLOR_DARK_YELLOW)
 
@@ -288,50 +288,86 @@ class MainWindow(QtWidgets.QMainWindow):
 #
 ########################################################################
 
-    def serial_error(self, source=None):
-        self.serial.stop()
-        self.disconnect(False)
-        if self.script_thread:
-            self.end_script()
+    def serial_error(self):
+        if self.is_connected:
+            self.add_text(f"LOST {ser.port}", type=TYPE_ERROR)
+            self.disconnect(False)
 
     def disconnect(self, intentional=True):
+        
+
+        if self.is_connected == False:
+            if intentional:
+                self.debug_text("ALREADY DISCONNECTED", color=COLOR_DARK_YELLOW)
+            return
+
         if intentional:
             self.target_port = None
             self.ui.label_port.setText("Ports:")
+            self.add_text(f"DISCONNECTED FROM: {ser.port}\n", type=TYPE_INFO)
+            self.debug_text(f"DISCONNECTED FROM: {ser.port}")
 
-        if self.serial.connected == False:
-            self.debug_text("ALREADY DISCONNECTED", color=COLOR_DARK_YELLOW)
-            return
-
-        self.serial.stop()
-        self.serial_thread.quit()
+        
+        self.serial_worker.stop()
         self.serial_thread.exit()
-
-        self.ui.textEdit_terminal.setStyleSheet(
-                STYLE_SHEET_TERMINAL_INACTIVE)
-        self.ui.pushButton_connect.setStyleSheet(
-                STYLE_SHEET_BUTTON_INACTIVE)
+        serial_disconnect()
+        self.is_connected = False
+        self.ui.textEdit_terminal.setStyleSheet(STYLE_SHEET_TERMINAL_INACTIVE)
+        self.ui.pushButton_connect.setStyleSheet(STYLE_SHEET_BUTTON_INACTIVE)
         self.ui.pushButton_connect.setText("Connect")
+        self.ui.comboBox_baud.setEnabled(True)
+        self.ui.comboBox_parity.setEnabled(True)
+        self.ui.checkBox_dsrdtr.setEnabled(True)
+        self.ui.checkBox_rtscts.setEnabled(True)
+        self.ui.checkBox_dsrdtr.setEnabled(True)
+        self.ui.checkBox_xonxoff.setEnabled(True)
         self.log.set_port("NONE")
 
+    def connect(self, port: str, baud: str = "115200", xonxoff: bool = False, dsrdtr: bool = False, rtscts: str = False, parity: str = "NONE") -> bool:
+        if port not in self.current_ports:
+            self.debug_text(f"ERR: PORT {port} NOT FOUND", color=COLOR_RED)
+            return
+        self.ui.comboBox_port.setCurrentText(port)
 
-        if self.serial.disconnect():
-            if intentional:
-                self.debug_text(
-                    f"DISCONNECTED FROM {ser.port}", color=COLOR_GREEN)
-                self.add_text(
-                    f"DISCONNECTED FROM {ser.port}\n", type=TYPE_INFO)
-            else:
-                self.debug_text(
-                    f"LOST {ser.port}", color=COLOR_RED)
-                self.add_text(
-                    f"DISCONNECTED FROM {ser.port}\n", type=TYPE_ERROR)
+        self.is_connected = serial_connect(port, baud, xonxoff,rtscts, dsrdtr, parity)
 
-            
-            
-            
+        if not self.is_connected:
+            self.debug_text(f"ERR: {port} COULD NOT CONNECT", color=COLOR_RED)
+            self.add_text(f"ERR: {port} COULD NOT CONNECT \n", type=TYPE_ERROR)
+            return 
 
-    def connect(self, **kwargs) -> bool:
+        self.log.set_port(port)
+
+        self.debug_text("CONNECTED TO: ", port, color=COLOR_GREEN)
+        self.add_text(f"CONNECTED TO {port} at {ser.baudrate} BAUD\n", type=TYPE_INFO)
+
+        if self.ui.checkBox_auto_reconnect.isChecked():
+            self.target_port = port
+            self.ui.label_port.setText(f"Port: Auto ({self.target_port})")
+
+        self.ui.pushButton_send.setStyleSheet(STYLE_SHEET_BUTTON_ACTIVE)
+
+        self.ui.textEdit_terminal.setStyleSheet(STYLE_SHEET_TERMINAL_ACTIVE)
+        self.ui.pushButton_connect.setStyleSheet(STYLE_SHEET_BUTTON_ACTIVE)
+        self.ui.comboBox_baud.setEnabled(False)
+        self.ui.comboBox_parity.setEnabled(False)
+        self.ui.checkBox_dsrdtr.setEnabled(False)
+        self.ui.checkBox_rtscts.setEnabled(False)
+        self.ui.checkBox_dsrdtr.setEnabled(False)
+        self.ui.checkBox_xonxoff.setEnabled(False)
+        self.ui.pushButton_connect.setText("Disconnect")
+
+        self.serial_thread = QThread()
+        self.serial_worker = SerialWorker()
+        self.serial_worker.moveToThread(self.serial_thread)
+        self.serial_thread.started.connect(self.serial_worker.run)
+        self.serial_worker.out.connect(self.add_text)
+        self.serial_worker.disconnected.connect(self.serial_error)
+        self.serial_thread.setTerminationEnabled(True)
+        self.serial_thread.start()
+        return True
+
+    def handle_connect(self, **kwargs):
         port: str = None
         baud: str = None
         xonxoff: bool = None
@@ -339,6 +375,17 @@ class MainWindow(QtWidgets.QMainWindow):
         parity: str = None
         rtscts: str = None
 
+
+        if self.is_connected:
+            if not kwargs:
+                self.debug_text("ERR: ALREADY CONNECTED", color = COLOR_RED)
+            else:
+                self.disconnect()
+            
+                self.handle_connect(**kwargs)
+            return 
+
+    
         if '-h' in kwargs:
             self.add_text(CONNECT_HELP, type=TYPE_HELP)
             return
@@ -385,6 +432,13 @@ class MainWindow(QtWidgets.QMainWindow):
             if port == '-h':
                 self.add_text(CONNECT_HELP, type=TYPE_HELP)
                 return
+            elif port.startswith("#"):
+                port_index = int(port[1:])
+                if port_index < 0 or port_index > len(self.current_ports):
+                    self.debug_text(f"ERR: PORT INDEX {port_index} OUT OF BOUNDS 0:{len(self.current_ports)}")
+                    return 
+                port = self.ui.comboBox_port.setCurrentIndex(port_index)
+                port = self.ui.comboBox_port.currentText()
             elif port == '?':
                 self.ui.comboBox_port.showPopup()
                 self.ui.comboBox_port.setFocus()
@@ -395,70 +449,25 @@ class MainWindow(QtWidgets.QMainWindow):
                 elif port.isdigit():
                     if "COM" + port in self.current_ports:
                         port = "COM" + port
-
         else:
             port = self.ui.comboBox_port.currentText()
 
-        if port not in self.current_ports:
-            self.debug_text(f"ERR: PORT {port} NOT FOUND", color=COLOR_RED)
-            return
-        self.ui.comboBox_port.setCurrentText(port)
+        self.connect(port, baud, xonxoff, dsrdtr, rtscts, parity)
+        pass
 
-        if self.serial.connected:
-            self.disconnect()
-            time.sleep(.01)
-            self.connect(**kwargs)
-            return
-
-        if port not in self.current_ports:
-            self.debug_text(f"ERR: PORT {port} NOT FOUND", color=COLOR_RED)
-            return False
-
-        if not self.serial.connect(port=port, baud=baud, xonxoff=xonxoff, rtscts=rtscts, dsrdtr=dsrdtr, parity=parity):
-            self.debug_text(
-                f"ERR: {port} COULD NOT CONNECT", color=COLOR_RED)
-            self.add_text(
-                f"ERR: {port} COULD NOT CONNECT \n{self.serial.error_message}", type=TYPE_ERROR)
-            return False
-
-        self.log.set_port(port)
-
-        self.debug_text("CONNECTED TO: ", port, color=COLOR_GREEN)
-        self.add_text(
-            f"CONNECTED TO {port} at {ser.baudrate} BAUD\n", type=TYPE_INFO)
-
-        if self.ui.checkBox_auto_reconnect.isChecked():
-            self.target_port = port
-            self.ui.label_port.setText(f"Port: Auto ({self.target_port})")
-
-        self.ui.pushButton_send.setStyleSheet(STYLE_SHEET_BUTTON_ACTIVE)
-
-        self.ui.textEdit_terminal.setStyleSheet(STYLE_SHEET_TERMINAL_ACTIVE)
-        self.ui.pushButton_connect.setStyleSheet(STYLE_SHEET_BUTTON_ACTIVE)
-        self.ui.pushButton_connect.setText("Disconnect")
-
-        self.serial.moveToThread(self.serial_thread)
-        self.serial_thread.started.connect(self.serial.run)
-        self.serial.incoming.connect(self.add_text)
-        self.serial.disconnect_signal.connect(self.serial_error)
-        self.serial_thread.setTerminationEnabled(True)
-        self.serial_thread.start()
-        return True
-
-    def connect_clicked(self, source=None):
-        if self.serial.connected:
+    def connect_clicked(self):
+        if self.is_connected:
             self.disconnect()
         else:
-            self.connect()
+            self.handle_connect()
 
-        return
 
     def auto_reconnect_toggled(self):
         if self.ui.checkBox_auto_reconnect.isChecked():
-            if self.serial.connected:
-                self.target_port = self.serial.port_name
+            if self.is_connected:
+                self.target_port = ser.port
                 self.ui.label_port.setText(
-                    f"Ports: (Auto: {self.serial.port_name})")
+                    f"Ports: (Auto: {self.target_port})")
         else:
             self.ui.label_port.setText(f"Ports:")
             self.target_port = None
@@ -494,10 +503,10 @@ class MainWindow(QtWidgets.QMainWindow):
         if current_selection in self.current_ports:
             self.ui.comboBox_port.setCurrentText(current_selection)
 
-        if self.target_port and self.serial.connected == False:
+        if self.target_port and self.is_connected == False:
             if self.target_port in self.current_ports and self.ui.checkBox_auto_reconnect.isChecked():
                 args = {'port': self.target_port}
-                self.connect(**args)
+                self.handle_connect(**args)
 
     def show_ports(self, **kwargs):
         p_str = "PORTS: "
@@ -525,7 +534,6 @@ class MainWindow(QtWidgets.QMainWindow):
 #               SETTINGS FUNCTIONS
 #
 ########################################################################
-
 
     def create_settings(self):
         self.save_checkboxes = [self.ui.checkBox_auto_reconnect,
@@ -594,6 +602,8 @@ class MainWindow(QtWidgets.QMainWindow):
             self.current_settings[combo_box.objectName()
                                   ] = combo_box.currentText()
 
+        self.current_settings['tableWidget_keys'] = self.get_key_cmds()
+
         with open(SETTINGS_FILE, 'w') as file:
             json.dump(self.current_settings, file)
 
@@ -626,6 +636,9 @@ class MainWindow(QtWidgets.QMainWindow):
                 else:
                     self.save_item(line_edit)
 
+            for item in self.current_settings['tableWidget_keys']:
+                self.add_key_cmd(item, self.current_settings['tableWidget_keys'][item])
+
             if 'lineEdit_script_name' in self.current_settings:
                 last_script_name: str = self.current_settings['lineEdit_script_name']
                 print("LAST SCRIPT NAME", last_script_name)
@@ -645,7 +658,6 @@ class MainWindow(QtWidgets.QMainWindow):
 #
 ########################################################################
 
-
     def create_commands(self):
         self.cmd_list.append(Command("help", self.print_help))
 
@@ -657,7 +669,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.cmd_list.append(cmd_clear)
         self.cmd_list.append(Command("quit", quit))
         self.cmd_list.append(Command("exit", quit))
-        cmd_con = Command("con", self.connect, "port", str)
+        cmd_con = Command("con", self.handle_connect, "port", str)
         cmd_con.add_argument('-b', '', str, 115200)
         cmd_con.add_argument('-d', '', bool, True)
         cmd_con.add_argument('-x', '', bool, True)
@@ -710,6 +722,8 @@ class MainWindow(QtWidgets.QMainWindow):
         cmd_keys.add_argument("-h", "")
 
         self.cmd_list.append(cmd_keys)
+
+        self.cmd_list.append(Command("new", self.open_new_window))
 
     def interpret_command(self, text: str):
         """return none if no command found"""
@@ -873,6 +887,8 @@ class MainWindow(QtWidgets.QMainWindow):
             file.write(self.ui.textEdit_script.toPlainText())
 
         self.ui.lineEdit_script_name.setText(file_name.replace(".txt", ""))
+
+        self.debug_text(f"Saved '{file_name}'", color=COLOR_GREEN)
         return
 
     def script_line(self, line: list):
@@ -1085,9 +1101,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def get_key_cmds(self):
         key_cmds = {}
-
         for row in range(self.ui.tableWidget_keys.rowCount()):
-
             if self.ui.tableWidget_keys.item(row, 0) is not None:
                 if not self.ui.tableWidget_keys.item(row, 0).text():
                     continue
@@ -1101,7 +1115,8 @@ class MainWindow(QtWidgets.QMainWindow):
         self.ui.tableWidget_keys.setRowCount(1)
 
     def key_cmds_edited(self):
-        if self.ui.tableWidget_keys.currentRow() == self.ui.tableWidget_keys.rowCount()-1:
+        print("CHECKED")
+        if self.ui.tableWidget_keys.currentRow() == self.ui.tableWidget_keys.rowCount() - 1:
             if not self.ui.tableWidget_keys.currentItem():
                 return
             self.ui.tableWidget_keys.setRowCount(
@@ -1111,6 +1126,7 @@ class MainWindow(QtWidgets.QMainWindow):
             self.ui.lineEdit_keyboard_control.setEnabled(True)
         else:
             self.ui.lineEdit_keyboard_control.setEnabled(False)
+        self.save_settings()
 
     def add_key_cmd(self, key: str, send: str):
         indx = self.ui.tableWidget_keys.rowCount() - 1
@@ -1119,11 +1135,15 @@ class MainWindow(QtWidgets.QMainWindow):
         self.ui.tableWidget_keys.setItem(indx, 1, QTableWidgetItem(str(send)))
         self.key_cmds_edited()
 
+    
+
+
     def keyboard_control(self):
         key = self.ui.lineEdit_keyboard_control.text()
         self.ui.lineEdit_keyboard_control.clear()
-        if key in self.key_cmds:
-            self.ui.lineEdit_input.setText(self.key_cmds[key])
+        key_cmds = self.get_key_cmds()
+        if key in key_cmds:
+            self.ui.lineEdit_input.setText(key_cmds[key])
             self.send_clicked()
         else:
             self.debug_text(
@@ -1135,6 +1155,18 @@ class MainWindow(QtWidgets.QMainWindow):
 #
 ########################################################################
 
+    def open_new_window(self):
+        import platform
+        import subprocess
+        if platform.system() == 'Windows':
+            cmd = f'start pythonw.exe {INSTALL_FOLDER}/serial_killer.py'
+            
+        elif platform.system() == 'Linux':
+            cmd = f'python3 {INSTALL_FOLDER}/serial_killer.py'
+            
+        dprint(cmd, color = 'yellow')
+        subprocess.call(cmd, shell=True)
+
     def get_latest_file(self, directory: str):
         list_of_files = glob.glob(directory + "*.txt")
         latest_file = max(list_of_files, key=os.path.getmtime)
@@ -1142,7 +1174,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def list_files(self, directory: str):
         files = os.listdir(directory)
-        files_str = "\n"
+        files_str = ""
         for file in files:
             file_timestamp = os.path.getmtime(directory + file)
             last_t = datetime.fromtimestamp(file_timestamp)

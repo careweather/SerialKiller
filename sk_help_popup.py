@@ -1,9 +1,4 @@
-import datetime
-import os
-from datetime import date, datetime
-
 from PyQt5 import QtCore, QtWidgets
-from PyQt5.QtWidgets import QFileDialog
 
 from gui.GUI_HELP_POPUP import Ui_help_popup
 from sk_tools import *

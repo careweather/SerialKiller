@@ -20,19 +20,6 @@ Options:
     -d <DELAY>  start the script with delay [DELAY] 
     -r [name]   run the script [name].txt.
 '''
-
-
-LOG_HELP = '''\
-USEAGE: 'log' [OPTIONS]
-
-Options:
-    NONE        open the most recent log 
-    -o          open a log 
-    -a [name]   archive the current log     OPTIONAL: as [name].txt
-    -rm [name]  remove a log                REQUIRED: remove [name].txt
-    -ls         list logs in the directory
-'''
-
 SCRIPT_SYNTAX_HELP = '''\
 Each line in this text will be evaluated as if it was typed into the 'output' line.
 Lines are evaluated with a delay between sends.
@@ -44,7 +31,6 @@ Script Commands:
 #delay=[milliseconds]       Delay between sends [milliseconds] (int)
 #ARG=[default]              Set the default argument if none is provided from a command
 #info=[string]              Print [string] to the terminal as info
-#warning=[string]           Print [string] to the terminal as a warning
 #error=[string]             Print [string] to the terminal as an error
 #loop=[numb_loops]          Run the code between this line and #endloop [numb_loops] times.
                             If no '=[numb_loops]' is provided, it will run infinitely
@@ -55,10 +41,18 @@ Script Special Words:
 $LOOP                       Replaced with the current loop index.
 $ARG                        Replaced with the arguments passed with script call -a
 '''
+LOG_HELP = '''\
+USEAGE: log [OPTIONS]
+If NO options are provided, the most recent log is opened.
 
+Options:
+    -o          open a log 
+    -a [name]   archive the current log     OPTIONAL: as [name].txt
+    -rm [name]  remove a log                REQUIRED: remove [name].txt
+    -ls         list logs in the directory
+'''
 PLOT_HELP = '''\
-USEAGE:
-plot <-kv|-a> [OPTIONS]
+USEAGE: plot <-kv|-a> [OPTIONS]
 Start, or clear a plot
 
 Command Line Options:
@@ -71,20 +65,25 @@ Command Line Options:
     -m              Set the windowing option to 'Max'
     -l [len]        Set the max length of [len] points
 '''
-
-
 CONNECT_HELP = '''\
-COMMAND 'con'
-Connect to a port.
+USEAGE: con [OPTIONS]
+Connect to a port. 
+With NO arguments, the settings are selected from the 'Port' settings below.
 
-Command Line Options:
-    [PORT]      connect to port name [PORT]
-                '?' expands port dropdown
-    -b [BAUD]   connect at baud rate [BAUD](int)
-    -d          enable dsrdtr
-    -x          enable flow control (xonxoff)
-    -r          enable rtscts 
-    -p [PARITY] set parity to [PARITY] 
+OPTIONS:
+[PORT]      The target port name.
+            If all ports begin with "COM", only the COM# is required. 
+            i.e, 3 = COM3
+-b [BAUD]   connect at baud rate [BAUD]
+-d          enable dsrdtr
+-x          enable flow control (xonxoff)
+-r          enable rtscts 
+-p [PARITY] set parity to [PARITY] 
+
+Examples (assuming ports are COM5 and COM10):
+con 10                (connect to COM10)
+con com5 -b 9600 -x   (connect to COM5. Set baud to 9600, enable flow control)
+con 5 -p ODD          (connect to COM5. Set ODD parity)
 '''
 
 KEY_HELP = '''
@@ -98,30 +97,26 @@ Options:
 
 '''
 
-
 HELP_TEXT = '''\
-Serial from the device will appear here
-Type "help" for more information
+Serial from the device will appear here. 
+Type "help" for to view help pop-up.
+Navigation: 
+    ESC             Jump to Input, stop script
+    CTRL+P          Show ports
+    CTRL+E          Clear Terminal
+    CTRL+S          Start Script
+    CTRL+< or >     Tab Right or left
+    CTRL+SHIFT+c    Connect or Disconnect
 
-Commands: 
-con [PORT] [OPTIONS] 
-    Connect to a serial port. 
-    If no [PORT] argument is given, the port dropdown will be selected
-    use 'con -h' for options
-dcon
-    Disconnect from the serial port
-ports
-    List availiable ports
-script [OPTIONS]
-    Run, open or save a script
-    use 'script -h' for options
-log [OPTIONS]      
-    Open, View, Edit logs 
-    use 'con -h' for options
-clear
-    Clear the terminal
-quit     
-    Quit immediately
-help      
-    Show help popup
+Common Commands: 
+con [PORT] [OPTS]   Connect to a serial port. '-h' for help
+dcon                Disconnect from the serial port
+ports [-a]          List availiable ports. '-a' lists more info
+script [OPTS]       Run, open or save a script. '-h' for options
+log [OPTS]          Open, View, Edit logs. '-h' for options
+clear               Clear the terminal
+new                 Open a new window
+quit                Quit immediately
+key [OPTS]          Set key commands. '-h' for options
+help                Show help popup
 '''

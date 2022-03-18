@@ -1,4 +1,4 @@
-#delay=1 #ARG=11 #plot -h
+#delay=1 #ARG=11 #dcon
 I am an example script 
 #delay=1000
 Edit me in the script tab
@@ -16,3 +16,4 @@ $LOOP
 goodbye...
 #delay=1
 clear
+#script -h

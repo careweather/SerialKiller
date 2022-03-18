@@ -72,8 +72,8 @@ def run_app():
     try:
         from PyQt5 import QtWidgets
         from termcolor import cprint
-
         import sk_main_window
+        from PyQt5.QtGui import QIcon 
     except Exception as E:
         print("ERROR:", E)
         install_deps()
@@ -81,6 +81,7 @@ def run_app():
     global app
     app = QtWidgets.QApplication(sys.argv)
     main = sk_main_window.MainWindow()
+    main.setWindowIcon(QIcon("img/SK_Icon.png"))
     main.resize(600, 700)
     main.show()
     status = app.exec_()

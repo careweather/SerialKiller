@@ -1,13 +1,10 @@
 import os
 import platform
 from termcolor import cprint
-import os
-from datetime import date
+from datetime import date, datetime
 
 from PyQt5.QtGui import QColor
 from PyQt5.QtWidgets import QFileDialog
-
-import serial.tools.list_ports as list_ports
 
 DATE_TODAY = date.today()
 
@@ -74,6 +71,8 @@ def get_number(obj, return_type=float, failure_val=None, lower_limit: float = No
 
     return rval
 
+def get_timestamp():
+    return datetime.datetime.now().strftime("%H:%M:%S.%f")[:-3]
 
 
 

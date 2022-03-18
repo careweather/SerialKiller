@@ -1,10 +1,6 @@
 import os
-import datetime
 from datetime import date
-from PyQt5.QtWidgets import QFileDialog
-from PyQt5 import QtWidgets
 import logging
-import re
 from sk_tools import *
 
 DEFAULT_LOG_FORMAT = '%(port)s\t|%(asctime)s.%(msecs)03d|\t%(message)s'
