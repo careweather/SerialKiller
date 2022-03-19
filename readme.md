@@ -1,4 +1,28 @@
+# Serial Killer - A killer serial terminal
+An open source Serial Terminal, with a host of features for automation and simplicity. 
 
+
+![terminal-example](img/example.png)
+
+Current Features:
+- "Command line" style control
+  -  Quickly connect to a port, clear the terminal or access a number of other features with a handful of commands, entered directly in the output text box. 
+- Auto-Rescan - Any change in available serial ports is immediately displayed.
+- Auto-Reconnect - Reconnect to a port as soon as it appears. 
+- Auto-Save - User settings are remembered between program loads.
+- Text Color Highlighting - Inputs, outputs, etc. are colored differently to make communication clear. 
+- Logging - All input/output is saved by default to a timestamped log file.
+  - Recover data when the terminal is cleared or the program closed. 
+  - Interleave data from multiple ports at one time. 
+  - Create custom log formats to export formatted data.
+- Custom Single-key press controls
+  - Tie single key presses to messages sent to the device. 
+- Scripting - Automate an interface, run tests or configure the UI with basic scripting files.
+  - The K.I.S.S. scripting syntax has a minimal number of features but supports looping, custom arguments, delays, and other commands. 
+- Plotting - Graph data as it is received. 
+  - Use custom filters to remove irrelevant data. 
+  - Set custom plot limits and sizes. 
+  - Use features built into pyqtgraph to export plot images, transform data, etc. 
 
 # Install: 
 Ensure the following packages are installed:
@@ -25,7 +49,25 @@ With Python >= 3.8, run `serial_killer.py`
 
 # Useage:
 
-> TODO: Write This. 
+## Commands
+
+## 
+
+# Possible Future Features / Fixes
+
+## Plots
+- Add plot types for parsing and plotting arrays and single variables
+- Add flexible input parsing, separators, etc for plot data. 
+- Add multiple scale plotting. 
+
+## Scripting 
+- Integrate python scripts directly in the script tab. I have done some experiments using python's eval() and exec() functionality, but I ran into bugs that looked too time consuming to address.  
+
+## Serial
+- Add encodings other than 'utf-8' for input and output.
+
+## Commands 
+- 
 
 # Modification / Under the hood
 
