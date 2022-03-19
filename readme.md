@@ -97,7 +97,7 @@ hello   world
 
 Similarly to shell terminals, the up and down arrows will scroll through the history of commands sent. 
 
-## $UTS
+### $UTS
 
 I have also included one keyword that will be replaced in input: `$UTS`, which is replaced with the current UNIX timestamp. 
 
@@ -111,9 +111,173 @@ the unix timestamp is 1647726351
 
 </details>
 
-## Commands
-
+# Commands
 <details open>
+
+Commands are typed directly in the "TX" text box, as if they were being sent to the device. They have a command-line style syntax. Arguments and values are separated with spaces. 
+
+> TODO: Implement command escape char to prevent conflicts between commands and text to send
+
+The list of commands and their uses are detailed below: 
+
+## con [port] [options]
+
+Connect to a port (optional: with settings defined in [options]). 
+
+If no arguments are provided, the settings in the "Port" box at the bottom of the window are used. 
+
+**Options:** 
+```
+*none*              Open the port selected in the port dropdown
+[name]              Open port name [portname] 
+                    Use the full port name or (if on Windows) the com port number.
+                    i.e. 'con 3' opens COM3 
+
+-b [baud]           Set the baud rate to [baud]
+-d                  Enable dsrdtr
+-x                  Enable xonxoff
+-r                  Enable rts/cts
+-p [parity]         Set parity to [parity] (accepts "EVEN", "ODD", "MARK" or "SPACE")
+-h                  Show Help Text
+```
+
+**Examples**
+(assuming ports available are COM1, COM33, and COM50)
+
+Connect to COM33 at 9600 baud:
+```
+con COM33 -b 9600
+```
+
+Connect to COM50 with EVEN parity and rtscts ON. 
+
+```
+con 50 -p EVEN -r
+```
+-------
+## dcon
+
+Disconnect from a port. No options are available. 
+
+-------
+
+## ports [-a]
+
+Show all available ports. 
+
+Optional: if argument '-a' is included, additional port information is printed. 
+
+-------
+
+## clear
+
+Immediately clear the terminal. No options are available.
+
+-------
+
+## script [options]
+
+Run, Save or modify a script based on the [options] provided. 
+
+If NO options are provided, the script in the script tab is run. 
+
+**Options**
+```
+*none*      Run the script in the script tab
+-h          Show help text
+-o [name]   Open a script (optional open [name].txt)
+            If no [name] is given, a file dialoge will open.
+            The script will not run unless '-r' argument is also provided.
+-t          Jump to the script tab
+-ls         List all scripts
+-n [name]   Start a new script (optional [name].txt)
+-rm [name]  Remove a script (optional [name].txt)
+            If no [name] is given, a file dialoge will open.
+-d [delay]  Start the script with delay [delay] (milliseconds)
+-a [arg]    Pass argument [arg] into script
+```
+
+**Examples**  
+Open and run a script named "test".txt:
+```
+script -o test -r
+```
+
+Run the script in the script tab with send delay 500ms and optional argument "hello"
+```
+script -d 500 -a hello
+```
+
+**See scripting syntax section for more information**
+
+--------
+## log [options]
+
+Open, list or Archive a log
+
+If NO options are provided, the most recent log file is opened. 
+
+**options**
+```
+*none*      open the most recent log file
+-h          show help text
+-o          open a log from the directory
+-a [name]   archive the current log (optional as [name].txt)
+-ls         list log files in the log directory
+```
+
+**Examples**  
+Archive the current log as 'my-log'.txt
+```
+log -a my-log
+```
+
+----------
+## plot [options]
+
+Start, Modify or Stop a plot. 
+
+**options**
+```
+-h              show help text
+-kv             start the plot in key-value mode
+-c              clear the plot
+-t [targets]    set the plot's target values (comma seperated)
+-m              Operate the plot limits in "max" mode. Otherwize "window"
+-l [length]     Set the max length of the plot 
+```
+
+**Examples**  
+Start a plot in key-value mode with target keys of "X,Y,Z" and a max length of 100 data points. 
+```
+plot -kv -t X,Y,Z -l 100
+```
+
+**See plotting section for more information**
+
+----------
+## key [options]
+
+Set, or Clear keyboard commands. 
+
+To set a key and value, use arguments "-k [key]" and "-v [value]".
+
+**options**
+```
+*none*          jump to the 'keyboard control' text line
+-h              show help text
+-k [key]        set the key to [key]
+-v [value]      set the value to send to [value]
+-c              clear all key-value pairs
+```
+
+**Examples**  
+Set key '1' to send value 'one'
+```
+key -k 1 -v one
+```
+
+-----------------
 </details>
 
 ## Scripts
@@ -131,13 +295,9 @@ the unix timestamp is 1647726351
 <details open>
 </details>
 
-## Settings
-
+## Keyboard Control
 <details open>
 </details>
-
-
-
 
 # Possible Future Features / Fixes
 

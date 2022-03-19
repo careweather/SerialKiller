@@ -1066,8 +1066,7 @@ class MainWindow(QtWidgets.QMainWindow):
         if key and value:
             self.add_key_cmd(key, value)
         else:
-            self.add_text("KEY and VALUE required", type = TYPE_ERROR)
-            self.add_text(KEY_HELP, type=TYPE_HELP)
+            self.ui.lineEdit_keyboard_control.setFocus()
 
 
     def get_key_cmds(self):
