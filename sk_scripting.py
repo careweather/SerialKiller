@@ -45,6 +45,7 @@ class ScriptWorker(QObject):
             return
         else:
             self.loop_total = l_number
+            self.loop_counter = 0
         
     def end_loop(self):
         if self.loop_start_line == None:

@@ -318,33 +318,12 @@ Both these commands print text to the terminal in style INFO and style ERROR.
 
 The `#loop=[numb_loops]` and `#endloop` keywords are meant to signal start and stop of a loop.
 
+If `#loop` is used rather than `#loop=[numb_loops]`, the loop will run indefinitely, so:
+
 The lines in between these keywords will be run [numb_loop] times. 
 
-For example 
-```
-#loop=5 // loop 5 times.
-hello
-#endloop
-```
-Would send "hello" 5 times. 
-If `#loop` is used rather than `#loop=[numb_loops]`, the loop will run indefinitely, so:
-```
-#loop
-hello
-#endloop
-```
-will run until the script is stopped. 
+The variable `$LOOP` keeps track of the number of loops executed. This counter starts at 0 and increments by one each loop execution. To use this counter, include `$LOOP` anywhere in the script. 
 
-The variable `$LOOP` keeps track of the number of loops executed. This counter starts at 0 and increments by one each loop execution. 
-
-To use this counter, include `$LOOP` anywhere in the script. 
-For example:
-```
-#loop=5
-my number is $LOOP
-#endloop
-```
-This would send "my number is 0", "my number is 1", "my number is 2", etc... 
 
 ### #end
 
@@ -352,6 +331,26 @@ End the script at this line.
 
 ### Examples
 
+A super basic example of sending lines of text to a device after a delay of 50 milliseconds
+```
+#delay=50
+send1
+send2
+send3
+```
+After making sure no device is connected, loop through 10 cycles, sending an incrementing number.
+```
+#dcon #delay=100    // disconnect, set delay to 100 ms
+#info=starting loop // 
+#loop=10            // loop 10 times
+slow loop $LOOP 
+#endloop
+//#end              // Uncomment to end here
+#pause=1000         // One-Time pause for 1 second
+#loop=15 #delay=30  // Loop again, much faster
+fast loop $LOOP
+#endloop
+```
 
 
 </details>
