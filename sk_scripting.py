@@ -67,7 +67,7 @@ class ScriptWorker(QObject):
             cmd = cmd.strip()
 
             if cmd.startswith("delay="):
-                print("setting delay to:", cmd[6:])
+                #print("setting delay to:", cmd[6:])
                 self.delay = get_number(cmd[6:], int, self.delay)
             
             if cmd.startswith("info="):
@@ -75,9 +75,6 @@ class ScriptWorker(QObject):
 
             elif cmd.startswith("error="):
                 self.send(cmd[6:]+ "\n", TYPE_ERROR)
-
-            elif cmd.startswith("help="):
-                self.send(cmd[5:]+ "\n", TYPE_HELP)
 
             elif cmd.startswith("pause="):
                 time.sleep(get_number(cmd[6:]) / 1000)
@@ -88,10 +85,7 @@ class ScriptWorker(QObject):
             elif cmd.startswith("endloop"):
                 self.end_loop()
 
-            elif cmd.startswith("ARG=") and not self.arg_str:
-                self.arg_str=cmd[4:]
-
-            elif cmd.startswith("exit"):
+            elif cmd.startswith("end"):
                 self.finished.emit(True)
                 time.sleep(.01)
 
@@ -104,7 +98,6 @@ class ScriptWorker(QObject):
             if not line.replace(" ", ""):
                 return 
         line = line.replace("$LOOP", str(abs(self.loop_counter)))
-        line = line.replace("$ARG", self.arg_str)
 
         if line.strip().startswith("#"): 
             return self.handle_command(line)

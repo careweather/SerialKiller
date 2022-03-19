@@ -253,7 +253,8 @@ class MainWindow(QtWidgets.QMainWindow):
             ui_text = self.ui.lineEdit_input.text()
             text = ui_text + \
                 replace_escapes(self.ui.lineEdit_append_to_send.text())
-            self.ui.lineEdit_input.clear()
+            if not self.script_worker:
+                self.ui.lineEdit_input.clear()
 
         text = text.replace("$UTS", str(int(time.time())))
 
@@ -711,8 +712,6 @@ class MainWindow(QtWidgets.QMainWindow):
         self.cmd_list.append(cmd_keys)
 
         self.cmd_list.append(Command("new", self.open_new_window))
-
-        self.cmd_list.append(Command("github", self.open_github_repo))
 
     def interpret_command(self, text: str):
         """return none if no command found"""

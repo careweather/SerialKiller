@@ -59,7 +59,6 @@ With Python >= 3.8, run `serial_killer.py`
 
 <details open>
 
-
 ### Text 
 The types of messages that might be shown in the terminal are shown below: 
 
@@ -140,7 +139,6 @@ If no arguments are provided, the settings in the "Port" box at the bottom of th
 -p [parity]         Set parity to [parity] (accepts "EVEN", "ODD", "MARK" or "SPACE")
 -h                  Show Help Text
 ```
-
 **Examples**
 (assuming ports available are COM1, COM33, and COM50)
 
@@ -157,10 +155,9 @@ con 50 -p EVEN -r
 -------
 ## dcon
 
-Disconnect from a port. No options are available. 
+Disconnect from the current port (if connected).
 
 -------
-
 ## ports [-a]
 
 Show all available ports. 
@@ -168,10 +165,9 @@ Show all available ports.
 Optional: if argument '-a' is included, additional port information is printed. 
 
 -------
-
 ## clear
 
-Immediately clear the terminal. No options are available.
+Immediately clear the terminal
 
 -------
 
@@ -276,6 +272,15 @@ Set key '1' to send value 'one'
 ```
 key -k 1 -v one
 ```
+-----------
+## new
+
+Open a new Serial Killer window.
+
+-----------
+## quit (or exit)
+
+Exit Serial Killer immediately. 
 
 -----------------
 </details>
@@ -283,6 +288,72 @@ key -k 1 -v one
 ## Scripts
 
 <details open>
+
+### Syntax
+
+Each line of text in the script tab is evaluated as if it was being typed directly into the terminal and sent.
+
+To allow for a device to reply, a delay (in milliseconds) is set between one send and the next.
+
+**Comments** are designated by text that follows a `//`, much like in javascript or c++. 
+
+**Script Commands** are lines that begin with `#`. Multiple commands can appear on the same  line, provided that each has a '#' before it. Script commands do not have a delay associated with them, line with regular lines.
+
+These lines can be either serial killer commands (i.e. `#dcon`, `#plot -kv`, etc...) or can be a number of script-specific commands that are detailed below. 
+
+### #delay=[delay_time]
+This will set the delay between sends to [delayTime] (in milliseconds). This will override any delay time set before it. 
+
+### #pause=[pause_time]
+
+This will pause the script for [pause_time] (in milliseconds). It will not change the delay time between sends. 
+
+### #info=[info] and #error=[error]
+
+Both these commands print text to the terminal in style INFO and style ERROR.
+
+### #loop 
+### #loop=[loop_numb]
+### #endloop
+
+The `#loop=[numb_loops]` and `#endloop` keywords are meant to signal start and stop of a loop.
+
+The lines in between these keywords will be run [numb_loop] times. 
+
+For example 
+```
+#loop=5 // loop 5 times.
+hello
+#endloop
+```
+Would send "hello" 5 times. 
+If `#loop` is used rather than `#loop=[numb_loops]`, the loop will run indefinitely, so:
+```
+#loop
+hello
+#endloop
+```
+will run until the script is stopped. 
+
+The variable `$LOOP` keeps track of the number of loops executed. This counter starts at 0 and increments by one each loop execution. 
+
+To use this counter, include `$LOOP` anywhere in the script. 
+For example:
+```
+#loop=5
+my number is $LOOP
+#endloop
+```
+This would send "my number is 0", "my number is 1", "my number is 2", etc... 
+
+### #end
+
+End the script at this line. 
+
+### Examples
+
+
+
 </details>
 
 ## Logs
