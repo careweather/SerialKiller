@@ -68,13 +68,10 @@
      <number>5</number>
     </property>
     <property name="bottomMargin">
-     <number>0</number>
-    </property>
-    <property name="horizontalSpacing">
      <number>5</number>
     </property>
-    <property name="verticalSpacing">
-     <number>2</number>
+    <property name="spacing">
+     <number>5</number>
     </property>
     <item row="0" column="0">
      <widget class="QGroupBox" name="groupBox_output">
@@ -153,7 +150,7 @@
           </font>
          </property>
          <property name="text">
-          <string>SAMPLE TEXT</string>
+          <string>DEBUG TEXT HERE</string>
          </property>
         </widget>
        </item>
@@ -453,7 +450,7 @@
     <item row="2" column="0">
      <widget class="QTabWidget" name="tabWidget">
       <property name="currentIndex">
-       <number>0</number>
+       <number>1</number>
       </property>
       <property name="elideMode">
        <enum>Qt::ElideNone</enum>
@@ -581,20 +578,34 @@ font: 10pt &quot;Courier New&quot;;</string>
         <string>Script</string>
        </attribute>
        <layout class="QGridLayout" name="gridLayout_5">
-        <item row="0" column="7">
-         <widget class="QLabel" name="label_15">
-          <property name="maximumSize">
-           <size>
-            <width>30</width>
-            <height>16777215</height>
-           </size>
+        <item row="1" column="0" colspan="10">
+         <widget class="QTextEdit" name="textEdit_script">
+          <property name="font">
+           <font>
+            <family>Consolas</family>
+            <pointsize>10</pointsize>
+           </font>
           </property>
-          <property name="text">
-           <string>.txt</string>
+          <property name="styleSheet">
+           <string notr="true">background-color: rgb(50,0,0);
+color: rgb(255, 255, 255);</string>
           </property>
          </widget>
         </item>
-        <item row="0" column="8">
+        <item row="0" column="3">
+         <widget class="QLineEdit" name="lineEdit_delay">
+          <property name="maximumSize">
+           <size>
+            <width>100</width>
+            <height>16777215</height>
+           </size>
+          </property>
+          <property name="placeholderText">
+           <string>200</string>
+          </property>
+         </widget>
+        </item>
+        <item row="0" column="9">
          <widget class="QPushButton" name="pushButton_run_script">
           <property name="minimumSize">
            <size>
@@ -613,6 +624,19 @@ font: 10pt &quot;Courier New&quot;;</string>
           </property>
          </widget>
         </item>
+        <item row="0" column="8">
+         <widget class="QLabel" name="label_15">
+          <property name="maximumSize">
+           <size>
+            <width>30</width>
+            <height>16777215</height>
+           </size>
+          </property>
+          <property name="text">
+           <string>.txt</string>
+          </property>
+         </widget>
+        </item>
         <item row="0" column="1">
          <widget class="QLabel" name="label_2">
           <property name="maximumSize">
@@ -626,31 +650,17 @@ font: 10pt &quot;Courier New&quot;;</string>
           </property>
          </widget>
         </item>
-        <item row="1" column="0" colspan="9">
-         <widget class="QTextEdit" name="textEdit_script">
-          <property name="font">
-           <font>
-            <family>Consolas</family>
-            <pointsize>10</pointsize>
-           </font>
-          </property>
-          <property name="styleSheet">
-           <string notr="true">background-color: rgb(50,0,0);
-color: rgb(255, 255, 255);</string>
-          </property>
-         </widget>
-        </item>
         <item row="0" column="6">
-         <widget class="QLineEdit" name="lineEdit_script_name"/>
-        </item>
-        <item row="0" column="5">
          <widget class="QLabel" name="label_16">
           <property name="text">
            <string>Name:</string>
           </property>
          </widget>
         </item>
-        <item row="0" column="4">
+        <item row="0" column="7">
+         <widget class="QLineEdit" name="lineEdit_script_name"/>
+        </item>
+        <item row="0" column="5">
          <spacer name="horizontalSpacer_6">
           <property name="orientation">
            <enum>Qt::Horizontal</enum>
@@ -663,16 +673,10 @@ color: rgb(255, 255, 255);</string>
           </property>
          </spacer>
         </item>
-        <item row="0" column="3">
-         <widget class="QLineEdit" name="lineEdit_delay">
-          <property name="maximumSize">
-           <size>
-            <width>100</width>
-            <height>16777215</height>
-           </size>
-          </property>
-          <property name="placeholderText">
-           <string>200</string>
+        <item row="0" column="4">
+         <widget class="QLabel" name="label_9">
+          <property name="text">
+           <string>ms</string>
           </property>
          </widget>
         </item>
@@ -1113,7 +1117,7 @@ color: rgb(255, 255, 255);</string>
            <item row="2" column="0" colspan="4">
             <widget class="QCheckBox" name="checkBox_interpret_escape">
              <property name="text">
-              <string>Interpret Escape Sequences in input (\n, \r, \t)</string>
+              <string>Interpret command chars in input ('\n', '\r', '\t')</string>
              </property>
              <property name="checked">
               <bool>true</bool>

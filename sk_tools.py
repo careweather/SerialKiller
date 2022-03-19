@@ -48,6 +48,7 @@ TYPE_HELP = 6
 
 GITHUB_URL = "https://github.com/Alaraway/SerialKiller"
 
+
 def dprint(*args, color: str = "white", **kwargs):
     if DEBUG_LEVEL:
         p_string = ""
@@ -73,15 +74,16 @@ def get_number(obj, return_type=float, failure_val=None, lower_limit: float = No
 
     return rval
 
+
 def get_timestamp():
     return datetime.datetime.now().strftime("%H:%M:%S.%f")[:-3]
 
 
-
-def find_file(self, start_directory:str, file_name:str = None, file_extension:str = '.txt'):
+def find_file(self, start_directory: str, file_name: str = None, file_extension: str = '.txt'):
     '''opens a popup if file_name == None. Returns "" if cancel. Returns None if no file found'''
     if file_name == None or file_name == False:
-        file_path = QFileDialog.getOpenFileName(self, "Open", directory= start_directory, filter = "*"+file_extension)[0]
+        file_path = QFileDialog.getOpenFileName(
+            self, "Open", directory=start_directory, filter="*"+file_extension)[0]
         return file_path
     if file_extension in file_name:
         file_name.replace(file_extension, "")
@@ -91,13 +93,16 @@ def find_file(self, start_directory:str, file_name:str = None, file_extension:st
     else:
         return None
 
+
 def colorToStyleSheet(color: QColor) -> str:
     fmtcolor = f"rgb({color.red()}, {color.green()}, {color.blue()})"
     return fmtcolor
 
-def replace_escapes(input: str) -> str:
-    return input.replace("\\n", '\n').replace('\\r', '\r').replace('\\t', '\t')
 
+def replace_escapes(input: str) -> str:
+    input = input.replace("\\\\n", '^n^').replace('\\\\r', '^r^').replace('\\\\t', '^t^') ## Temporary change any \\n, ,etc
+    input = input.replace("\\n", '\n').replace('\\r', '\r').replace('\\t', '\t') 
+    return input.replace("^n^", '\\n').replace('^r^', '\\r').replace('^t^', '\\t') # Replace any \\n, etc
 
 
 STYLE_SHEET_TERMINAL_INACTIVE = f'background-color: {colorToStyleSheet(COLOR_DARK_GREY)};color: rgb(255, 255, 255);font: 10pt "Consolas";'
@@ -105,4 +110,3 @@ STYLE_SHEET_TERMINAL_ACTIVE = f'background-color: {colorToStyleSheet(COLOR_BLACK
 STYLE_SHEET_BUTTON_INACTIVE = f"background-color: {colorToStyleSheet(COLOR_GREY)};"
 STYLE_SHEET_BUTTON_ACTIVE = f"background-color: {colorToStyleSheet(COLOR_GREEN)};"
 STYLE_SHEET_SCRIPT = f'background-color: {colorToStyleSheet(COLOR_DARK_RED)};color: rgb(255, 255, 255);font: 10pt "Consolas";'
-

@@ -25,6 +25,10 @@ Current Features:
   - Use features built into pyqtgraph to export plot images, transform data, etc. 
 
 # Install: 
+
+<details open>
+
+
 Ensure the following packages are installed:
 - Pip 
 - Python > 3.8
@@ -41,23 +45,77 @@ check you are added to the group:
 
 > & groups 
 
-The machine will need to be restarted in order for this change to take effect.
+Your computer will need to be restarted in order for this change to take effect.
+
+</details>
 
 # Run: 
 
 With Python >= 3.8, run `serial_killer.py`  
 
-# Useage:
+# Usage:
+
+## General
+
+<details open>
+
+### Text Input
+Use the 'TX' text box at the top of the window both as a way to send text to the device, and as a way to enter commands. 
+
+This text is only sent after pressing 'Send' or hitting `ENTER`. 
+
+To append a newline or return character (as is common with serial messages) to this text, edit the string defined in `Settings > Append to Send:`. The text here will be appended to everything sent. 
+
+![send_settings](img/send-settings.PNG)
+
+Because some characters like `tab` and `newline` cannot be typed with the `TAB` and `ENTER` keys, an option is provided to interpret "\t", "\n", and "\r" in the input with their corresponding control characters. As with other text interpretation, "\\\n", "\\\t", and "\\\r" are replaced with literal \n, \t ,\r. 
+
+If enabled, this would mean that:
+```
+hello\tworld \n i am on a newline \\n i am not
+```
+is sent as:
+```
+hello   world 
+ i am on a newline \n i am not
+```
+
+
+</details>
 
 ## Commands
 
-## 
+<details open>
+</details>
+
+## Scripts
+
+<details open>
+</details>
+
+## Logs
+
+<details open>
+</details>
+
+## Plotting
+
+<details open>
+</details>
+
+## Settings
+
+<details open>
+</details>
+
+
+
 
 # Possible Future Features / Fixes
 
 ## Plots
 - Add plot types for parsing and plotting arrays and single variables
-- Add flexible input parsing, separators, etc for plot data. 
+- Add flexible input parsing, separators, etc. for plot data. 
 - Add multiple scale plotting. 
 
 ## Scripting 
@@ -67,7 +125,8 @@ With Python >= 3.8, run `serial_killer.py`
 - Add encodings other than 'utf-8' for input and output.
 
 ## Commands 
-- 
+- Additional Commands for changing settings
+- Adding escape character to command parser
 
 # Modification / Under the hood
 
