@@ -24,7 +24,6 @@ class ScriptWorker(QObject):
         if type == TYPE_TX:
             time.sleep(self.delay / 1000)
         
-
     def start_loop(self, loop_str:str):
         loop_str = loop_str.replace("loop", "")
         self.loop_start_line = self.current_line_number
@@ -33,7 +32,6 @@ class ScriptWorker(QObject):
             return
         elif not loop_str.startswith("="):
             return
-        
         l_number = get_number(loop_str[1:], int)
         if l_number == None:
             self.loop_start_line = None
@@ -74,9 +72,6 @@ class ScriptWorker(QObject):
             
             if cmd.startswith("info="):
                 self.send(cmd[5:] + "\n", TYPE_INFO)
-                
-            elif cmd.startswith("warning="):
-                self.send(cmd[8:]+ "\n", TYPE_WARNING)
 
             elif cmd.startswith("error="):
                 self.send(cmd[6:]+ "\n", TYPE_ERROR)
@@ -112,7 +107,7 @@ class ScriptWorker(QObject):
             return self.handle_command(line)
         
         self.send(line)
-        return 
+        return
 
     def run(self):
         self.active = True

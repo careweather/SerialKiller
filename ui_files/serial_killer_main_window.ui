@@ -371,7 +371,7 @@
         <widget class="QComboBox" name="comboBox_baud">
          <property name="minimumSize">
           <size>
-           <width>70</width>
+           <width>80</width>
            <height>0</height>
           </size>
          </property>
@@ -513,6 +513,12 @@
         </item>
         <item row="1" column="3">
          <widget class="QPushButton" name="pushButton_clear">
+          <property name="minimumSize">
+           <size>
+            <width>120</width>
+            <height>0</height>
+           </size>
+          </property>
           <property name="maximumSize">
            <size>
             <width>80</width>

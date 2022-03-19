@@ -6,7 +6,6 @@ from sk_tools import *
 DEFAULT_LOG_FORMAT = '%(port)s\t|%(asctime)s.%(msecs)03d|\t%(message)s'
 DEFAULT_TIME_FORMAT = "%I:%M:%S"
 
-
 class Logger:
     def __init__(self, path: str = None, name: str = None, time_fmt: str = None, log_fmt: str = None, port_name: str = None) -> None:
         self.started = False

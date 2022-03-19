@@ -10,12 +10,12 @@ def update_ui_files():
     ]
     print("UPDATING FROM UI FILE")
     for command in update_ui_commands:
-        print(command, 'white', end='\t', flush=True)
+        print(command, end='\t', flush=True)
         result = subprocess.call(command, shell=True)
         if result:
-            print("FAILURE", 'red')
+            print("FAILURE")
         else:
-            print("SUCCESS", 'green')
+            print("SUCCESS")
     quit()
 
 def install_deps():
@@ -38,11 +38,9 @@ def install_deps():
         'pip install PyQt5-sip --upgrade'
     ]
 
-    install_result = 0
-
     for cmd in install_cmds:
         print(cmd)
-        install_result =  subprocess.call(cmd, shell=True)
+        install_result = subprocess.call(cmd, shell=True)
         if install_result:
             print("FAILURE")
             quit()
@@ -51,7 +49,6 @@ def install_deps():
         
     quit()
 
-
 def execute():
     cl_args = {
         '-u': update_ui_files,
@@ -59,12 +56,12 @@ def execute():
     }
 
     for arg in sys.argv[1:]:
-        print(f"ARG: {arg}", 'yellow')
+        print(f"ARG: {arg}")
         if arg in cl_args:
             cl_args[arg]()
         else:
             print(f"WARN: ARGUMENT {arg} NOT RECOGNIZED")
-    
+
     run_app()
 
 

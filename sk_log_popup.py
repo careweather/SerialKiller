@@ -6,8 +6,6 @@ from PyQt5 import QtCore, QtWidgets
 
 from gui.GUI_LOG_POPUP import Ui_logViewer
 
-
-
 class Log_Viewer(QtWidgets.QWidget):
     def __init__(self, log_file:str) -> None:
         super().__init__()
@@ -34,9 +32,7 @@ class Log_Viewer(QtWidgets.QWidget):
             self.close()
 
 def open_log_viewer(self, log_file):
-    
     self.window = Log_Viewer(log_file)
-    
     self.window.resize(800,600)
     self.window.show()
     return

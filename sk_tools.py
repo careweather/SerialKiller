@@ -46,6 +46,8 @@ TYPE_ERROR = 4
 TYPE_CMD = 5
 TYPE_HELP = 6
 
+GITHUB_URL = "https://github.com/Alaraway/SerialKiller"
+
 def dprint(*args, color: str = "white", **kwargs):
     if DEBUG_LEVEL:
         p_string = ""
@@ -95,6 +97,8 @@ def colorToStyleSheet(color: QColor) -> str:
 
 def replace_escapes(input: str) -> str:
     return input.replace("\\n", '\n').replace('\\r', '\r').replace('\\t', '\t')
+
+
 
 STYLE_SHEET_TERMINAL_INACTIVE = f'background-color: {colorToStyleSheet(COLOR_DARK_GREY)};color: rgb(255, 255, 255);font: 10pt "Consolas";'
 STYLE_SHEET_TERMINAL_ACTIVE = f'background-color: {colorToStyleSheet(COLOR_BLACK)};color: rgb(255, 255, 255);font: 10pt "Consolas";'

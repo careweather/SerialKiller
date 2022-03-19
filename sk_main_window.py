@@ -129,6 +129,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.ui.action_open_log.triggered.connect(
             lambda: self.handle_log_command(**open_args))
         self.ui.action_help.triggered.connect(self.print_help)
+        self.ui.action_github_repo.triggered.connect(self.open_github_repo)
         self.ui.tabWidget.setCurrentIndex(0)
         self.ui.textEdit_terminal.setPlaceholderText(HELP_TEXT)
         self.ui.textEdit_terminal.setStyleSheet(STYLE_SHEET_TERMINAL_INACTIVE)
@@ -245,6 +246,7 @@ class MainWindow(QtWidgets.QMainWindow):
             label_text += str(arg)
         self.ui.label_debug.setStyleSheet(f"color:{colorToStyleSheet(color)}")
         self.ui.label_debug.setText(label_text)
+        dprint(label_text)
 
     def send_clicked(self, text: str = None):
         if not text:
@@ -294,8 +296,6 @@ class MainWindow(QtWidgets.QMainWindow):
             self.disconnect(False)
 
     def disconnect(self, intentional=True):
-        
-
         if self.is_connected == False:
             if intentional:
                 self.debug_text("ALREADY DISCONNECTED", color=COLOR_DARK_YELLOW)
@@ -307,7 +307,6 @@ class MainWindow(QtWidgets.QMainWindow):
             self.add_text(f"DISCONNECTED FROM: {ser.port}\n", type=TYPE_INFO)
             self.debug_text(f"DISCONNECTED FROM: {ser.port}")
 
-        
         self.serial_worker.stop()
         self.serial_thread.exit()
         serial_disconnect()
@@ -371,25 +370,10 @@ class MainWindow(QtWidgets.QMainWindow):
         port: str = None
         baud: str = None
         xonxoff: bool = None
-        dsrdtr: bool = False
+        dsrdtr: bool = None
+        rtscts: bool = None
         parity: str = None
-        rtscts: str = None
-
-
-        if self.is_connected:
-            if not kwargs:
-                self.debug_text("ERR: ALREADY CONNECTED", color = COLOR_RED)
-            else:
-                self.disconnect()
-            
-                self.handle_connect(**kwargs)
-            return 
-
-    
-        if '-h' in kwargs:
-            self.add_text(CONNECT_HELP, type=TYPE_HELP)
-            return
-
+        
         if '-d' in kwargs:
             dsrdtr = True
             self.ui.checkBox_dsrdtr.setChecked(True)
@@ -452,8 +436,16 @@ class MainWindow(QtWidgets.QMainWindow):
         else:
             port = self.ui.comboBox_port.currentText()
 
+        if self.is_connected:
+            if port in self.current_ports:
+                self.disconnect()
+                self.handle_connect(**kwargs)
+            else:
+                self.debug_text("ERR: ALREADY CONNECTED", color = COLOR_RED)
+            return
+
         self.connect(port, baud, xonxoff, dsrdtr, rtscts, parity)
-        pass
+        
 
     def connect_clicked(self):
         if self.is_connected:
@@ -678,8 +670,7 @@ class MainWindow(QtWidgets.QMainWindow):
         cmd_con.add_argument('-h', '', bool, True)
         self.cmd_list.append(cmd_con)
 
-        cmd_dcon = Command("dcon", self.disconnect)
-        self.cmd_list.append(cmd_dcon)
+        self.cmd_list.append(Command("dcon", self.disconnect))
 
         cmd_script = Command("script", self.handle_script_command)
         cmd_script.add_argument("-h", '')
@@ -692,7 +683,6 @@ class MainWindow(QtWidgets.QMainWindow):
         cmd_script.add_argument("-d", '', int)
         cmd_script.add_argument("-a", '', str, "")
         cmd_script.add_argument("-ls")
-
         self.cmd_list.append(cmd_script)
 
         cmd_log = Command("log", self.handle_log_command)
@@ -701,7 +691,6 @@ class MainWindow(QtWidgets.QMainWindow):
         cmd_log.add_argument('-rm', '')
         cmd_log.add_argument('-ls', '')
         cmd_log.add_argument('-h', "")
-
         self.cmd_list.append(cmd_log)
 
         cmd_plot = Command("plot", self.handle_plot_command)
@@ -712,18 +701,18 @@ class MainWindow(QtWidgets.QMainWindow):
         cmd_plot.add_argument("-h", "")
         cmd_plot.add_argument("-m")
         cmd_plot.add_argument("-p")
-
         self.cmd_list.append(cmd_plot)
 
         cmd_keys = Command("key", self.handle_key_cmd)
         cmd_keys.add_argument("-k", "")
-        cmd_keys.add_argument("-s", "")
+        cmd_keys.add_argument("-v", "")
         cmd_keys.add_argument("-c", "")
         cmd_keys.add_argument("-h", "")
-
         self.cmd_list.append(cmd_keys)
 
         self.cmd_list.append(Command("new", self.open_new_window))
+
+        self.cmd_list.append(Command("github", self.open_github_repo))
 
     def interpret_command(self, text: str):
         """return none if no command found"""
@@ -757,24 +746,21 @@ class MainWindow(QtWidgets.QMainWindow):
         arg_str = ""
         run_script = True
         run_script_name = None
-
-        if "-a" in kwargs:
-            arg_str = kwargs['-a']
-
         if '-h' in kwargs:
             self.add_text(SCRIPT_HELP, type=TYPE_HELP)
             return
-
+        if "-a" in kwargs:
+            arg_str = kwargs['-a']
         if '-ls' in kwargs:
             self.list_files(SCRIPT_FOLDER)
             return
-
         if '-rm' in kwargs:
             if isinstance(kwargs['-rm'], list):
                 for i in kwargs['-rm']:
                     self.delete_script(i)
             else:
                 self.delete_script(kwargs['-rm'])
+            return
 
         if '-n' in kwargs:
             self.ui.textEdit_script.clear()
@@ -811,54 +797,40 @@ class MainWindow(QtWidgets.QMainWindow):
         if run_script:
             self.start_script(run_script_name, delay, arg_str)
 
-        return
-
     def open_script(self, file_name: str = None):
         file_path = find_file(self, SCRIPT_FOLDER, file_name)
         if file_path == "" or file_path == False:
             return
         if file_path == None:
-            self.debug_text(
-                f"ERR: file '{file_name}'.txt not found", color=COLOR_RED)
+            self.debug_text(f"ERR: file '{file_name}'.txt not found", color=COLOR_RED)
             return
-
         dprint(f"OPENING SCRIPT {file_name}", color='blue')
-
         with open(file_path, 'r') as file:
             self.ui.textEdit_script.setPlainText(file.read())
-
-        self.ui.lineEdit_script_name.setText(
-            file_path.split('/')[-1].replace('.txt', ''))
+        self.ui.lineEdit_script_name.setText(file_path.split('/')[-1].replace('.txt', ''))
         self.ui.tabWidget.setCurrentIndex(1)
         self.ui.textEdit_script.setFocus()
-        return
 
     def delete_script(self, file_name: str = None):
         file_path = find_file(self, SCRIPT_FOLDER, file_name)
-
         if file_path == "":
             return
-
         if file_path == None:
             self.add_text(f"COULD NOT REMOVE {file_name}")
             return
-
         if not (file_path.endswith(".txt")):
             self.add_text(f"INVALID FILE {file_name}")
             return
-
         if self.ui.lineEdit_script_name.text() == file_name:
             self.ui.lineEdit_script_name.clear()
             self.ui.textEdit_script.clear()
-
         self.add_text("DELETED: ", file_path, "\n", type=TYPE_INFO)
         os.remove(file_path)
 
     def save_script(self, file_name: str = None, save_as=False):
         file_path: str = None
         if save_as:
-            file_path = self.get_save_file(
-                INSTALL_FOLDER + '/scripts', "*.txt", "Save Script")
+            file_path = self.get_save_file(INSTALL_FOLDER + '/scripts', "*.txt", "Save Script")
             file_name = file_path.split('/')[-1]
             if not file_path:
                 return
@@ -880,14 +852,10 @@ class MainWindow(QtWidgets.QMainWindow):
             else:
                 file_path = file_name
 
-        dprint(f"SAVING SCRIPT {file_path}", color='blue')
         self.debug_text(f"SAVING SCRIPT {file_name}", color=COLOR_GREEN)
-
         with open(file_path, 'w') as file:
             file.write(self.ui.textEdit_script.toPlainText())
-
         self.ui.lineEdit_script_name.setText(file_name.replace(".txt", ""))
-
         self.debug_text(f"Saved '{file_name}'", color=COLOR_GREEN)
         return
 
@@ -958,7 +926,6 @@ class MainWindow(QtWidgets.QMainWindow):
 #               LOGGING FUNCTIONS
 #
 ########################################################################
-
     def handle_log_command(self, **kwargs):
         if '-h' in kwargs:
             self.add_text(LOG_HELP, type=TYPE_HELP)
@@ -1088,16 +1055,20 @@ class MainWindow(QtWidgets.QMainWindow):
         value = ""
         if "-h" in kwargs:
             self.add_text(KEY_HELP, type=TYPE_HELP)
+            return
         if '-c' in kwargs:
             self.clear_key_cmds()
             return
         if '-k' in kwargs:
             key = kwargs['-k']
-        if '-s' in kwargs:
-            value = kwargs['-s']
-
+        if '-v' in kwargs:
+            value = kwargs['-v']
         if key and value:
             self.add_key_cmd(key, value)
+        else:
+            self.add_text("KEY and VALUE required", type = TYPE_ERROR)
+            self.add_text(KEY_HELP, type=TYPE_HELP)
+
 
     def get_key_cmds(self):
         key_cmds = {}
@@ -1106,8 +1077,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 if not self.ui.tableWidget_keys.item(row, 0).text():
                     continue
                 if self.ui.tableWidget_keys.item(row, 1) is not None:
-                    key_cmds[self.ui.tableWidget_keys.item(row, 0).text(
-                    )] = self.ui.tableWidget_keys.item(row, 1).text()
+                    key_cmds[self.ui.tableWidget_keys.item(row, 0).text()] = self.ui.tableWidget_keys.item(row, 1).text()
         return key_cmds
 
     def clear_key_cmds(self):
@@ -1115,12 +1085,10 @@ class MainWindow(QtWidgets.QMainWindow):
         self.ui.tableWidget_keys.setRowCount(1)
 
     def key_cmds_edited(self):
-        print("CHECKED")
         if self.ui.tableWidget_keys.currentRow() == self.ui.tableWidget_keys.rowCount() - 1:
             if not self.ui.tableWidget_keys.currentItem():
                 return
-            self.ui.tableWidget_keys.setRowCount(
-                self.ui.tableWidget_keys.rowCount()+1)
+            self.ui.tableWidget_keys.setRowCount(self.ui.tableWidget_keys.rowCount()+1)
         self.key_cmds = self.get_key_cmds()
         if self.key_cmds:
             self.ui.lineEdit_keyboard_control.setEnabled(True)
@@ -1134,20 +1102,20 @@ class MainWindow(QtWidgets.QMainWindow):
         self.ui.tableWidget_keys.setItem(indx, 0, QTableWidgetItem(str(key)))
         self.ui.tableWidget_keys.setItem(indx, 1, QTableWidgetItem(str(send)))
         self.key_cmds_edited()
-
     
-
-
     def keyboard_control(self):
         key = self.ui.lineEdit_keyboard_control.text()
+        if not key:
+            return
         self.ui.lineEdit_keyboard_control.clear()
         key_cmds = self.get_key_cmds()
+        cprint(key, color = 'green', end = '\t')
+        cprint(key_cmds, color = 'red')
         if key in key_cmds:
             self.ui.lineEdit_input.setText(key_cmds[key])
             self.send_clicked()
         else:
-            self.debug_text(
-                f"KEY {key} not in Keyboard commands", color=COLOR_RED)
+            self.debug_text(f"KEY {key} not in Keyboard commands", color=COLOR_RED)
 
 ########################################################################
 #
@@ -1155,16 +1123,18 @@ class MainWindow(QtWidgets.QMainWindow):
 #
 ########################################################################
 
+    def open_github_repo(self):
+        import webbrowser
+        self.debug_text("OPENING GITHUB REPO", color = COLOR_GREEN)
+        webbrowser.open(GITHUB_URL)
+
     def open_new_window(self):
         import platform
         import subprocess
         if platform.system() == 'Windows':
             cmd = f'start pythonw.exe {INSTALL_FOLDER}/serial_killer.py'
-            
         elif platform.system() == 'Linux':
             cmd = f'python3 {INSTALL_FOLDER}/serial_killer.py'
-            
-        dprint(cmd, color = 'yellow')
         subprocess.call(cmd, shell=True)
 
     def get_latest_file(self, directory: str):
@@ -1181,7 +1151,6 @@ class MainWindow(QtWidgets.QMainWindow):
             last_modified = last_t.strftime("%m/%d/%Y %H:%M:%S")
             files_str += str(last_modified) + "\t" + file + "\n"
         self.add_text(files_str, type=TYPE_HELP)
-        return
 
     def get_file(self, start_dir: str = None, extensions: str = None, title: str = "Open") -> str:
         files = QFileDialog.getOpenFileName(
@@ -1197,7 +1166,6 @@ class MainWindow(QtWidgets.QMainWindow):
         text: str = None
         if not os.path.exists(file_path):
             return None
-
         with open(file_path, 'r') as file:
             text = file.read()
         return text
