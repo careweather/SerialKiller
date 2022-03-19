@@ -76,6 +76,9 @@ class ScriptWorker(QObject):
             elif cmd.startswith("error="):
                 self.send(cmd[6:]+ "\n", TYPE_ERROR)
 
+            elif cmd.startswith("help="):
+                self.send(cmd[5:]+ "\n", TYPE_HELP)
+
             elif cmd.startswith("pause="):
                 time.sleep(get_number(cmd[6:]) / 1000)
 
