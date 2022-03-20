@@ -61,7 +61,7 @@ def serial_connect(port: str, baud=115200, xonxoff=False, rtscts=False, dsrdtr=F
         print(f"ERROR OPENING PORT: {port} ", E)
         dprint(f"ERR: {traceback.format_exc()}\n", color='red')
         ser.port = None
-        time.sleep(.1)
+        time.sleep(.05)
         return False
 
 def serial_disconnect():
@@ -139,7 +139,7 @@ class RescanWorker(QObject):
     new_ports = pyqtSignal(dict)
     active = True
 
-    def __init__(self, update_interval=1.00) -> None:
+    def __init__(self, update_interval=.5) -> None:
         super().__init__()
         self.active = True
         self.update_interval = update_interval

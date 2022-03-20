@@ -3,14 +3,16 @@ import time
 
 from sk_tools import *
 
+
 class ScriptWorker(QObject):
     line = pyqtSignal(list)
     finished = pyqtSignal(bool)
 
-    def __init__(self, text:str, delay:int = 500, arg_str:str = "") -> None:
+    def __init__(self, text:str, delay:int = DEFAULT_SCRIPT_DELAY, arg_str:str = "") -> None:
         super().__init__()
         self.arg_str = arg_str
         self.delay = delay
+        dprint("SCRIPT DELAY:", self.delay)
         self.lines:list = text.splitlines(False)
         self.active = False
         self.line_total = len(self.lines)

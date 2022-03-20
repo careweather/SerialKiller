@@ -16,6 +16,8 @@ SETTINGS_FILE = INSTALL_FOLDER + "/user_settings.json"
 SCRIPT_FOLDER = INSTALL_FOLDER + "/scripts/"
 LOG_FOLDER = INSTALL_FOLDER + "/logs/"
 
+
+## COLORS 
 COLOR_WHITE = QColor(255, 255, 255)
 COLOR_LIGHT_GREY = QColor(220, 220, 220)
 COLOR_GREY = QColor(155, 155, 155)
@@ -47,6 +49,9 @@ TYPE_CMD = 5
 TYPE_HELP = 6
 
 GITHUB_URL = "https://github.com/Alaraway/SerialKiller"
+
+
+DEFAULT_SCRIPT_DELAY = 200 
 
 
 def dprint(*args, color: str = "white", **kwargs):
@@ -100,9 +105,9 @@ def colorToStyleSheet(color: QColor) -> str:
 
 
 def replace_escapes(input: str) -> str:
-    input = input.replace("\\\\n", '^n^').replace('\\\\r', '^r^').replace('\\\\t', '^t^') ## Temporary change any \\n, ,etc
-    input = input.replace("\\n", '\n').replace('\\r', '\r').replace('\\t', '\t') 
-    return input.replace("^n^", '\\n').replace('^r^', '\\r').replace('^t^', '\\t') # Replace any \\n, etc
+    input = input.replace("\\\\n", '^n^').replace('\\\\r', '^r^').replace('\\\\t', '^t^')  # Temporary change any \\n, ,etc
+    input = input.replace("\\n", '\n').replace('\\r', '\r').replace('\\t', '\t')
+    return input.replace("^n^", '\\n').replace('^r^', '\\r').replace('^t^', '\\t')  # Replace any \\n, etc
 
 
 STYLE_SHEET_TERMINAL_INACTIVE = f'background-color: {colorToStyleSheet(COLOR_DARK_GREY)};color: rgb(255, 255, 255);font: 10pt "Consolas";'

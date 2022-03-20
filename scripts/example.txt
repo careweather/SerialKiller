@@ -1,19 +1,16 @@
-#delay=1 #ARG=11 #dcon
+#delay=1 #dcon
 I am an example script 
 #delay=1000
 Edit me in the script tab
 Incrementing Loop...
-#loop=$ARG #delay=100
+#loop=10 #delay=100
 $LOOP
 #endloop
 #delay=1000
 #info=DECREMENTING LOOP...
 #delay=100
-#loop=-$ARG
+#loop=-10
 $LOOP
 #endloop
 #delay=1000
 goodbye...
-#delay=1
-clear
-#script -h
