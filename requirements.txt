@@ -1,0 +1,5 @@
+numpy==1.20.1
+PyQt5==5.15.6
+pyqtgraph==0.12.1
+pyserial==3.5
+termcolor==1.1.0
