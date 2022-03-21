@@ -65,14 +65,14 @@ With Python >= 3.8, run `serial_killer.py`
 
 The types of messages that might be shown in the terminal are shown below:
 
-![send_settings](img/text.PNG)
+![text_settings](img/text.PNG)
 
 RX (text from a device) text is colored white.  
 TX (text to a device) text is colored blue.
 
 The text sent to the device, INFO text, and ERROR text all have optional strings prepended to them. These are not required, but may make logging easier to understand. Customize these strings in the `Settings > Terminal Settings` box. Use the checkboxes to set if each type of text should be included in the terminal or log.
 
-![send_settings](img/terminal-settings.PNG)
+![term_settings](img/terminal-settings.PNG)
 
 ### Text TO a device
 

@@ -20,47 +20,10 @@ from sk_help import *
 from sk_help_popup import Help_Popup, open_help_popup
 from sk_log_popup import Log_Viewer, open_log_viewer
 from sk_logging import Logger
-from sk_scripting import ScriptWorker
+from sk_scripting import ScriptWorker, ScriptSyntaxHighlighter
 from sk_tools import *
 
 
-
-
-class ScriptSyntaxHighlighter(QSyntaxHighlighter):
-    cmd_format = QTextCharFormat()
-    cmd_format.setForeground(COLOR_LIGHT_YELLOW)
-
-    comment_format = QTextCharFormat()
-    comment_format.setForeground(COLOR_MED_DARK_GREY)
-
-    def __init__(self, parent: QTextEdit = None):
-        super().__init__(parent)
-
-    def highlightBlock(self, input: str) -> None:
-        text = input.split("//")[0]
-        dprint(text, color='blue')
-        command_sections = []
-        block_start = None
-
-        if text.strip().startswith("#"):
-            command_sections.append([0,len(text)])
-        dprint("cmd_sections ", command_sections, color='red')
-        for section in command_sections:
-            self.setFormat(section[0], section[1] - section[0] + 1, self.cmd_format)
-
-        comment_sections = []
-        if '//' in input:
-            dprint("has comment: ", input)
-            block_start = input.index("//")
-            if '\n' in input:
-                comment_sections.append([block_start, input.index('\n')])
-            else:
-                comment_sections.append([block_start, len(input)])
-
-        dprint("comment_sections ", comment_sections, color='yellow')
-
-        for section in comment_sections:
-            self.setFormat(section[0], section[1] - section[0] + 1, self.comment_format)
 
 
 class MainWindow(QtWidgets.QMainWindow):
@@ -516,10 +479,13 @@ class MainWindow(QtWidgets.QMainWindow):
         for p in self.current_ports:
             p_str += f"{p} "
         self.debug_text(p_str, color=COLOR_BLACK)
+        p_str = "-----PORTS-----\n"
         if not self.current_ports:
-            p_str = "PORTS: NONE"
-        else:
-            p_str = " #  NAME\t\tDESCRIPTION\n"
+            p_str += "NONE"
+        elif '-a' not in kwargs:
+            p_str += " #  NAME\t\tDESCRIPTION\n"
+        
+            
 
         for index, port in enumerate(self.current_ports):
             this_port = self.current_ports[port]
@@ -529,6 +495,7 @@ class MainWindow(QtWidgets.QMainWindow):
                     p_str += f"\t{item}:\t{str(this_port[item])}\n"
             else:
                 p_str += f'''({index}) {this_port["name"]}\t\t{this_port["descr"]}\n'''
+        
         self.add_text(p_str, type=TYPE_HELP)
 
 

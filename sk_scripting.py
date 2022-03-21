@@ -1,7 +1,46 @@
 from PyQt5.QtCore import QObject, pyqtSignal
+from PyQt5.QtGui import QTextCharFormat, QTextCursor, QSyntaxHighlighter
+from PyQt5.QtWidgets import QTextEdit
 import time 
 
 from sk_tools import *
+
+
+class ScriptSyntaxHighlighter(QSyntaxHighlighter):
+    cmd_format = QTextCharFormat()
+    cmd_format.setForeground(COLOR_LIGHT_YELLOW)
+
+    comment_format = QTextCharFormat()
+    comment_format.setForeground(COLOR_MED_DARK_GREY)
+
+    def __init__(self, parent: QTextEdit = None):
+        super().__init__(parent)
+
+    def highlightBlock(self, input: str) -> None:
+        text = input.split("//")[0]
+        #dprint(text, color='blue')
+        command_sections = []
+        block_start = None
+
+        if text.strip().startswith("#"):
+            command_sections.append([0,len(text)])
+        #dprint("cmd_sections ", command_sections, color='red')
+        for section in command_sections:
+            self.setFormat(section[0], section[1] - section[0] + 1, self.cmd_format)
+
+        comment_sections = []
+        if '//' in input:
+            #dprint("has comment: ", input)
+            block_start = input.index("//")
+            if '\n' in input:
+                comment_sections.append([block_start, input.index('\n')])
+            else:
+                comment_sections.append([block_start, len(input)])
+
+        #dprint("comment_sections ", comment_sections, color='yellow')
+
+        for section in comment_sections:
+            self.setFormat(section[0], section[1] - section[0] + 1, self.comment_format)
 
 
 class ScriptWorker(QObject):

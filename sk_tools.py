@@ -104,6 +104,10 @@ def colorToStyleSheet(color: QColor) -> str:
     fmtcolor = f"rgb({color.red()}, {color.green()}, {color.blue()})"
     return fmtcolor
 
+def remove_from_string(input:str, removes = []):
+    for item in removes:
+        input = input.replace(item, "")
+    return input
 
 def replace_escapes(input: str) -> str:
     input = input.replace("\\\\n", '^n^').replace('\\\\r', '^r^').replace('\\\\t', '^t^')  # Temporary change any \\n, ,etc

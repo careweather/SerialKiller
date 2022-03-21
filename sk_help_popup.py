@@ -1,10 +1,15 @@
+from os import remove
 from PyQt5 import QtCore, QtWidgets
 
 from gui.GUI_HELP_POPUP import Ui_help_popup
 from sk_tools import *
 
-
+fmt_error_msg = f'''
+# NOTE: This markdown translation has some issues. 
+See the [github repo]({GITHUB_URL}) for correct formatting\n
+'''
 class Help_Popup(QtWidgets.QWidget):
+    
     def __init__(self) -> None:
         super().__init__()
         dprint("OPENING LOG VIEWER", color = 'red')
@@ -14,7 +19,8 @@ class Help_Popup(QtWidgets.QWidget):
         help_text = ""
         with open("readme.md", 'r') as file:
             file_text = file.read().split("# Usage:")[1].split("# Possible Future Features / Fixes")[0]
-            help_text = "# NOTE: This markdown translation has some issues. See the github repo for correct formatting\n" + file_text
+            file_text = remove_from_string(file_text, ['<details open>', '<details closed>', '</details>'])
+            help_text = fmt_error_msg + file_text
 
         self.ui.textEdit_file.setMarkdown(help_text)
         

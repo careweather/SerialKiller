@@ -139,7 +139,7 @@ class RescanWorker(QObject):
     new_ports = pyqtSignal(dict)
     active = True
 
-    def __init__(self, update_interval=.5) -> None:
+    def __init__(self, update_interval=1) -> None:
         super().__init__()
         self.active = True
         self.update_interval = update_interval
