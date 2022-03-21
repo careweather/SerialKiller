@@ -2,6 +2,23 @@
 CONTAINS THE HELP STRINGS FOR COMMAND LINE USES
 '''
 
+from sk_tools import GITHUB_URL
+
+GREETINGS_TEXT = f'''\
+                    _         _   _     _  _  _             
+                   (_)       | | | |   (_)| || |            
+   ___   ___  _ __  _   __ _ | | | | __ _ | || |  ___  _ __ 
+  / __| / _ \| '__|| | / _` || | | |/ /| || || | / _ \| '__|
+  \__ \|  __/| |   | || (_| || | |   < | || || ||  __/| |   
+  |___/ \___||_|   |_| \__,_||_| |_|\_\|_||_||_| \___||_|   
+                                                           
+-----------------Written by Alex Laraway--------------------
+{GITHUB_URL}
+
+run with --h for CLI options
+'''
+
+
 SCRIPT_HELP = '''\
 USEAGE: 'script' [OPTIONS]
 Modify or run a script. 

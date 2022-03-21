@@ -4,9 +4,7 @@ import numpy as np
 import pyqtgraph as pg
 from PyQt5.QtWidgets import QApplication
 from pyqtgraph.functions import intColor
-from termcolor import cprint
 from sk_tools import *
-
 
 def char_split(input: str, chars: list, keep_seps=False) -> list:
     r_list = []
@@ -22,7 +20,6 @@ def char_split(input: str, chars: list, keep_seps=False) -> list:
     if buff:
         r_list.append(buff)
     return r_list
-
 
 def str_contains_elements(input: str, chars: list) -> bool:
     for i in input:
@@ -42,20 +39,16 @@ class Plot_Widget(pg.GraphicsLayoutWidget):
         self.limits = "Window"
         self.paused = False
         self.started = False
-        self.plot = pg.PlotItem()
-
+        self.plot:pg.PlotItem = pg.PlotItem()
         self.elements = {}
         self.start_time: float = None
-        self.separators = [',', ';', '\t', '\n', '|']
+        self.separators = [',', ';', '\t', '\n', '|', ']']
         self.assignment_operators = ['=', ':']
         self.prev_color = 0
         self.max_value = 0
         self.min_value = 0
 
-        
-
     def begin(self, type="Key-Value", targets: list = None, max_points=100, limits="Window"):
-
         if isinstance(targets, str):
             self.targets = targets.split(",")
         else:
@@ -72,21 +65,21 @@ class Plot_Widget(pg.GraphicsLayoutWidget):
         self.start_time = time.perf_counter()
         self.legend = pg.LegendItem(offset=(30, 30))
         self.legend.setParentItem(self.plot)
-        dprint("STARTING PLOT:", self.plot_type, self.targets, self.max_points, self.limits)
+        vprint("STARTING PLOT: ", self.plot_type, self.targets, self.max_points, self.limits)
         self.addItem(self.plot)
 
     def pause(self):
+        vprint("Plot Paused")
         self.paused = True
-        return
 
     def resume(self):
+        vprint("Plot Resumed")
         self.paused = False
-
-        return
 
     def reset(self):
         if not self.started:
             return
+        vprint("Resetting Plot")
         self.prev_color = 0
         self.min_value = 0
         self.max_value =0
@@ -99,9 +92,7 @@ class Plot_Widget(pg.GraphicsLayoutWidget):
         self.started = False
         self.plot.enableAutoScale()
 
-        return
-
-    def end(self):
+    def end(self): #TODO 
         return
 
     def update(self, input: str):
@@ -110,7 +101,6 @@ class Plot_Widget(pg.GraphicsLayoutWidget):
         self.str_buffer += input
         if '\n' not in self.str_buffer:
             return
-
         elements = self.str_buffer.split("\n", 1)
         if len(elements) > 1:
             self.str_buffer = elements[1]
@@ -120,18 +110,14 @@ class Plot_Widget(pg.GraphicsLayoutWidget):
         if self.plot_type == 'Key-Value':
             self.parse_data_kv(elements[0])
 
-        elif self.plot_type == "Array":
+        elif self.plot_type == "Array": # TODO
             pass
 
         for element in self.elements:
             self.elements[element]['line'].setData(self.elements[element]['x'], self.elements[element]['y'])
 
-
         if self.limits == "Max":
             self.plot.setYRange(self.min_value, self.max_value)
-        
-
-        return
 
     def add_element(self, element_name: str, start_value: float = 0):
         if not element_name:
@@ -146,9 +132,7 @@ class Plot_Widget(pg.GraphicsLayoutWidget):
         self.elements[element_name]['line'] = self.plot.plot(
             self.elements[element_name]['x'], self.elements[element_name]['y'], pen=intColor(self.prev_color))
         self.prev_color += 50
-        self.legend.addItem(
-            self.elements[element_name]['line'], name=element_name)
-        return
+        self.legend.addItem(self.elements[element_name]['line'], name=element_name)
 
     def parse_data_kv(self, input: str):
         input = input.replace("\r", "")
@@ -157,7 +141,6 @@ class Plot_Widget(pg.GraphicsLayoutWidget):
         for token in tokens:
             if not str_contains_elements(token, self.assignment_operators):
                 continue
-
             kv = char_split(token, self.assignment_operators)
             if len(kv) == 1:
                 #cprint(f"NO VALUE: {kv}", 'yellow')

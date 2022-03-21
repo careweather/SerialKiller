@@ -5,22 +5,12 @@ import serial
 import serial.tools.list_ports as list_ports
 from PyQt5.QtCore import QObject, pyqtSignal
 from serial.serialutil import (PARITY_EVEN, PARITY_MARK, PARITY_NONE, PARITY_ODD, PARITY_SPACE)
-from termcolor import cprint
 from sk_tools import *
-SER_PRINT = 1
 baud_rates = serial.Serial.BAUDRATES
 ser = serial.Serial()
 parity_values = {"NONE": PARITY_NONE, "EVEN": PARITY_EVEN,
                  "ODD": PARITY_ODD, "MARK": PARITY_MARK, "SPACE": PARITY_SPACE}
 
-
-def serial_debug(*args, color='yellow'):
-    if not SER_PRINT:
-        return
-    printstr = ""
-    for arg in args:
-        printstr += str(arg)
-    cprint(printstr, color)
 
 def serial_get_string() -> str:
     if not ser.isOpen():
@@ -38,7 +28,7 @@ def serial_send_string(input: str = ""):
         ser.flush()
         ser.write(input.encode('utf-8'))
     except Exception as E:
-        serial_debug("ERROR SENDING DATA:", E, color='red')
+        eprint("ERROR SENDING DATA:", E, color='red')
 
 def serial_connect(port: str, baud=115200, xonxoff=False, rtscts=False, dsrdtr=False, parity="NONE"):
     try:
@@ -58,8 +48,8 @@ def serial_connect(port: str, baud=115200, xonxoff=False, rtscts=False, dsrdtr=F
         else:
             return False
     except Exception as E:
-        print(f"ERROR OPENING PORT: {port} ", E)
-        dprint(f"ERR: {traceback.format_exc()}\n", color='red')
+        eprint(f"ERROR OPENING PORT: {port} ", E)
+        eprint(f"ERR: {traceback.format_exc()}\n", color='red')
         ser.port = None
         time.sleep(.05)
         return False
@@ -89,8 +79,8 @@ class SerialWorker(QObject):  # THIS FETCHES SERIAL DATA. ASYNC.
                 elif time.perf_counter() - self.last_activity > 1:  # Throttle polling if no activity within .5 sec
                     time.sleep(.005)
             except Exception as E:
-                print("Serial Worker Error", E)
-                dprint(f"ERR: {traceback.format_exc()}\n", color='red')
+                eprint("Serial Worker Error", E)
+                eprint(f"ERR: {traceback.format_exc()}\n", color='red')
                 self.active = False
                 self.disconnected.emit(False)
 
@@ -150,7 +140,7 @@ class RescanWorker(QObject):
                 self.new_ports.emit(get_ports())
                 time.sleep(self.update_interval)
             except Exception as E:
-                dprint(f"ERR: {traceback.format_exc()}\n", color='red')
+                eprint(f"ERR: {traceback.format_exc()}\n", color='red')
 
     def stop(self):
         self.active = False

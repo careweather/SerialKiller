@@ -18,26 +18,23 @@ class ScriptSyntaxHighlighter(QSyntaxHighlighter):
 
     def highlightBlock(self, input: str) -> None:
         text = input.split("//")[0]
-        #dprint(text, color='blue')
         command_sections = []
         block_start = None
 
         if text.strip().startswith("#"):
             command_sections.append([0,len(text)])
-        #dprint("cmd_sections ", command_sections, color='red')
         for section in command_sections:
             self.setFormat(section[0], section[1] - section[0] + 1, self.cmd_format)
 
         comment_sections = []
         if '//' in input:
-            #dprint("has comment: ", input)
             block_start = input.index("//")
             if '\n' in input:
                 comment_sections.append([block_start, input.index('\n')])
             else:
                 comment_sections.append([block_start, len(input)])
 
-        #dprint("comment_sections ", comment_sections, color='yellow')
+
 
         for section in comment_sections:
             self.setFormat(section[0], section[1] - section[0] + 1, self.comment_format)
@@ -51,7 +48,7 @@ class ScriptWorker(QObject):
         super().__init__()
         self.arg_str = arg_str
         self.delay = delay
-        dprint("SCRIPT DELAY:", self.delay)
+        vprint("SCRIPT DELAY:", self.delay)
         self.lines:list = text.splitlines(False)
         self.active = False
         self.line_total = len(self.lines)
@@ -76,7 +73,7 @@ class ScriptWorker(QObject):
         l_number = get_number(loop_str[1:], int)
         if l_number == None:
             self.loop_start_line = None
-            dprint(f"LOOP NUMBER {loop_str[1:]} INVALID", color= 'red')
+            eprint(f"LOOP NUMBER {loop_str[1:]} INVALID")
             self.loop_counter = 0
             self.loop_total = 0
             return
@@ -109,7 +106,6 @@ class ScriptWorker(QObject):
             cmd = cmd.strip()
 
             if cmd.startswith("delay="):
-                #print("setting delay to:", cmd[6:])
                 self.delay = get_number(cmd[6:], int, self.delay)
             
             if cmd.startswith("info="):
@@ -157,7 +153,7 @@ class ScriptWorker(QObject):
     
     def stop(self):
         self.active = False
-        print("SCRIPT DONE")
+        vprint("SCRIPT DONE")
 
 
 

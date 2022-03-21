@@ -7,7 +7,7 @@ import re
 
 import PyQt5
 from PyQt5 import QtCore, QtGui, QtWidgets
-from PyQt5.QtCore import QThread, QTimer
+from PyQt5.QtCore import QThread, QTimer, flush
 from PyQt5.QtGui import QTextCharFormat, QTextCursor, QSyntaxHighlighter
 # library imports
 from PyQt5.QtWidgets import QFileDialog, QTableWidgetItem, QTextEdit
@@ -24,8 +24,6 @@ from sk_scripting import ScriptWorker, ScriptSyntaxHighlighter
 from sk_tools import *
 
 
-
-
 class MainWindow(QtWidgets.QMainWindow):
     target_port: str = None  # Port to auto-connect to.
     current_ports: dict = {}  # List of current ports
@@ -40,7 +38,7 @@ class MainWindow(QtWidgets.QMainWindow):
     plot_started = False
     is_connected = False
 
-    def __init__(self, * args, **kwargs) -> None:
+    def __init__(self, open_cmd="", * args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
         self.last_save_time = time.perf_counter()
         self.cmd_list = []
@@ -49,7 +47,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.ui.setupUi(self)
         self.connect_ui()
         self.save_timer = QTimer()
-        self.log = Logger(log_fmt=self.ui.lineEdit_log_format.text())
+
         self.create_settings()
         self.create_commands()
         self.update_ports()
@@ -58,9 +56,16 @@ class MainWindow(QtWidgets.QMainWindow):
 
         self.script_highlighter = ScriptSyntaxHighlighter(self.ui.textEdit_script)
 
+        self.log = Logger(log_fmt=self.ui.lineEdit_log_format.text())
         self.log.start()
         self.ui.lineEdit_input.setFocus()
         self.ui.tabWidget.setCurrentIndex(0)
+        self.update_ports(get_ports())
+
+        if open_cmd:
+            vprint("Has Open Command:", open_help_popup)
+            self.ui.lineEdit_input.setText(open_cmd)
+            self.send_clicked()
 
     def keyPressEvent(self, event: QtGui.QKeyEvent) -> None:
         key = event.key()
@@ -184,7 +189,6 @@ class MainWindow(QtWidgets.QMainWindow):
         self.history_index = 0
 
     def add_text(self, *args, type: int = TYPE_RX):
-
         text: str = ""
         for arg in args:
             text += str(arg)
@@ -195,15 +199,16 @@ class MainWindow(QtWidgets.QMainWindow):
             self.log.write(text)
             if self.plot_started:
                 self.ui.widget_plot.update(text)
+            vprint(text, color="white", end="", flush=True)
 
         elif type == TYPE_TX:  # Outgoing TO DEVICE
             text = self.ui.lineEdit_tx_chr.text() + text
             if self.ui.checkBox_output_include_terminal.isChecked():
-
                 self.ui.textEdit_terminal.setTextColor(COLOR_LIGHT_BLUE)
                 self.ui.textEdit_terminal.insertPlainText(text)
             if self.ui.checkBox_output_include_log.isChecked():
                 self.log.write(text)
+            vprint(text, color="blue", end="", flush=True)
 
         elif type == TYPE_INFO:
             if self.ui.checkBox_info_include_terminal.isChecked():
@@ -212,6 +217,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 self.ui.textEdit_terminal.insertPlainText(text)
             if self.ui.checkBox_info_include_log.isChecked():
                 self.log.write(text)
+            vprint(text, color="green", end="", flush=True)
 
         elif type == TYPE_ERROR:
             if self.ui.checkBox_error_include_terminal.isChecked():
@@ -220,10 +226,12 @@ class MainWindow(QtWidgets.QMainWindow):
                 self.ui.textEdit_terminal.insertPlainText(text)
             if self.ui.checkBox_error_include_log.isChecked():
                 self.log.write(text)
+            vprint(text, color="red", end="", flush=True)
 
         elif type == TYPE_HELP:
             self.ui.textEdit_terminal.setTextColor(COLOR_LIGHT_YELLOW)
             self.ui.textEdit_terminal.insertPlainText(text)
+            vprint(text, color="yellow", end="", flush=True)
 
         if self.ui.checkBox_autoscroll.isChecked():
             self.ui.textEdit_terminal.moveCursor(QTextCursor.End)
@@ -232,17 +240,16 @@ class MainWindow(QtWidgets.QMainWindow):
     def debug_text(self, *args, color: QColor = COLOR_BLACK):
         label_text = ""
         for arg in args:
-            label_text += str(arg).replace("\n", "")
+            label_text += str(arg)
         self.ui.label_debug.setStyleSheet(f"color:{colorToStyleSheet(color)}")
         self.ui.label_debug.setText(label_text)
+        vprint(label_text, color = 'cyan')
 
-    def send_clicked(self, text: str = None):
-        if not text:
-            ui_text = self.ui.lineEdit_input.text()
-            text = ui_text + \
-                replace_escapes(self.ui.lineEdit_append_to_send.text())
-            if not self.script_worker:
-                self.ui.lineEdit_input.clear()
+    def send_clicked(self):
+        ui_text = self.ui.lineEdit_input.text()
+        text = ui_text + replace_escapes(self.ui.lineEdit_append_to_send.text())
+        if not self.script_worker:
+            self.ui.lineEdit_input.clear()
 
         text = text.replace("$UTS", str(int(time.time())))
 
@@ -253,7 +260,6 @@ class MainWindow(QtWidgets.QMainWindow):
 
         cmd_result = self.interpret_command(ui_text)
         if cmd_result != None:
-
             if cmd_result == True:
                 return
             if cmd_result.startswith("ERR:"):
@@ -262,7 +268,6 @@ class MainWindow(QtWidgets.QMainWindow):
             else:
                 self.add_text(str(cmd_result) + '\n', type=TYPE_INFO)
             return
-
         self.add_text(text, type=TYPE_TX)
         if self.is_connected:
             serial_send_string(text)
@@ -283,6 +288,7 @@ class MainWindow(QtWidgets.QMainWindow):
         if self.is_connected:
             self.add_text(f"LOST {ser.port}", type=TYPE_ERROR)
             self.disconnect(False)
+            vprint("SERIAL PORT LOST", color="red")
 
     def disconnect(self, intentional=True):
         if self.is_connected == False:
@@ -349,6 +355,8 @@ class MainWindow(QtWidgets.QMainWindow):
         self.serial_worker.disconnected.connect(self.serial_error)
         self.serial_thread.setTerminationEnabled(True)
         self.serial_thread.start()
+
+        vprint("Serial Connection Success")
         return True
 
     def handle_connect(self, **kwargs):
@@ -484,8 +492,6 @@ class MainWindow(QtWidgets.QMainWindow):
             p_str += "NONE"
         elif '-a' not in kwargs:
             p_str += " #  NAME\t\tDESCRIPTION\n"
-        
-            
 
         for index, port in enumerate(self.current_ports):
             this_port = self.current_ports[port]
@@ -495,7 +501,7 @@ class MainWindow(QtWidgets.QMainWindow):
                     p_str += f"\t{item}:\t{str(this_port[item])}\n"
             else:
                 p_str += f'''({index}) {this_port["name"]}\t\t{this_port["descr"]}\n'''
-        
+
         self.add_text(p_str, type=TYPE_HELP)
 
 
@@ -555,14 +561,16 @@ class MainWindow(QtWidgets.QMainWindow):
             json.dump(self.current_settings, file)
 
     def save_settings(self):
-        if (time.perf_counter() - self.last_save_time < 1):
+        '''Save Settings After One Second'''  # This is so multiple saves arent attempted for multiple edits
+        if (time.perf_counter() - self.last_save_time < 1.00):
             return
 
         self.save_timer.singleShot(1000, self._save_settings)
         self.last_save_time = time.perf_counter()
 
     def _save_settings(self):
-        dprint("SAVED SETTINGS", color='green')
+        '''Actual Save Settings Here'''
+        vprint("SAVED SETTINGS", color='green')
         for checkbox in self.save_checkboxes:
             self.current_settings[checkbox.objectName()] = checkbox.isChecked()
         for line_edit in self.save_line_edits:
@@ -576,7 +584,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def recall_settings(self):
         if not os.path.exists(SETTINGS_FILE):
-            dprint("FIRST PROGRAM LOAD", color='yellow')
+            vprint("FIRST PROGRAM LOAD", color='yellow')
             with open(SETTINGS_FILE, 'w') as file:
                 pass
             self._save_settings()
@@ -612,7 +620,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
             if 'lineEdit_script_name' in self.current_settings:
                 last_script_name: str = self.current_settings['lineEdit_script_name']
-                print("LAST SCRIPT NAME", last_script_name)
+                vprint("LAST SCRIPT NAME: ", last_script_name)
                 if last_script_name:
                     self.open_script(last_script_name)
                 else:
@@ -621,7 +629,7 @@ class MainWindow(QtWidgets.QMainWindow):
             self.command_char = self.ui.lineEdit_command_char.text()
 
         except Exception as E:
-            dprint(f"\nERROR IN RECALLING SETTINGS: {E}", color='red')
+            eprint(f"\nERROR IN RECALLING SETTINGS: {E}", color='red')
 
 
 ########################################################################
@@ -653,6 +661,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.cmd_list.append(Command("dcon", self.disconnect))
 
         cmd_script = Command("script", self.handle_script_command)
+        cmd_script.add_argument("-f", '')
         cmd_script.add_argument("-h", '')
         cmd_script.add_argument("-o", '', str)
         cmd_script.add_argument("-t", '')
@@ -671,6 +680,7 @@ class MainWindow(QtWidgets.QMainWindow):
         cmd_log.add_argument('-rm', '')
         cmd_log.add_argument('-ls', '')
         cmd_log.add_argument('-h', "")
+        cmd_log.add_argument('-f', "")
         self.cmd_list.append(cmd_log)
 
         cmd_plot = Command("plot", self.handle_plot_command)
@@ -693,7 +703,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.cmd_list.append(Command("new", self.open_new_window))
 
     def interpret_command(self, text: str):
-        """return none if no command found"""
+        """execute a command. Returns NONE if no command found"""
         text = text.replace("\n", "").replace("\r", "")
         if not text:
             return None
@@ -703,7 +713,7 @@ class MainWindow(QtWidgets.QMainWindow):
             if text[0] != self.command_char:
                 return None
             text = text[1:]
-            dprint(f"POSSIBLE CMD: <{text}>", color='yellow')
+            vprint(f"POSSIBLE CMD: <{text}>", color='yellow')
 
         for cmd in self.cmd_list:
             cmd: Command
@@ -729,6 +739,9 @@ class MainWindow(QtWidgets.QMainWindow):
         if '-h' in kwargs:
             self.add_text(SCRIPT_HELP, type=TYPE_HELP)
             return
+        if '-f' in kwargs:
+            self.open_folder_location(SCRIPT_FOLDER)
+            return
         if "-a" in kwargs:
             arg_str = kwargs['-a']
         if '-ls' in kwargs:
@@ -751,20 +764,16 @@ class MainWindow(QtWidgets.QMainWindow):
                 self.ui.lineEdit_script_name.setText(
                     kwargs["-n"].replace(".txt", ""))
             return
-
         if "-t" in kwargs:
             self.ui.tabWidget.setCurrentIndex(1)
             self.ui.textEdit_script.setFocus()
             return
-
         if '-o' in kwargs:
             self.open_script(kwargs['-o'])
             run_script = False
-
         if '-s' in kwargs:
             self.save_script(kwargs['-s'])
             return
-
         if '-r' in kwargs:
             run_script = True
             if kwargs['-r']:
@@ -785,9 +794,9 @@ class MainWindow(QtWidgets.QMainWindow):
         if file_path == "" or file_path == False:
             return
         if file_path == None:
-            self.debug_text(f"ERR: file '{file_name}'.txt not found", color=COLOR_RED)
+            self.debug_text(f"ERR: file '{file_name}' not found", color=COLOR_RED)
             return
-        dprint(f"OPENING SCRIPT {file_name}", color='blue')
+        vprint(f"OPENING SCRIPT {file_name}", color='blue')
         with open(file_path, 'r') as file:
             self.ui.textEdit_script.setPlainText(file.read())
         self.ui.lineEdit_script_name.setText(file_path.split('/')[-1].replace('.txt', ''))
@@ -833,12 +842,10 @@ class MainWindow(QtWidgets.QMainWindow):
                 file_path = INSTALL_FOLDER + "/scripts/" + file_name
             else:
                 file_path = file_name
-
         with open(file_path, 'w') as file:
             file.write(self.ui.textEdit_script.toPlainText())
         self.ui.lineEdit_script_name.setText(file_name.replace(".txt", ""))
         self.debug_text(f"Saved '{file_name}'", color=COLOR_GREEN)
-        return
 
     def script_line(self, line: list):
         if line[1] == TYPE_TX:
@@ -884,7 +891,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.script_worker.finished.connect(self.end_script)
         self.script_thread.start()
 
-        dprint("RUNNING SCRIPT: ", text, color='yellow')
+        vprint("RUNNING SCRIPT: ", text, color='yellow')
 
     def end_script(self):
         if self.script_worker is None:
@@ -910,6 +917,9 @@ class MainWindow(QtWidgets.QMainWindow):
             self.add_text(LOG_HELP, type=TYPE_HELP)
             return
 
+        if '-f' in kwargs:
+            self.open_folder_location(LOG_FOLDER)
+            return
         if '-o' in kwargs:
             if kwargs['-o']:
                 log_file = LOG_FOLDER + kwargs["-o"]
@@ -938,6 +948,7 @@ class MainWindow(QtWidgets.QMainWindow):
         if not log_file:
             log_file = self.get_latest_file(LOG_FOLDER)
         open_log_viewer(self, log_file)
+
 
 ########################################################################
 #
@@ -1085,8 +1096,8 @@ class MainWindow(QtWidgets.QMainWindow):
             return
         self.ui.lineEdit_keyboard_control.clear()
         key_cmds = self.get_key_cmds()
-        #cprint(key, color='green', end='\t')
-        #cprint(key_cmds, color='red')
+        vprint(key, color='green', end='\t')
+        vprint(key_cmds, color='red')
         if key in key_cmds:
             self.ui.lineEdit_input.setText(key_cmds[key])
             self.send_clicked()
@@ -1098,6 +1109,13 @@ class MainWindow(QtWidgets.QMainWindow):
 #               MISC FUNCTIONS
 #
 ########################################################################
+
+    def open_folder_location(self, folder_path: str):
+        if USER_OS != "Windows":
+            return False
+        if not os.path.isdir(folder_path):
+            return False
+        os.startfile(folder_path)
 
     def open_github_repo(self):
         import webbrowser
@@ -1124,8 +1142,10 @@ class MainWindow(QtWidgets.QMainWindow):
         for file in files:
             file_timestamp = os.path.getmtime(directory + file)
             last_t = datetime.fromtimestamp(file_timestamp)
-            last_modified = last_t.strftime("%m/%d/%Y %H:%M:%S")
-            files_str += str(last_modified) + "\t" + file + "\n"
+            last_modified = last_t.strftime("%m/%d/%Y %H:%M")
+            file_size = os.path.getsize(directory + file)
+            files_str += f"{last_modified : <15}{file_size : >10} {file : <12}\n"
+
         self.add_text(files_str, type=TYPE_HELP)
 
     def get_file(self, start_dir: str = None, extensions: str = None, title: str = "Open") -> str:

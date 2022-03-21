@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Form implementation generated from reading ui file 'ui_files/serial_killer_main_window.ui'
+# Form implementation generated from reading ui file 'C:\Users\admin\Documents\GitHub\SerialKiller/ui_files/serial_killer_main_window.ui'
 #
 # Created by: PyQt5 UI code generator 5.15.6
 #

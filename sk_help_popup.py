@@ -12,7 +12,7 @@ class Help_Popup(QtWidgets.QWidget):
     
     def __init__(self) -> None:
         super().__init__()
-        dprint("OPENING LOG VIEWER", color = 'red')
+        vprint("OPENING LOG VIEWER", color = 'green')
         self.ui = Ui_help_popup()
         self.ui.setupUi(self)
 

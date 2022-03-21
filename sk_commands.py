@@ -46,14 +46,14 @@ class Command:
                 else: 
                     args[self.arg_list[token]['kw']] = self.arg_list[token]['default']
             else:
-                dprint(f"ERR IN CMD '{self.key}' ARG: '{token}' invalid", color = 'red')
+                vprint(f"ERR IN CMD '{self.key}' ARG: '{token}' invalid", color = 'red')
                 return f"ERR: CMD '{self.key}' ARG: '{token}' invalid"
                 
         try: 
             self.func(**args)
             return True
         except Exception as E:
-            dprint(f"ERR: {traceback.format_exc()} {sys.exc_info()[2]}", color = 'red')
+            eprint(f"ERR: {traceback.format_exc()} {sys.exc_info()[2]}", color = 'red')
             return f"ERR: {traceback.format_exc()} {sys.exc_info()[2]}"
     
     def execute(self, input:str):
@@ -77,7 +77,7 @@ class Command:
             elif current_argument:
                 args[current_argument].append(token)
             else:
-                dprint(f"ERR IN CMD '{self.key}' ARG: '{token}' invalid", color = 'red')
+                vprint(f"ERR IN CMD '{self.key}' ARG: '{token}' invalid", color = 'red')
                 return f"ERR: CMD '{self.key}' ARG: '{token}' invalid"
 
         for arg in args:
@@ -91,7 +91,7 @@ class Command:
             self.func(**args)
             return True
         except Exception as E:
-            dprint(f"ERR: {traceback.format_exc()} {sys.exc_info()[2]}", color = 'red')
+            eprint(f"ERR: {traceback.format_exc()} {sys.exc_info()[2]}", color = 'red')
             return f"ERR: {traceback.format_exc()} {sys.exc_info()[2]}"
         
         
