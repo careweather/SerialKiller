@@ -3,13 +3,14 @@ import json
 import os
 import time
 from datetime import datetime
+import re
 
 import PyQt5
 from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.QtCore import QThread, QTimer
-from PyQt5.QtGui import QTextCursor
+from PyQt5.QtGui import QTextCharFormat, QTextCursor, QSyntaxHighlighter
 # library imports
-from PyQt5.QtWidgets import QFileDialog, QTableWidgetItem
+from PyQt5.QtWidgets import QFileDialog, QTableWidgetItem, QTextEdit
 
 # gui imports
 from gui.GUI_MAIN_WINDOW import Ui_MainWindow
@@ -21,6 +22,45 @@ from sk_log_popup import Log_Viewer, open_log_viewer
 from sk_logging import Logger
 from sk_scripting import ScriptWorker
 from sk_tools import *
+
+
+
+
+class ScriptSyntaxHighlighter(QSyntaxHighlighter):
+    cmd_format = QTextCharFormat()
+    cmd_format.setForeground(COLOR_LIGHT_YELLOW)
+
+    comment_format = QTextCharFormat()
+    comment_format.setForeground(COLOR_MED_DARK_GREY)
+
+    def __init__(self, parent: QTextEdit = None):
+        super().__init__(parent)
+
+    def highlightBlock(self, input: str) -> None:
+        text = input.split("//")[0]
+        dprint(text, color='blue')
+        command_sections = []
+        block_start = None
+
+        if text.strip().startswith("#"):
+            command_sections.append([0,len(text)])
+        dprint("cmd_sections ", command_sections, color='red')
+        for section in command_sections:
+            self.setFormat(section[0], section[1] - section[0] + 1, self.cmd_format)
+
+        comment_sections = []
+        if '//' in input:
+            dprint("has comment: ", input)
+            block_start = input.index("//")
+            if '\n' in input:
+                comment_sections.append([block_start, input.index('\n')])
+            else:
+                comment_sections.append([block_start, len(input)])
+
+        dprint("comment_sections ", comment_sections, color='yellow')
+
+        for section in comment_sections:
+            self.setFormat(section[0], section[1] - section[0] + 1, self.comment_format)
 
 
 class MainWindow(QtWidgets.QMainWindow):
@@ -52,7 +92,9 @@ class MainWindow(QtWidgets.QMainWindow):
         self.update_ports()
         self.start_rescan()
         self.recall_settings()
-        
+
+        self.script_highlighter = ScriptSyntaxHighlighter(self.ui.textEdit_script)
+
         self.log.start()
         self.ui.lineEdit_input.setFocus()
         self.ui.tabWidget.setCurrentIndex(0)
@@ -125,7 +167,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.ui.action_open_log.triggered.connect(lambda: self.handle_log_command(**{'-o': None}))
         self.ui.action_help.triggered.connect(self.print_help)
         self.ui.action_github_repo.triggered.connect(self.open_github_repo)
-        
+
         self.ui.textEdit_terminal.setPlaceholderText(HELP_TEXT)
         self.ui.textEdit_terminal.setStyleSheet(STYLE_SHEET_TERMINAL_INACTIVE)
         self.ui.pushButton_connect.setStyleSheet(STYLE_SHEET_BUTTON_INACTIVE)
@@ -230,7 +272,6 @@ class MainWindow(QtWidgets.QMainWindow):
             label_text += str(arg).replace("\n", "")
         self.ui.label_debug.setStyleSheet(f"color:{colorToStyleSheet(color)}")
         self.ui.label_debug.setText(label_text)
-
 
     def send_clicked(self, text: str = None):
         if not text:
@@ -568,11 +609,11 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def recall_settings(self):
         if not os.path.exists(SETTINGS_FILE):
-            dprint("FIRST PROGRAM LOAD", color = 'yellow')
+            dprint("FIRST PROGRAM LOAD", color='yellow')
             with open(SETTINGS_FILE, 'w') as file:
-                pass 
+                pass
             self._save_settings()
-            return 
+            return
         try:
             with open(SETTINGS_FILE, 'r') as file:
                 self.current_settings = json.load(file)
@@ -825,7 +866,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 file_path = INSTALL_FOLDER + "/scripts/" + file_name
             else:
                 file_path = file_name
-        
+
         with open(file_path, 'w') as file:
             file.write(self.ui.textEdit_script.toPlainText())
         self.ui.lineEdit_script_name.setText(file_name.replace(".txt", ""))

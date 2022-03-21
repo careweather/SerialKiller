@@ -1,6 +1,6 @@
-#delay=1 #dcon
+#delay=1 #dcon // This is a comment
 I am an example script 
-#delay=1000
+#delay=50
 Edit me in the script tab
 Incrementing Loop...
 #loop=10 #delay=100
@@ -8,9 +8,9 @@ $LOOP
 #endloop
 #delay=1000
 #info=DECREMENTING LOOP...
-#delay=100
-#loop=-10
+#delay=100 #loop=-10
 $LOOP
 #endloop
 #delay=1000
 goodbye...
+// Another comment

@@ -10,7 +10,13 @@ class Help_Popup(QtWidgets.QWidget):
         dprint("OPENING LOG VIEWER", color = 'red')
         self.ui = Ui_help_popup()
         self.ui.setupUi(self)
-        self.ui.textEdit_file.setMarkdown(open("help.md", 'r').read())
+
+        help_text = ""
+        with open("readme.md", 'r') as file:
+            file_text = file.read().split("# Usage:")[1].split("# Possible Future Features / Fixes")[0]
+            help_text = "# NOTE: This markdown translation has some issues. See the github repo for correct formatting\n" + file_text
+
+        self.ui.textEdit_file.setMarkdown(help_text)
         
     def keyPressEvent(self, event):  # Escape key functionality
         key = event.key()
