@@ -228,6 +228,7 @@ class Ui_MainWindow(object):
         self.textEdit_script.setFont(font)
         self.textEdit_script.setStyleSheet("background-color: rgb(50,0,0);\n"
 "color: rgb(255, 255, 255);")
+        self.textEdit_script.setTabStopDistance(40.0)
         self.textEdit_script.setObjectName("textEdit_script")
         self.gridLayout_5.addWidget(self.textEdit_script, 1, 0, 1, 10)
         self.lineEdit_delay = QtWidgets.QLineEdit(self.script)

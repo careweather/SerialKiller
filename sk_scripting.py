@@ -1,14 +1,14 @@
 from PyQt5.QtCore import QObject, pyqtSignal
 from PyQt5.QtGui import QTextCharFormat, QTextCursor, QSyntaxHighlighter
 from PyQt5.QtWidgets import QTextEdit
-import time 
+import time
 
 from sk_tools import *
 
 
 class ScriptSyntaxHighlighter(QSyntaxHighlighter):
     cmd_format = QTextCharFormat()
-    cmd_format.setForeground(COLOR_LIGHT_YELLOW)
+    cmd_format.setForeground(COLOR_LIGHT_BLUE)
 
     comment_format = QTextCharFormat()
     comment_format.setForeground(COLOR_MED_DARK_GREY)
@@ -22,7 +22,7 @@ class ScriptSyntaxHighlighter(QSyntaxHighlighter):
         block_start = None
 
         if text.strip().startswith("#"):
-            command_sections.append([0,len(text)])
+            command_sections.append([0, len(text)])
         for section in command_sections:
             self.setFormat(section[0], section[1] - section[0] + 1, self.cmd_format)
 
@@ -34,8 +34,6 @@ class ScriptSyntaxHighlighter(QSyntaxHighlighter):
             else:
                 comment_sections.append([block_start, len(input)])
 
-
-
         for section in comment_sections:
             self.setFormat(section[0], section[1] - section[0] + 1, self.comment_format)
 
@@ -44,25 +42,26 @@ class ScriptWorker(QObject):
     line = pyqtSignal(list)
     finished = pyqtSignal(bool)
 
-    def __init__(self, text:str, delay:int = DEFAULT_SCRIPT_DELAY, arg_str:str = "") -> None:
+    def __init__(self, text: str, delay: int = DEFAULT_SCRIPT_DELAY, arg_str: str = "") -> None:
         super().__init__()
+        self.on_exit_str = ""
         self.arg_str = arg_str
         self.delay = delay
         vprint("SCRIPT DELAY:", self.delay)
-        self.lines:list = text.splitlines(False)
+        self.lines: list = text.splitlines(False)
         self.active = False
         self.line_total = len(self.lines)
         self.current_line_number = 0
         self.loop_counter = 0
         self.loop_start_line = None
-        self.loop_total = 0 
-    
-    def send(self, text:str = None, type = TYPE_TX):
+        self.loop_total = 0
+
+    def send(self, text: str = None, type=TYPE_TX):
         self.line.emit([text, type])
         if type == TYPE_TX:
             time.sleep(self.delay / 1000)
-        
-    def start_loop(self, loop_str:str):
+
+    def start_loop(self, loop_str: str):
         loop_str = loop_str.replace("loop", "")
         self.loop_start_line = self.current_line_number
         if not loop_str:
@@ -84,20 +83,21 @@ class ScriptWorker(QObject):
         else:
             self.loop_total = l_number
             self.loop_counter = 0
-        
+
     def end_loop(self):
         if self.loop_start_line == None:
-            return 
+            return
         if self.loop_total != None:
             if self.loop_counter == self.loop_total - 1:
                 return
         self.current_line_number = self.loop_start_line
         self.loop_counter += 1
-        pass 
+        pass
 
-    def handle_command(self, text:str = None):
+    def handle_command(self, text: str = None):
         if not text:
             return None
+
         cmds = text.split("#")
 
         for cmd in cmds:
@@ -107,19 +107,19 @@ class ScriptWorker(QObject):
 
             if cmd.startswith("delay="):
                 self.delay = get_number(cmd[6:], int, self.delay)
-            
+
             if cmd.startswith("info="):
                 self.send(cmd[5:] + "\n", TYPE_INFO)
 
             elif cmd.startswith("error="):
-                self.send(cmd[6:]+ "\n", TYPE_ERROR)
+                self.send(cmd[6:] + "\n", TYPE_ERROR)
 
             elif cmd.startswith("pause="):
                 time.sleep(get_number(cmd[6:]) / 1000)
 
             elif cmd.startswith("loop"):
                 self.start_loop(cmd)
-            
+
             elif cmd.startswith("endloop"):
                 self.end_loop()
 
@@ -130,16 +130,16 @@ class ScriptWorker(QObject):
             else:
                 self.send(cmd, TYPE_CMD)
 
-    def evaluate(self, line:str):
-        if "//" in line: # Comment 
+    def evaluate(self, line: str):
+        if "//" in line:  # Comment
             line = line.split("//")[0]
             if not line.replace(" ", ""):
-                return 
+                return
         line = line.replace("$LOOP", str(abs(self.loop_counter)))
 
-        if line.strip().startswith("#"): 
+        if line.strip().startswith("#"):
             return self.handle_command(line)
-        
+
         self.send(line)
         return
 
@@ -150,10 +150,8 @@ class ScriptWorker(QObject):
             self.current_line_number += 1
         self.finished.emit(True)
 
-    
     def stop(self):
+        if self.on_exit_str:
+            self.handle_command(self.on_exit_str)
         self.active = False
         vprint("SCRIPT DONE")
-
-
-

@@ -47,7 +47,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.ui.setupUi(self)
         self.connect_ui()
         self.save_timer = QTimer()
-
+       
         self.create_settings()
         self.create_commands()
         self.update_ports()
@@ -177,8 +177,6 @@ class MainWindow(QtWidgets.QMainWindow):
         self.ui.lineEdit_input.setText(self.cmd_history[self.history_index])
 
     def append_to_history(self, line: str):
-        if self.script_worker != None:
-            return
         line = line.replace("\n", "").replace("\r", "")
         if not line:
             return
@@ -245,20 +243,46 @@ class MainWindow(QtWidgets.QMainWindow):
         self.ui.label_debug.setText(label_text)
         vprint(label_text, color = 'cyan')
 
-    def send_clicked(self):
-        ui_text = self.ui.lineEdit_input.text()
-        text = ui_text + replace_escapes(self.ui.lineEdit_append_to_send.text())
-        if not self.script_worker:
-            self.ui.lineEdit_input.clear()
 
-        text = text.replace("$UTS", str(int(time.time())))
-
-        self.append_to_history(text)
+    def input_text_evaluate(self, input:str):
+        input = input.replace("$UTS", str(int(time.time())))
+        if "${" in input and "}" in input:
+            
+            between_brackets = input.split("${")[1].split("}")[0]
+            #print(between_brackets)
+            try:
+                resp = eval(between_brackets)
+            except Exception as E:
+                resp = None
+                eprint(E)
+                self.add_text(str(E) + "\n", type=TYPE_ERROR)
+                return None
+            
+            if resp is not None:
+                input = input.replace("${" + between_brackets + "}", str(resp))
+            else:
+                input = input.replace("${" + between_brackets + "}", "")
 
         if self.ui.checkBox_interpret_escape.isChecked():
-            text = replace_escapes(text)
+            input = replace_escapes(input)
+        return input
 
-        cmd_result = self.interpret_command(ui_text)
+
+    def send_clicked(self, add_to_history = True):
+        original_text = self.ui.lineEdit_input.text()
+        text = original_text + replace_escapes(self.ui.lineEdit_append_to_send.text())
+        if self.ui.lineEdit_input.isEnabled():
+            self.ui.lineEdit_input.clear()
+
+        if add_to_history:
+            self.append_to_history(original_text)
+
+        text = self.input_text_evaluate(text)
+
+        if text == None:
+            return
+
+        cmd_result = self.interpret_command(original_text)
         if cmd_result != None:
             if cmd_result == True:
                 return
@@ -286,7 +310,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def serial_error(self):
         if self.is_connected:
-            self.add_text(f"LOST {ser.port}", type=TYPE_ERROR)
+            self.add_text(f"LOST {ser.port}\n", type=TYPE_ERROR)
             self.disconnect(False)
             vprint("SERIAL PORT LOST", color="red")
 
@@ -463,11 +487,11 @@ class MainWindow(QtWidgets.QMainWindow):
             return
         self.current_ports = ports
         if ports_lost:
-            p_str = "LOST: " + str(ports_lost)
+            p_str = "LOST PORT(s): " + str(ports_lost)
             p_str = p_str.replace("{", '').replace("}", '').replace("'", '')
             self.debug_text(p_str, color=COLOR_RED)
         elif ports_found:
-            p_str = "FOUND: " + str(ports_found)
+            p_str = "FOUND PORT(s): " + str(ports_found)
             p_str = p_str.replace("{", '').replace("}", '').replace("'", '')
             self.debug_text(p_str, color=COLOR_GREEN)
 
@@ -700,7 +724,9 @@ class MainWindow(QtWidgets.QMainWindow):
         cmd_keys.add_argument("-h", "")
         self.cmd_list.append(cmd_keys)
 
-        self.cmd_list.append(Command("new", self.open_new_window))
+        cmd_new = Command("new", self.open_new_window, "pass_to", str)
+
+        self.cmd_list.append(cmd_new)
 
     def interpret_command(self, text: str):
         """execute a command. Returns NONE if no command found"""
@@ -850,11 +876,11 @@ class MainWindow(QtWidgets.QMainWindow):
     def script_line(self, line: list):
         if line[1] == TYPE_TX:
             self.ui.lineEdit_input.setText(line[0])
-            self.send_clicked()
+            self.send_clicked(add_to_history=False)
         elif line[1] == TYPE_CMD:
             self.interpret_command(line[0])
         else:
-            self.add_text(line[0], type=line[1])
+            self.add_text(self.input_text_evaluate(line[0]), type=line[1])
         return
 
     def start_script(self, file_name: str = None, delay=None, arg_str=""):
@@ -1100,7 +1126,7 @@ class MainWindow(QtWidgets.QMainWindow):
         vprint(key_cmds, color='red')
         if key in key_cmds:
             self.ui.lineEdit_input.setText(key_cmds[key])
-            self.send_clicked()
+            self.send_clicked(add_to_history=False)
         else:
             self.debug_text(f"KEY {key} not in Keyboard commands", color=COLOR_RED)
 
@@ -1122,13 +1148,15 @@ class MainWindow(QtWidgets.QMainWindow):
         self.debug_text("OPENING GITHUB REPO", color=COLOR_GREEN)
         webbrowser.open(GITHUB_URL)
 
-    def open_new_window(self):
+    def open_new_window(self, pass_to:str = ""):
         import platform
         import subprocess
         if platform.system() == 'Windows':
-            cmd = f'start pythonw.exe {INSTALL_FOLDER}/serial_killer.py'
+            cmd = f'start pythonw.exe {INSTALL_FOLDER}/serial_killer.py {pass_to}'
         elif platform.system() == 'Linux':
-            cmd = f'python3 {INSTALL_FOLDER}/serial_killer.py'
+            cmd = f'python3 {INSTALL_FOLDER}/serial_killer.py {pass_to}'
+
+        vprint("OPENING NEW WINDOW ", cmd)
         subprocess.call(cmd, shell=True)
 
     def get_latest_file(self, directory: str):
@@ -1137,7 +1165,9 @@ class MainWindow(QtWidgets.QMainWindow):
         return latest_file
 
     def list_files(self, directory: str):
-        files = os.listdir(directory)
+        list_of_files = filter( lambda x: os.path.isfile(os.path.join(directory, x)),
+                        os.listdir(directory) )
+        files = sorted(list_of_files,key = lambda x: os.path.getmtime(os.path.join(directory, x)),reverse=True)
         files_str = ""
         for file in files:
             file_timestamp = os.path.getmtime(directory + file)
