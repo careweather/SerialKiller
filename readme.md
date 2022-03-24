@@ -127,6 +127,8 @@ Commands are typed directly in the "TX" text box, as if they were being sent to 
 
 The list of commands and their uses are detailed below:
 
+
+<!-- con -->
 ## con [port] [options]
 
 Connect to a port (optional: with settings defined in [options]).
@@ -163,7 +165,7 @@ Connect to COM50 with EVEN parity and rtscts ON.
 ```
 con 50 -p EVEN -r
 ```
-
+<!-- con -->
 ---
 
 ## dcon

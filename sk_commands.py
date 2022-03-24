@@ -5,6 +5,7 @@ import traceback
 from sk_tools import *
 
 
+
 class Command:
     def __init__(self, key: str, func, default_kw:str = None, default_type:type = str, ) -> None:
         self.key = key
