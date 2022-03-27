@@ -18,11 +18,9 @@ def update_ui_files():
             quit()
         else:
             print("-----SUCCESS")
-    print("ALL GUI FILES UPDATED. RUN AGAIN TO START SERIAL KILLER")
-    quit()
+    #print("ALL GUI FILES UPDATED. RUN AGAIN TO START SERIAL KILLER")
+    #quit()
     
-
-
 def install_deps():
     lib_deps = '''\
     numpy
@@ -77,8 +75,6 @@ def execute():
     x_size = 600
     y_size = 700
     open_cmd = ""
-    
-    
     input_args = sys.argv[1:]
     while input_args:
         arg = input_args.pop(0)
@@ -87,7 +83,12 @@ def execute():
         elif arg == '-x':
             x_size = int(input_args.pop(0))
         elif arg == '-c':
-            open_cmd = input_args.pop(0)
+            open_cmd = ""
+            for s in input_args:
+                open_cmd += s + " "
+            break
+        elif arg == '-q' or arg == '--quit':
+            quit()
         elif arg == '-u' or arg == '--update':
             update_ui_files()
         elif arg == '-i' or arg == '--install':

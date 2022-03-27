@@ -137,3 +137,45 @@ quit                Quit immediately
 key [OPTS]          Set key commands. '-h' for options
 help                Show help popup
 '''
+
+COW_BORED = """
+      Z Z   ^__^
+        z z (--)\_______
+            (__)\       )\\
+                ||----w |
+                ||     ||
+"""
+
+COW_DEAD = """
+        \   ^__^         
+         \  (XX)\_______        George, not the livestock...   
+            (__)_ x   x )---            \  ,-----, 
+              U ||----w |               ,--'---:---`--,
+                ||     ||               ==(o)-----(o)==J
+"""
+
+COW_BUBBLES = """
+  O   o     ^__^
+      o  o  (--)\_______
+          o (o )\       )\\
+                ||----w |
+                ||     ||
+"""
+
+COW_IN_LOVE = '''
+        ^__^ ^__^
+ ______/(-oo)(--)\_______
+(       /( <)(> )\       )\\
+|_______||        ||----w |
+||      ||        ||     ||
+'''
+
+COW_NERD = """
+        \  ^___^
+         \ (oo-)\___________
+           (u_ )            |->
+               \            |
+                ||-------WW |
+                ||         ||
+"""
+

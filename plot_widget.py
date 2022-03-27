@@ -42,7 +42,7 @@ class Plot_Widget(pg.GraphicsLayoutWidget):
         self.plot:pg.PlotItem = pg.PlotItem()
         self.elements = {}
         self.start_time: float = None
-        self.separators = [',', ';', '\t', '\n', '|', ']']
+        self.separators = [',', ';', '\t', '\n', '|', ']', '[']
         self.assignment_operators = ['=', ':']
         self.prev_color = 0
         self.max_value = 0

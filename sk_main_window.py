@@ -47,7 +47,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.ui.setupUi(self)
         self.connect_ui()
         self.save_timer = QTimer()
-       
+
         self.create_settings()
         self.create_commands()
         self.update_ports()
@@ -55,6 +55,9 @@ class MainWindow(QtWidgets.QMainWindow):
         self.recall_settings()
 
         self.script_highlighter = ScriptSyntaxHighlighter(self.ui.textEdit_script)
+
+
+        
 
         self.log = Logger(log_fmt=self.ui.lineEdit_log_format.text())
         self.log.start()
@@ -66,6 +69,8 @@ class MainWindow(QtWidgets.QMainWindow):
             vprint("Has Open Command:", open_help_popup)
             self.ui.lineEdit_input.setText(open_cmd)
             self.send_clicked()
+
+        self.ui.pushButton_restart_logger.setEnabled(False)
 
     def keyPressEvent(self, event: QtGui.QKeyEvent) -> None:
         key = event.key()
@@ -125,6 +130,7 @@ class MainWindow(QtWidgets.QMainWindow):
 #
 ########################################################################
 
+
     def connect_ui(self):
 
         self.ui.action_save_script.triggered.connect(self.save_script)
@@ -135,6 +141,14 @@ class MainWindow(QtWidgets.QMainWindow):
         self.ui.action_open_log.triggered.connect(lambda: self.handle_log_command(**{'-o': None}))
         self.ui.action_help.triggered.connect(self.print_help)
         self.ui.action_github_repo.triggered.connect(self.open_github_repo)
+
+        self.ui.lineEdit_log_folder.textChanged.connect(self.log_settings_changed)
+        self.ui.lineEdit_log_name.textChanged.connect(self.log_settings_changed)
+        self.ui.lineEdit_time_format.textChanged.connect(self.log_settings_changed)
+        self.ui.lineEdit_log_format.textChanged.connect(self.log_settings_changed)
+        self.ui.pushButton_restart_logger.clicked.connect(self.restart_logger)
+
+        self.ui.label_log_settings_debug.setText("")
 
         self.ui.textEdit_terminal.setPlaceholderText(HELP_TEXT)
         self.ui.textEdit_terminal.setStyleSheet(STYLE_SHEET_TERMINAL_INACTIVE)
@@ -241,15 +255,13 @@ class MainWindow(QtWidgets.QMainWindow):
             label_text += str(arg)
         self.ui.label_debug.setStyleSheet(f"color:{colorToStyleSheet(color)}")
         self.ui.label_debug.setText(label_text)
-        vprint(label_text, color = 'cyan')
+        vprint(label_text, color='cyan')
 
-
-    def input_text_evaluate(self, input:str):
+    def input_text_evaluate(self, input: str):
         input = input.replace("$UTS", str(int(time.time())))
         if "${" in input and "}" in input:
-            
             between_brackets = input.split("${")[1].split("}")[0]
-            #print(between_brackets)
+            # print(between_brackets)
             try:
                 resp = eval(between_brackets)
             except Exception as E:
@@ -257,7 +269,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 eprint(E)
                 self.add_text(str(E) + "\n", type=TYPE_ERROR)
                 return None
-            
+
             if resp is not None:
                 input = input.replace("${" + between_brackets + "}", str(resp))
             else:
@@ -267,8 +279,7 @@ class MainWindow(QtWidgets.QMainWindow):
             input = replace_escapes(input)
         return input
 
-
-    def send_clicked(self, add_to_history = True):
+    def send_clicked(self, add_to_history=True):
         original_text = self.ui.lineEdit_input.text()
         text = original_text + replace_escapes(self.ui.lineEdit_append_to_send.text())
         if self.ui.lineEdit_input.isEnabled():
@@ -278,11 +289,9 @@ class MainWindow(QtWidgets.QMainWindow):
             self.append_to_history(original_text)
 
         text = self.input_text_evaluate(text)
-
         if text == None:
             return
-
-        cmd_result = self.interpret_command(original_text)
+        cmd_result = self.interpret_command(text)
         if cmd_result != None:
             if cmd_result == True:
                 return
@@ -342,9 +351,6 @@ class MainWindow(QtWidgets.QMainWindow):
         self.log.set_port("NONE")
 
     def connect(self, port: str, baud: str = "115200", xonxoff: bool = False, dsrdtr: bool = False, rtscts: str = False, parity: str = "NONE") -> bool:
-        if port not in self.current_ports:
-            self.debug_text(f"ERR: PORT {port} NOT FOUND", color=COLOR_RED)
-            return
         self.ui.comboBox_port.setCurrentText(port)
         self.is_connected = serial_connect(port, baud, xonxoff, rtscts, dsrdtr, parity)
         if not self.is_connected:
@@ -383,13 +389,41 @@ class MainWindow(QtWidgets.QMainWindow):
         vprint("Serial Connection Success")
         return True
 
-    def handle_connect(self, **kwargs):
+    def find_port_name(self, input: str):
+        if input in self.current_ports:
+            return input
+        if input.upper() in self.current_ports:
+            return input.upper()
+        if "COM" + input in self.current_ports:
+            return "COM" + input
+        if "dev/tty" + input in self.current_ports:
+            return "dev/tty" + input
+        return None
+
+    def handle_connect(self, *args, **kwargs):
         port: str = None
         baud: str = None
         xonxoff: bool = None
         dsrdtr: bool = None
         rtscts: bool = None
         parity: str = None
+
+        if '-h' in kwargs:
+            self.add_text(CONNECT_HELP, type=TYPE_HELP)
+            return
+
+        if args:  # Port name
+            port = args[0]
+            if args[0] == '?':
+                self.ui.comboBox_port.showPopup()
+                self.ui.comboBox_port.setFocus()
+                return False
+            port = self.find_port_name(args[0])
+            if port == None:
+                self.debug_text(f"ERR: PORT {args[0]} NOT FOUND", color=COLOR_RED)
+                return
+        else:
+            port = self.ui.comboBox_port.currentText()
 
         if '-d' in kwargs:
             dsrdtr = True
@@ -427,28 +461,10 @@ class MainWindow(QtWidgets.QMainWindow):
         else:
             baud = self.ui.comboBox_baud.currentText()
 
-        if 'port' in kwargs:
-            port = kwargs['port']
-            if port == '-h':
-                self.add_text(CONNECT_HELP, type=TYPE_HELP)
-                return
-            elif port == '?':
-                self.ui.comboBox_port.showPopup()
-                self.ui.comboBox_port.setFocus()
-                return False
-            elif port not in self.current_ports:
-                if port.upper() in self.current_ports:
-                    port = port.upper()
-                elif port.isdigit():
-                    if "COM" + port in self.current_ports:
-                        port = "COM" + port
-        else:
-            port = self.ui.comboBox_port.currentText()
-
         if self.is_connected:
-            if port in self.current_ports:
+            if port != ser.port or kwargs:
                 self.disconnect()
-                self.handle_connect(**kwargs)
+                self.handle_connect(*args, **kwargs)
             else:
                 self.debug_text("ERR: ALREADY CONNECTED", color=COLOR_RED)
             return
@@ -503,8 +519,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
         if self.target_port and self.is_connected == False:
             if self.target_port in self.current_ports and self.ui.checkBox_auto_reconnect.isChecked():
-                args = {'port': self.target_port}
-                self.handle_connect(**args)
+                self.handle_connect(self.target_port)
 
     def show_ports(self, **kwargs):
         p_str = "PORTS: "
@@ -535,6 +550,7 @@ class MainWindow(QtWidgets.QMainWindow):
 #
 ########################################################################
 
+
     def create_settings(self):
         self.save_checkboxes = [self.ui.checkBox_auto_reconnect,
                                 self.ui.checkBox_auto_save_settings,
@@ -554,10 +570,18 @@ class MainWindow(QtWidgets.QMainWindow):
                                 self.ui.lineEdit_tx_chr,
                                 self.ui.lineEdit_log_format,
                                 self.ui.lineEdit_command_char,
-                                self.ui.lineEdit_delay]
+                                self.ui.lineEdit_delay,
+                                ]
+
+        self.log_save_line_edits = [self.ui.lineEdit_time_format,
+                                    self.ui.lineEdit_log_folder,
+                                    self.ui.lineEdit_log_format,
+                                    self.ui.lineEdit_log_name]
 
         self.save_combo_boxes = [self.ui.comboBox_baud,
-                                 self.ui.comboBox_plot_type]
+                                 self.ui.comboBox_plot_type,
+                                 self.ui.comboBox_limits,
+                                 ]
 
         for checkbox in self.save_checkboxes:
             checkbox.stateChanged.connect(self.save_settings)
@@ -616,6 +640,10 @@ class MainWindow(QtWidgets.QMainWindow):
         try:
             with open(SETTINGS_FILE, 'r') as file:
                 self.current_settings = json.load(file)
+
+            if 'lineEdit_log_folder' in self.current_settings and not self.current_settings['lineEdit_log_folder']:
+                self.current_settings['lineEdit_log_folder'] = DEFAULT_LOG_FOLDER
+
             for checkbox in self.save_checkboxes:
                 checkbox: QtWidgets.QCheckBox
                 if checkbox.objectName() in self.current_settings:
@@ -662,74 +690,25 @@ class MainWindow(QtWidgets.QMainWindow):
 #
 ########################################################################
 
+
     def create_commands(self):
         self.cmd_list.append(Command("help", self.print_help))
-
-        cmd_ports = Command("ports", self.show_ports)
-        cmd_ports.add_argument("-a", '')
-        self.cmd_list.append(cmd_ports)
-
-        cmd_clear = Command("clear", self.clear_clicked)
-        self.cmd_list.append(cmd_clear)
+        self.cmd_list.append(Command("ports", self.show_ports, 0, options=['-a']))
+        self.cmd_list.append(Command("clear", self.clear_clicked))
         self.cmd_list.append(Command("quit", quit))
         self.cmd_list.append(Command("exit", quit))
-        cmd_con = Command("con", self.handle_connect, "port", str)
-        cmd_con.add_argument('-b', '', str, 115200)
-        cmd_con.add_argument('-d', '', bool, True)
-        cmd_con.add_argument('-x', '', bool, True)
-        cmd_con.add_argument('-r', '', bool, True)
-        cmd_con.add_argument('-p', '', str)
-        cmd_con.add_argument('-h', '', bool, True)
-        self.cmd_list.append(cmd_con)
-
+        self.cmd_list.append(Command("con", self.handle_connect, 1, options=['-b', '-d', '-x', '-r', '-p', '-h']))
         self.cmd_list.append(Command("dcon", self.disconnect))
-
-        cmd_script = Command("script", self.handle_script_command)
-        cmd_script.add_argument("-f", '')
-        cmd_script.add_argument("-h", '')
-        cmd_script.add_argument("-o", '', str)
-        cmd_script.add_argument("-t", '')
-        cmd_script.add_argument("-n", '', str, "")
-        cmd_script.add_argument("-rm", '', str)
-        cmd_script.add_argument("-s", '', str)
-        cmd_script.add_argument("-r", '', str)
-        cmd_script.add_argument("-d", '', int)
-        cmd_script.add_argument("-a", '', str, "")
-        cmd_script.add_argument("-ls")
-        self.cmd_list.append(cmd_script)
-
-        cmd_log = Command("log", self.handle_log_command)
-        cmd_log.add_argument('-o', '', default="")
-        cmd_log.add_argument('-a', '')
-        cmd_log.add_argument('-rm', '')
-        cmd_log.add_argument('-ls', '')
-        cmd_log.add_argument('-h', "")
-        cmd_log.add_argument('-f', "")
-        self.cmd_list.append(cmd_log)
-
-        cmd_plot = Command("plot", self.handle_plot_command)
-        cmd_plot.add_argument("-kv", '')
-        cmd_plot.add_argument("-c", "")
-        cmd_plot.add_argument("-t", "")
-        cmd_plot.add_argument("-l", "")
-        cmd_plot.add_argument("-h", "")
-        cmd_plot.add_argument("-m")
-        cmd_plot.add_argument("-p")
-        self.cmd_list.append(cmd_plot)
-
-        cmd_keys = Command("key", self.handle_key_cmd)
-        cmd_keys.add_argument("-k", "")
-        cmd_keys.add_argument("-v", "")
-        cmd_keys.add_argument("-c", "")
-        cmd_keys.add_argument("-h", "")
-        self.cmd_list.append(cmd_keys)
-
-        cmd_new = Command("new", self.open_new_window, "pass_to", str)
-
-        self.cmd_list.append(cmd_new)
+        self.cmd_list.append(Command("script", self.handle_script_command, 0, ['-f', '-h', '-o', '-t', '-n', '-rm', '-s', '-r', '-d', '-a', '-ls']))
+        self.cmd_list.append(Command("log", self.handle_log_command, 0, ['-o', '-a', '-rm', '-ls', '-h', '-f']))
+        self.cmd_list.append(Command("plot", self.handle_plot_command, 0, ['-kv', '-c', '-t', '-l', '-h', '-m', '-p', '-k']))
+        self.cmd_list.append(Command("key", self.handle_key_cmd, 0, ['-k', '-v', '-c', '-h']))
+        self.cmd_list.append(Command("new", self.open_new_window, 1000))
+        self.cmd_list.append(Command("cowsay", self.cowsay, 1000, ["-d", '-t', '-b']))
 
     def interpret_command(self, text: str):
         """execute a command. Returns NONE if no command found"""
+
         text = text.replace("\n", "").replace("\r", "")
         if not text:
             return None
@@ -757,7 +736,7 @@ class MainWindow(QtWidgets.QMainWindow):
 #
 ########################################################################
 
-    def handle_script_command(self, **kwargs):
+    def handle_script_command(self, *args, **kwargs):
         delay = None
         arg_str = ""
         run_script = True
@@ -878,6 +857,7 @@ class MainWindow(QtWidgets.QMainWindow):
             self.ui.lineEdit_input.setText(line[0])
             self.send_clicked(add_to_history=False)
         elif line[1] == TYPE_CMD:
+            line[0] = self.input_text_evaluate(line[0])
             self.interpret_command(line[0])
         else:
             self.add_text(self.input_text_evaluate(line[0]), type=line[1])
@@ -944,35 +924,58 @@ class MainWindow(QtWidgets.QMainWindow):
             return
 
         if '-f' in kwargs:
-            self.open_folder_location(LOG_FOLDER)
+            self.open_folder_location(DEFAULT_LOG_FOLDER)
             return
         if '-o' in kwargs:
             if kwargs['-o']:
-                log_file = LOG_FOLDER + kwargs["-o"]
+                log_file = DEFAULT_LOG_FOLDER + kwargs["-o"]
                 if not log_file.endswith(".txt"):
                     log_file += ".txt"
                 if not os.path.exists(log_file):
                     self.add_text(f"Log file {log_file} not found", type=TYPE_ERROR)
                     return
             else:
-                log_file = self.get_file(LOG_FOLDER)
+                log_file = self.get_file(DEFAULT_LOG_FOLDER)
             if log_file:
                 self.open_log(log_file)
             return
 
         if '-ls' in kwargs:
-            self.list_files(LOG_FOLDER)
+            self.list_files(DEFAULT_LOG_FOLDER)
             return
 
         if '-a' in kwargs:
             self.log.archive(kwargs['-a'])
             return
-
         self.open_log()
+
+    def log_settings_changed(self):
+        self.ui.pushButton_restart_logger.setEnabled(True)
+        pass
+
+        
+    def restart_logger(self):
+
+        folder_path = self.ui.lineEdit_log_folder.text()
+        file_name = self.ui.lineEdit_log_name.text()
+        log_fmt = replace_escapes(self.ui.lineEdit_log_format.text())
+        time_fmt = replace_escapes(self.ui.lineEdit_time_format.text())
+        file_extension = self.ui.comboBox_log_name_extension.currentText()
+        port_name = None
+        if self.is_connected:
+            port_name = ser.port
+
+        
+        restart_result = self.log.restart(folder_path, file_name, time_fmt, log_fmt, port_name, file_extension)
+        if restart_result:
+            eprint(restart_result)
+        
+        self.ui.pushButton_restart_logger.setEnabled(False)
+        pass
 
     def open_log(self, log_file=None):
         if not log_file:
-            log_file = self.get_latest_file(LOG_FOLDER)
+            log_file = self.get_latest_file(DEFAULT_LOG_FOLDER)
         open_log_viewer(self, log_file)
 
 
@@ -981,6 +984,7 @@ class MainWindow(QtWidgets.QMainWindow):
 #               PLOT FUNCTIONS
 #
 ########################################################################
+
 
     def start_plot_clicked(self):
         if self.plot_started:
@@ -998,7 +1002,7 @@ class MainWindow(QtWidgets.QMainWindow):
         if '-m' in kwargs:
             limits = "Max"
         if '-c' in kwargs:
-            self.ui.widget_plot.reset()
+            self.end_plot()
             return
         if '-t' in kwargs:
             targets = kwargs['-t']
@@ -1136,6 +1140,9 @@ class MainWindow(QtWidgets.QMainWindow):
 #
 ########################################################################
 
+    def cowsay(self, *args, **kwargs):
+        self.add_text(get_cow(*args, **kwargs), type=TYPE_HELP)
+
     def open_folder_location(self, folder_path: str):
         if USER_OS != "Windows":
             return False
@@ -1148,15 +1155,19 @@ class MainWindow(QtWidgets.QMainWindow):
         self.debug_text("OPENING GITHUB REPO", color=COLOR_GREEN)
         webbrowser.open(GITHUB_URL)
 
-    def open_new_window(self, pass_to:str = ""):
+    def open_new_window(self, *args):
         import platform
         import subprocess
-        if platform.system() == 'Windows':
-            cmd = f'start pythonw.exe {INSTALL_FOLDER}/serial_killer.py {pass_to}'
-        elif platform.system() == 'Linux':
-            cmd = f'python3 {INSTALL_FOLDER}/serial_killer.py {pass_to}'
 
-        vprint("OPENING NEW WINDOW ", cmd)
+        if platform.system() == 'Windows':
+            cmd = f'start pythonw.exe {INSTALL_FOLDER}/serial_killer.py '
+        elif platform.system() == 'Linux':
+            cmd = f'python3 {INSTALL_FOLDER}/serial_killer.py '
+
+        for arg in args:
+            cmd += arg + " "
+
+        print("OPENING NEW WINDOW ", cmd)
         subprocess.call(cmd, shell=True)
 
     def get_latest_file(self, directory: str):
@@ -1165,9 +1176,9 @@ class MainWindow(QtWidgets.QMainWindow):
         return latest_file
 
     def list_files(self, directory: str):
-        list_of_files = filter( lambda x: os.path.isfile(os.path.join(directory, x)),
-                        os.listdir(directory) )
-        files = sorted(list_of_files,key = lambda x: os.path.getmtime(os.path.join(directory, x)),reverse=True)
+        list_of_files = filter(lambda x: os.path.isfile(os.path.join(directory, x)),
+                               os.listdir(directory))
+        files = sorted(list_of_files, key=lambda x: os.path.getmtime(os.path.join(directory, x)), reverse=True)
         files_str = ""
         for file in files:
             file_timestamp = os.path.getmtime(directory + file)
@@ -1177,6 +1188,7 @@ class MainWindow(QtWidgets.QMainWindow):
             files_str += f"{last_modified : <15}{file_size : >10} {file : <12}\n"
 
         self.add_text(files_str, type=TYPE_HELP)
+        return files_str
 
     def get_file(self, start_dir: str = None, extensions: str = None, title: str = "Open") -> str:
         files = QFileDialog.getOpenFileName(self, caption=title, directory=start_dir, filter=extensions)

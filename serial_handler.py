@@ -57,7 +57,7 @@ def serial_connect(port: str, baud=115200, xonxoff=False, rtscts=False, dsrdtr=F
 def serial_disconnect():
     ser.cancel_read()
     ser.cancel_write()
-    time.sleep(.05)
+    time.sleep(.01)
     ser.close()
 
 class SerialWorker(QObject):  # THIS FETCHES SERIAL DATA. ASYNC.

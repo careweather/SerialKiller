@@ -9,15 +9,14 @@ from PyQt5.QtWidgets import QFileDialog
 DATE_TODAY = date.today()
 
 USER_OS = platform.system()
-INSTALL_FOLDER = os.path.realpath(__file__).replace(__name__ + ".py", "").removesuffix("\\")
+INSTALL_FOLDER = os.path.realpath(__file__).replace(__name__ + ".py", "").removesuffix("\\").replace("\\", "/")
 CURRENT_FOLDER = os.getcwd()
 
 print(INSTALL_FOLDER)
 
 SETTINGS_FILE = INSTALL_FOLDER + "/user_settings.json"
 SCRIPT_FOLDER = INSTALL_FOLDER + "/scripts/"
-LOG_FOLDER = INSTALL_FOLDER + "/logs/"
-
+DEFAULT_LOG_FOLDER = INSTALL_FOLDER + "/logs/"
 
 # COLORS
 COLOR_WHITE = QColor(255, 255, 255)
@@ -41,7 +40,6 @@ COLOR_LIGHT_YELLOW = QColor(248, 252, 121)
 COLOR_DARK_YELLOW = QColor(138, 140, 0)
 
 
-
 TYPE_RX = 0
 TYPE_TX = 1
 
@@ -56,9 +54,10 @@ GITHUB_URL = "https://github.com/Alaraway/SerialKiller"
 DEFAULT_SCRIPT_DELAY = 200
 
 global DEBUG_LEVEL
-DEBUG_LEVEL = 1 # Default to debug prints and error prints only.
+DEBUG_LEVEL = 1  # Default to debug prints and error prints only.
 
-def eprint(*args, color:str = "red", **kwargs):
+
+def eprint(*args, color: str = "red", **kwargs):
     '''ERROR print debugging. Always Active'''
     p_string = ""
     for arg in args:
@@ -73,6 +72,7 @@ def eprint(*args, color:str = "red", **kwargs):
 #             p_string += str(arg)
 #         cprint(p_string, color=color, **kwargs)
 
+
 def vprint(*args, color: str = "white", **kwargs):
     '''VERBOSE print debugging. If debug level 2+'''
     if DEBUG_LEVEL > 1:
@@ -80,6 +80,7 @@ def vprint(*args, color: str = "white", **kwargs):
         for arg in args:
             p_string += str(arg)
         cprint(p_string, color=color, **kwargs)
+
 
 def get_number(obj, return_type=float, failure_val=None, lower_limit: float = None, upper_limit: float = None):
     rval = failure_val
@@ -95,8 +96,10 @@ def get_number(obj, return_type=float, failure_val=None, lower_limit: float = No
         return failure_val
     return rval
 
+
 def get_timestamp():
     return datetime.datetime.now().strftime("%H:%M:%S.%f")[:-3]
+
 
 def find_file(self, start_directory: str, file_name: str = None, file_extension: str = '.txt'):
     '''opens a popup if file_name == None. Returns "" if cancel. Returns None if no file found'''
@@ -117,15 +120,49 @@ def colorToStyleSheet(color: QColor) -> str:
     return fmtcolor
 
 
+def get_cow(*args, **kwargs):
+    from sk_help import COW_BORED, COW_DEAD, COW_BUBBLES, COW_NERD, COW_IN_LOVE
+    if not args and not kwargs:
+        return COW_BORED
+    cow = COW_BUBBLES
+    p_str = ""
+
+    for arg in args:
+        if arg == "love":
+            cow = COW_IN_LOVE
+        elif arg == "nerd":
+            cow = COW_NERD
+        elif arg == "dead":
+            cow = COW_DEAD
+        else:
+            p_str += arg + " "
+
+    top = "_"
+    for x in range(len(p_str)):
+        top += "_"
+
+    if not p_str:
+        return cow
+
+    cow_str = f"""\
+ {top}
+/ {p_str}\\
+\\{top}/"""
+
+    return cow_str + cow
+
+
 def remove_from_string(input: str, removes=[]):
     for item in removes:
         input = input.replace(item, "")
     return input
 
+
 def replace_escapes(input: str) -> str:
     input = input.replace("\\\\n", '^n^').replace('\\\\r', '^r^').replace('\\\\t', '^t^')  # Temporary change any \\n, ,etc
     input = input.replace("\\n", '\n').replace('\\r', '\r').replace('\\t', '\t')
     return input.replace("^n^", '\\n').replace('^r^', '\\r').replace('^t^', '\\t')  # Replace any \\n, etc
+
 
 STYLE_SHEET_TERMINAL_INACTIVE = f'background-color: {colorToStyleSheet(COLOR_DARK_GREY)};color: rgb(255, 255, 255);font: 10pt "Consolas";'
 STYLE_SHEET_TERMINAL_ACTIVE = f'background-color: {colorToStyleSheet(COLOR_BLACK)};color: rgb(255, 255, 255);font: 10pt "Consolas";'
