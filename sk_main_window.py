@@ -1,3 +1,4 @@
+from genericpath import exists
 import glob
 import json
 import os
@@ -5,12 +6,16 @@ import time
 from datetime import datetime
 import re
 
+import random
+
 import PyQt5
 from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.QtCore import QThread, QTimer, flush
 from PyQt5.QtGui import QTextCharFormat, QTextCursor, QSyntaxHighlighter
 # library imports
-from PyQt5.QtWidgets import QFileDialog, QTableWidgetItem, QTextEdit
+from PyQt5.QtWidgets import QCheckBox, QComboBox, QFileDialog, QGroupBox, QLabel, QLineEdit, QPushButton, QTableWidgetItem, QTextEdit, QWidget
+from pyqtgraph import plot
+from pyqtgraph.graphicsItems.LabelItem import LabelItem
 
 # gui imports
 from gui.GUI_MAIN_WINDOW import Ui_MainWindow
@@ -19,7 +24,7 @@ from sk_commands import Command
 from sk_help import *
 from sk_help_popup import Help_Popup, open_help_popup
 from sk_log_popup import Log_Viewer, open_log_viewer
-from sk_logging import Logger
+from sk_logging import SK_Logger
 from sk_scripting import ScriptWorker, ScriptSyntaxHighlighter
 from sk_tools import *
 
@@ -53,15 +58,11 @@ class MainWindow(QtWidgets.QMainWindow):
         self.update_ports()
         self.start_rescan()
         self.recall_settings()
-
         self.script_highlighter = ScriptSyntaxHighlighter(self.ui.textEdit_script)
+        self.start_logger()
 
-
-        
-
-        self.log = Logger(log_fmt=self.ui.lineEdit_log_format.text())
-        self.log.start()
         self.ui.lineEdit_input.setFocus()
+
         self.ui.tabWidget.setCurrentIndex(0)
         self.update_ports(get_ports())
 
@@ -146,7 +147,8 @@ class MainWindow(QtWidgets.QMainWindow):
         self.ui.lineEdit_log_name.textChanged.connect(self.log_settings_changed)
         self.ui.lineEdit_time_format.textChanged.connect(self.log_settings_changed)
         self.ui.lineEdit_log_format.textChanged.connect(self.log_settings_changed)
-        self.ui.pushButton_restart_logger.clicked.connect(self.restart_logger)
+        self.ui.pushButton_log_path_select.clicked.connect(self.set_log_folder)
+        self.ui.pushButton_restart_logger.clicked.connect(self.start_logger)
 
         self.ui.label_log_settings_debug.setText("")
 
@@ -172,6 +174,29 @@ class MainWindow(QtWidgets.QMainWindow):
         self.ui.pushButton_run_script.clicked.connect(self.start_script)
         self.ui.pushButton_start_plot.clicked.connect(self.start_plot_clicked)
         self.ui.pushButton_start_plot.setStyleSheet(STYLE_SHEET_BUTTON_INACTIVE)
+        self.ui.groupBox_adv_plot.toggled.connect(lambda: self.collapse_box(self.ui.groupBox_adv_plot))
+        self.collapse_box(self.ui.groupBox_adv_plot, True)
+
+    def collapse_box(self, groupBox: QGroupBox, force_close=False):
+        children = groupBox.findChildren((QLineEdit, QLabel, QComboBox, QCheckBox, QPushButton))
+
+        if force_close == True:
+            groupBox.setChecked(False)
+            return
+        if groupBox.isChecked():  # Expand
+            groupBox.setTitle(groupBox.title().replace(ARROW_RIGHT, ARROW_DOWN))
+            groupBox.setContentsMargins(1, 15, 1, 1)
+            vprint("EXPAND Box:", groupBox.objectName())
+            for item in children:
+                item: QWidget
+                item.show()
+        else:
+            vprint("Collapsing Box:", groupBox.objectName())
+            groupBox.setTitle(groupBox.title().replace(ARROW_DOWN, ARROW_RIGHT))
+            groupBox.setContentsMargins(0, 0, 0, 0)
+            for item in children:
+                item: QWidget
+                item.hide()
 
     def scroll_history(self, scroll_down=True):
         if scroll_down:
@@ -390,6 +415,12 @@ class MainWindow(QtWidgets.QMainWindow):
         return True
 
     def find_port_name(self, input: str):
+        if input.startswith("#"):
+            port_index = int(input[1:])
+            if port_index <= len(self.current_ports):
+                return list(self.current_ports)[port_index]
+            else:
+                return None
         if input in self.current_ports:
             return input
         if input.upper() in self.current_ports:
@@ -530,7 +561,7 @@ class MainWindow(QtWidgets.QMainWindow):
         if not self.current_ports:
             p_str += "NONE"
         elif '-a' not in kwargs:
-            p_str += " #  NAME\t\tDESCRIPTION\n"
+            p_str += " #  NAME\t\tMFGR\n"
 
         for index, port in enumerate(self.current_ports):
             this_port = self.current_ports[port]
@@ -539,7 +570,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 for item in this_port:
                     p_str += f"\t{item}:\t{str(this_port[item])}\n"
             else:
-                p_str += f'''({index}) {this_port["name"]}\t\t{this_port["descr"]}\n'''
+                p_str += f'''({index}) {this_port["name"]}\t\t{this_port["mfgr"]}\n'''
 
         self.add_text(p_str, type=TYPE_HELP)
 
@@ -693,22 +724,31 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def create_commands(self):
         self.cmd_list.append(Command("help", self.print_help))
-        self.cmd_list.append(Command("ports", self.show_ports, 0, options=['-a']))
+        self.cmd_list.append(Command("ports", self.show_ports, 0, kw_options=['-a']))
         self.cmd_list.append(Command("clear", self.clear_clicked))
         self.cmd_list.append(Command("quit", quit))
         self.cmd_list.append(Command("exit", quit))
-        self.cmd_list.append(Command("con", self.handle_connect, 1, options=['-b', '-d', '-x', '-r', '-p', '-h']))
+        self.cmd_list.append(Command("con", self.handle_connect, 1,
+                                     kw_options=['-b', '-d', '-x', '-r', '-p', '-h']))
         self.cmd_list.append(Command("dcon", self.disconnect))
-        self.cmd_list.append(Command("script", self.handle_script_command, 0, ['-f', '-h', '-o', '-t', '-n', '-rm', '-s', '-r', '-d', '-a', '-ls']))
-        self.cmd_list.append(Command("log", self.handle_log_command, 0, ['-o', '-a', '-rm', '-ls', '-h', '-f']))
-        self.cmd_list.append(Command("plot", self.handle_plot_command, 0, ['-kv', '-c', '-t', '-l', '-h', '-m', '-p', '-k']))
-        self.cmd_list.append(Command("key", self.handle_key_cmd, 0, ['-k', '-v', '-c', '-h']))
+        self.cmd_list.append(Command("script", self.handle_script_command, 0,
+                                     kw_options=['-f', '-h', '-o', '-t', '-n', '-rm', '-s', '-r', '-d', '-a', '-ls']))
+        self.cmd_list.append(Command("log", self.handle_log_command, 0,
+                                     kw_options=['-o', '-a', '-rm', '-ls', '-h', '-f', '--name', '--tfmt', '--fmt']))
+        self.cmd_list.append(Command("plot", self.handle_plot_command, 1,
+                                     kw_options=['-t', '--targets',
+                                                 '-p', '--points',
+                                                 '-h', '--help',
+                                                 '-l', '--limits',
+                                                 '-r', '--ref',
+                                                 '-s', '--seps']))
+        self.cmd_list.append(Command("key", self.handle_key_cmd, 0,
+                                     kw_options=['-k', '-v', '-c', '-h']))
         self.cmd_list.append(Command("new", self.open_new_window, 1000))
-        self.cmd_list.append(Command("cowsay", self.cowsay, 1000, ["-d", '-t', '-b']))
+        self.cmd_list.append(Command("cowsay", self.cowsay, 1000))
 
     def interpret_command(self, text: str):
         """execute a command. Returns NONE if no command found"""
-
         text = text.replace("\n", "").replace("\r", "")
         if not text:
             return None
@@ -886,6 +926,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.debug_text("SCRIPT STARTED")
 
         self.ui.lineEdit_input.setDisabled(True)
+        self.ui.lineEdit_keyboard_control.setDisabled(True)
         self.ui.pushButton_send.setDisabled(True)
         self.ui.tabWidget.setCurrentIndex(0)
 
@@ -905,6 +946,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
         self.ui.lineEdit_input.clear()
         self.ui.lineEdit_input.setDisabled(False)
+        self.ui.lineEdit_keyboard_control.setDisabled(False)
         self.ui.pushButton_send.setDisabled(False)
         self.ui.lineEdit_input.setFocus()
         self.script_thread.exit()
@@ -919,10 +961,11 @@ class MainWindow(QtWidgets.QMainWindow):
 ########################################################################
 
     def handle_log_command(self, **kwargs):
+        if not kwargs:
+            self.open_log()
         if '-h' in kwargs:
             self.add_text(LOG_HELP, type=TYPE_HELP)
             return
-
         if '-f' in kwargs:
             self.open_folder_location(DEFAULT_LOG_FOLDER)
             return
@@ -939,39 +982,44 @@ class MainWindow(QtWidgets.QMainWindow):
             if log_file:
                 self.open_log(log_file)
             return
-
         if '-ls' in kwargs:
             self.list_files(DEFAULT_LOG_FOLDER)
             return
-
         if '-a' in kwargs:
-            self.log.archive(kwargs['-a'])
+            self.log.archive(kwargs['-a'], self.ui.comboBox_log_name_extension.currentText())
             return
-        self.open_log()
+        if '--name' in kwargs:
+            self.ui.lineEdit_log_name.setText(kwargs['--name'])
+        if '--tfmt' in kwargs:
+            self.ui.lineEdit_time_format.setText(kwargs['--tfmt'])
+        if '--fmt' in kwargs:
+            self.ui.lineEdit_log_format.setText(kwargs['--fmt'])
+
+    def set_log_folder(self, log_folder: str = None):
+        if not log_folder:
+            log_folder = self.get_directory(DEFAULT_LOG_FOLDER)
+        self.ui.lineEdit_log_folder.setText(log_folder)
 
     def log_settings_changed(self):
         self.ui.pushButton_restart_logger.setEnabled(True)
+        self.ui.pushButton_restart_logger.setStyleSheet(STYLE_SHEET_BUTTON_ACTIVE)
         pass
 
-        
-    def restart_logger(self):
-
+    def start_logger(self):
         folder_path = self.ui.lineEdit_log_folder.text()
-        file_name = self.ui.lineEdit_log_name.text()
+        file_extension = self.ui.comboBox_log_name_extension.currentText()
+        file_name = time.strftime(self.ui.lineEdit_log_name.text())
         log_fmt = replace_escapes(self.ui.lineEdit_log_format.text())
         time_fmt = replace_escapes(self.ui.lineEdit_time_format.text())
-        file_extension = self.ui.comboBox_log_name_extension.currentText()
+        if not (os.path.isdir(folder_path)):
+            folder_path = DEFAULT_LOG_FOLDER
+            self.ui.lineEdit_log_folder.setText(folder_path)
         port_name = None
         if self.is_connected:
             port_name = ser.port
-
-        
-        restart_result = self.log.restart(folder_path, file_name, time_fmt, log_fmt, port_name, file_extension)
-        if restart_result:
-            eprint(restart_result)
-        
+        self.log = SK_Logger(folder_path, file_name + file_extension, time_fmt, log_fmt, port_name)
         self.ui.pushButton_restart_logger.setEnabled(False)
-        pass
+        self.ui.pushButton_restart_logger.setStyleSheet(STYLE_SHEET_BUTTON_INACTIVE)
 
     def open_log(self, log_file=None):
         if not log_file:
@@ -990,55 +1038,115 @@ class MainWindow(QtWidgets.QMainWindow):
         if self.plot_started:
             self.end_plot()
         else:
-            self.start_plot("Key-Value")
+            self.start_plot()
 
-    def handle_plot_command(self, **kwargs):
-        if '-h' in kwargs:
-            self.add_text(PLOT_HELP, type=TYPE_HELP)
+    def handle_plot_command(self, *args, **kwargs):
         plot_type = None
         targets = None
         max_points = None
-        limits = "Window"
-        if '-m' in kwargs:
-            limits = "Max"
-        if '-c' in kwargs:
-            self.end_plot()
+        reference_lines = None 
+        limits = None
+        separators = None 
+
+        for arg in args:
+            if arg == "pause" or arg == "p":
+                self.pause_plot()
+                return
+            if arg == "resume" or arg == 'r':
+                self.pause_plot()
+            elif arg == "clear" or arg == "c":
+                self.end_plot()
+                return
+            elif arg == "kv" or arg.upper() == "KEY-VALUE":
+                plot_type = "Key-Value"
+            elif arg == "sa" or arg.upper() == "SINGLE-ARRAY":
+                plot_type = ("Single-Array")
+            elif arg == "ka" or arg.upper() == "KEY-ARRAY":
+                plot_type = ("Key-Array")
+            elif arg == "sv" or arg.upper() == "SINGLE-VALUE":
+                plot_type = ("Single-Value")
+
+        if '-h' in kwargs or '--help' in kwargs:
+            self.add_text(PLOT_HELP, type=TYPE_HELP)
             return
+
+        
+        if '-s' in kwargs:
+            separators = kwargs['-s']
+            if not separators:
+                separators = ""
+        if '--seps' in kwargs:
+            separators = kwargs['--seps']
+            if not separators:
+                separators = ""
+
+
+        if '-r' in kwargs:
+            reference_lines = kwargs['-r']
+            if not reference_lines:
+                reference_lines = ""
+        if '--ref' in kwargs:
+            reference_lines = kwargs['--ref']
+            if not reference_lines:
+                reference_lines = ""
+
+        
+        
+        if '-l' in kwargs:
+            limits = kwargs['-l']
+        if '--limits' in kwargs:
+            limits = kwargs['--limits']
+            
         if '-t' in kwargs:
             targets = kwargs['-t']
-        if '-l' in kwargs:
-            max_points = int(kwargs['-l'])
-        if '-kv' in kwargs:
-            plot_type = "Key-Value"
-            self.start_plot(plot_type, targets, max_points, limits)
+            self.ui.lineEdit_target_keys.setText(kwargs['-t'])
+        if '--targets' in kwargs:
+            targets = kwargs['--targets']
+            self.ui.lineEdit_target_keys.setText(kwargs['--targets'])
+        
         if '-p' in kwargs:
-            self.pause_plot()
-            return
+            max_points = kwargs['-p']
+        if '--points' in kwargs:
+            max_points = kwargs['--points']
 
-    def start_plot(self, type=None, targets=None, max_points=None, limits=None):
-        if not limits:
-            limits = self.ui.comboBox_limits.currentText()
-        elif limits in ['Max', 'Window']:
-            self.ui.comboBox_limits.setCurrentText(limits)
 
+        if limits:
+            if limits.upper() == "MAX":
+                self.ui.comboBox_limits.setCurrentText("Max")
+            elif limits.upper() == "WINDOW":
+                self.ui.comboBox_limits.setCurrentText("Window")
+
+        if reference_lines != None:
+            self.ui.lineEdit_ref_lines.setText(reference_lines)
+
+        if targets != None:
+            self.ui.lineEdit_target_keys.setText(targets)
+
+        if max_points != None:
+            self.ui.lineEdit_max_points.setText(max_points)
+
+        if separators != None:
+            self.ui.lineEdit_seps.setText(separators)
+
+        if plot_type:
+            self.ui.comboBox_plot_type.setCurrentText(plot_type)
+            self.start_plot()
+
+    def start_plot(self):
         if self.plot_started:
             self.end_plot()
+            self.start_plot()
 
-        if type == None:
-            type = self.ui.comboBox_plot_type.currentText()
+        limits = self.ui.comboBox_limits.currentText()
+        type = self.ui.comboBox_plot_type.currentText()
+        targets = self.ui.lineEdit_target_keys.text()
+        max_points = self.lineEdit_to_numbers(self.ui.lineEdit_max_points)
 
-        if targets:
-            self.ui.lineEdit_target_keys.setText(targets)
-        elif self.ui.lineEdit_target_keys.text():
-            targets = self.ui.lineEdit_target_keys.text()
+        if max_points == None:
+            max_points = 100 
 
-        if max_points:
-            max_points = int(max_points)
-            self.ui.lineEdit_max_points.setText(str(max_points))
-        elif self.ui.lineEdit_max_points.text():
-            max_points = int(self.ui.lineEdit_max_points.text())
-        else:
-            max_points = 100
+        ref_lines = self.lineEdit_to_numbers(self.ui.lineEdit_ref_lines, separator=',')
+        seps = [char for char in replace_escapes(self.ui.lineEdit_seps.text())]
 
         self.plot_started = True
         self.ui.pushButton_start_plot.setText("Stop Plot")
@@ -1046,7 +1154,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.ui.pushButton_pause_plot.setText("Pause Plot")
         self.ui.pushButton_start_plot.setStyleSheet(STYLE_SHEET_BUTTON_ACTIVE)
         self.ui.tabWidget.setCurrentIndex(2)
-        self.ui.widget_plot.begin(type, targets, max_points, limits)
+        self.ui.widget_plot.begin(type, targets, max_points, limits, seps, ref_lines)
 
     def pause_plot(self):
         if self.ui.widget_plot.paused:
@@ -1058,8 +1166,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def end_plot(self):
         self.ui.pushButton_start_plot.setText("Start Plot")
-        self.ui.pushButton_start_plot.setStyleSheet(
-            STYLE_SHEET_BUTTON_INACTIVE)
+        self.ui.pushButton_start_plot.setStyleSheet(STYLE_SHEET_BUTTON_INACTIVE)
         self.ui.widget_plot.reset()
         self.plot_started = False
 
@@ -1068,7 +1175,6 @@ class MainWindow(QtWidgets.QMainWindow):
 #               KEYBOARD FUNCTIONS
 #
 ########################################################################
-
     def handle_key_cmd(self, **kwargs):
         key = ""
         value = ""
@@ -1140,6 +1246,29 @@ class MainWindow(QtWidgets.QMainWindow):
 #
 ########################################################################
 
+    def lineEdit_to_numbers(self, lineEdit: QLineEdit, separator=None):
+        text = lineEdit.text().replace(" ", "")
+        if not separator:
+            try:
+                r_val = float(text)
+                return r_val
+            except ValueError as E:
+                eprint(f"ERROR IN LINE EDIT {lineEdit.objectName()}: {E}")
+                return None
+        else:
+            r_vals = []
+            tokens = text.split(separator)
+            for token in tokens:
+                if not token:
+                    continue
+                try:
+                    val = float(token)
+                    r_vals.append(val)
+                except ValueError as E:
+                    eprint(f"ERROR IN LINE EDIT {lineEdit.objectName()}: {E}")
+                    return None
+            return r_vals
+
     def cowsay(self, *args, **kwargs):
         self.add_text(get_cow(*args, **kwargs), type=TYPE_HELP)
 
@@ -1205,6 +1334,10 @@ class MainWindow(QtWidgets.QMainWindow):
         with open(file_path, 'r') as file:
             text = file.read()
         return text
+
+    def get_directory(self, start=DEFAULT_LOG_FOLDER):
+        dir = str(QFileDialog.getExistingDirectory(self, directory=start)) + "/"
+        return dir
 
     def print_help(self):
         open_help_popup(self)

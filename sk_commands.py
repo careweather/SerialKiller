@@ -6,18 +6,14 @@ from sk_tools import *
 
 
 class Command:
-    def __init__(self, name: str, func, numb_args = 0, options = []) -> None:
+    def __init__(self, name: str, func, numb_args = 0, kw_options = []) -> None:
         self.name = name
         self.func = func
         self.numb_args = numb_args
-        self.options = options
-        if isinstance(options, str):
-            self.options = [options]
+        self.kw_options = kw_options
+        if isinstance(kw_options, str):
+            self.kw_options = [kw_options]
         
-
-    def add_option(self, name: str, kw: str = None, data_type: type = str, default=None):
-        pass 
-
     def execute(self, input: str):
         if not (input.split(" ")[0] == self.name):  # keyword matched
             return None
@@ -34,11 +30,12 @@ class Command:
 
         while tokens:
             token = tokens.pop(0)
-            if token in self.options:
+            if token in self.kw_options:
                 current_option = token
                 kw_args[current_option] = None
-            elif current_option:
+            elif current_option and kw_args[current_option] == None:
                 kw_args[current_option] = token
+                current_option = None 
             elif len(args) < self.numb_args:
                 args.append(token)
             else:

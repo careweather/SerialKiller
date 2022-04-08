@@ -115,7 +115,7 @@ def get_ports() -> dict:
             'vid': str(port.vid),
             'pid': str(port.pid),
             's/n': str(port.serial_number),
-            'numb': get_serial_port_number(port.device)
+            'numb': get_serial_port_number(port.device),
         }
 
     sorted_ports = {}

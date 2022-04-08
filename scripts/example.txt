@@ -13,5 +13,5 @@ i am loop number $LOOP
 #endloop
 goodbye...
 #pause=2000
-#clear #cowsay ${GITHUB_URL} nerd
+#clear #cowsay ${GITHUB_URL}
 // Another comment

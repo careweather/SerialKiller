@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>492</width>
-    <height>630</height>
+    <width>547</width>
+    <height>577</height>
    </rect>
   </property>
   <property name="palette">
@@ -124,6 +124,23 @@
          </property>
         </widget>
        </item>
+       <item row="0" column="0" colspan="3">
+        <widget class="QLineEdit" name="lineEdit_input"/>
+       </item>
+       <item row="2" column="0">
+        <widget class="QLabel" name="label_debug">
+         <property name="font">
+          <font>
+           <family>Consolas</family>
+           <pointsize>10</pointsize>
+           <bold>true</bold>
+          </font>
+         </property>
+         <property name="text">
+          <string>DEBUG TEXT HERE</string>
+         </property>
+        </widget>
+       </item>
        <item row="2" column="3">
         <widget class="QLineEdit" name="lineEdit_keyboard_control">
          <property name="enabled">
@@ -140,28 +157,14 @@
          </property>
         </widget>
        </item>
-       <item row="2" column="0">
-        <widget class="QLabel" name="label_debug">
-         <property name="font">
-          <font>
-           <family>Consolas</family>
-           <pointsize>10</pointsize>
-           <bold>true</bold>
-          </font>
-         </property>
-         <property name="text">
-          <string>DEBUG TEXT HERE</string>
-         </property>
-        </widget>
-       </item>
-       <item row="0" column="0" colspan="3">
-        <widget class="QLineEdit" name="lineEdit_input"/>
-       </item>
       </layout>
      </widget>
     </item>
     <item row="3" column="0">
      <widget class="QGroupBox" name="groupBox">
+      <property name="toolTip">
+       <string>The number of points plotted at once. Set to 0 for infinite.</string>
+      </property>
       <property name="title">
        <string>Port</string>
       </property>
@@ -468,7 +471,7 @@
     <item row="2" column="0">
      <widget class="QTabWidget" name="tabWidget">
       <property name="currentIndex">
-       <number>4</number>
+       <number>2</number>
       </property>
       <property name="elideMode">
        <enum>Qt::ElideNone</enum>
@@ -707,61 +710,187 @@ color: rgb(255, 255, 255);</string>
        <attribute name="title">
         <string>Plot</string>
        </attribute>
-       <layout class="QGridLayout" name="gridLayout_9">
-        <item row="2" column="0">
-         <widget class="QPushButton" name="pushButton_clear_plot">
-          <property name="text">
-           <string>Clear Plot</string>
-          </property>
-         </widget>
-        </item>
-        <item row="1" column="0" colspan="3">
-         <widget class="Plot_Widget" name="widget_plot" native="true">
-          <property name="enabled">
-           <bool>true</bool>
-          </property>
-         </widget>
-        </item>
-        <item row="2" column="2">
-         <widget class="QPushButton" name="pushButton_start_plot">
-          <property name="text">
-           <string>Start Plot</string>
-          </property>
-         </widget>
-        </item>
-        <item row="2" column="1">
-         <widget class="QPushButton" name="pushButton_pause_plot">
-          <property name="text">
-           <string>Pause Plot</string>
-          </property>
-         </widget>
-        </item>
-        <item row="0" column="0" colspan="3">
-         <widget class="QGroupBox" name="groupBox_2">
+       <layout class="QGridLayout" name="gridLayout_15">
+        <item row="0" column="5">
+         <widget class="QLineEdit" name="lineEdit_target_keys">
           <property name="sizePolicy">
-           <sizepolicy hsizetype="Minimum" vsizetype="Maximum">
+           <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
             <horstretch>0</horstretch>
             <verstretch>0</verstretch>
            </sizepolicy>
           </property>
-          <property name="title">
-           <string>Plot Settings</string>
+          <property name="toolTip">
+           <string>Separate Target Keys To Plot With Any Separator Defined in &quot;seps&quot;</string>
           </property>
-          <layout class="QGridLayout" name="gridLayout_8">
+          <property name="placeholderText">
+           <string>a,b,c,d</string>
+          </property>
+         </widget>
+        </item>
+        <item row="0" column="2">
+         <widget class="QLabel" name="label_3">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+          <property name="text">
+           <string>Points:</string>
+          </property>
+         </widget>
+        </item>
+        <item row="0" column="0">
+         <widget class="QLabel" name="label_4">
+          <property name="text">
+           <string>Type:</string>
+          </property>
+         </widget>
+        </item>
+        <item row="0" column="1">
+         <widget class="QComboBox" name="comboBox_plot_type">
+          <item>
+           <property name="text">
+            <string>Key-Value</string>
+           </property>
+          </item>
+          <item>
+           <property name="text">
+            <string>Single-Value</string>
+           </property>
+          </item>
+          <item>
+           <property name="text">
+            <string>Single-Array</string>
+           </property>
+          </item>
+          <item>
+           <property name="text">
+            <string>Key-Array</string>
+           </property>
+          </item>
+         </widget>
+        </item>
+        <item row="0" column="3">
+         <widget class="QLineEdit" name="lineEdit_max_points">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+          <property name="maximumSize">
+           <size>
+            <width>60</width>
+            <height>16777215</height>
+           </size>
+          </property>
+          <property name="placeholderText">
+           <string>100</string>
+          </property>
+         </widget>
+        </item>
+        <item row="3" column="0" colspan="6">
+         <widget class="Plot_Widget" name="widget_plot" native="true">
+          <property name="enabled">
+           <bool>true</bool>
+          </property>
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+         </widget>
+        </item>
+        <item row="0" column="4">
+         <widget class="QLabel" name="label_6">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Maximum" vsizetype="Preferred">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+          <property name="toolTip">
+           <string>The target keys to plot</string>
+          </property>
+          <property name="text">
+           <string>Keys:</string>
+          </property>
+         </widget>
+        </item>
+        <item row="2" column="0" colspan="6">
+         <widget class="QGroupBox" name="groupBox_adv_plot">
+          <property name="title">
+           <string>↓ Adv</string>
+          </property>
+          <property name="flat">
+           <bool>false</bool>
+          </property>
+          <property name="checkable">
+           <bool>true</bool>
+          </property>
+          <layout class="QGridLayout" name="gridLayout_9">
+           <property name="leftMargin">
+            <number>4</number>
+           </property>
            <property name="topMargin">
             <number>0</number>
            </property>
-           <property name="bottomMargin">
-            <number>6</number>
-           </property>
-           <property name="horizontalSpacing">
+           <property name="rightMargin">
             <number>4</number>
            </property>
-           <property name="verticalSpacing">
-            <number>1</number>
+           <property name="bottomMargin">
+            <number>0</number>
            </property>
+           <property name="horizontalSpacing">
+            <number>6</number>
+           </property>
+           <item row="3" column="0">
+            <widget class="QLabel" name="label_23">
+             <property name="sizePolicy">
+              <sizepolicy hsizetype="Maximum" vsizetype="Preferred">
+               <horstretch>0</horstretch>
+               <verstretch>0</verstretch>
+              </sizepolicy>
+             </property>
+             <property name="toolTip">
+              <string>Chars here will be used to split data into tokens</string>
+             </property>
+             <property name="text">
+              <string>Seps:</string>
+             </property>
+            </widget>
+           </item>
+           <item row="3" column="11">
+            <widget class="QCheckBox" name="checkBox_ignore_case">
+             <property name="text">
+              <string>Ignore Case</string>
+             </property>
+             <property name="checked">
+              <bool>true</bool>
+             </property>
+            </widget>
+           </item>
            <item row="0" column="4">
-            <widget class="QLabel" name="label_3">
+            <widget class="QLabel" name="label_24">
+             <property name="text">
+              <string>Ref Lines:</string>
+             </property>
+            </widget>
+           </item>
+           <item row="0" column="11">
+            <widget class="QLineEdit" name="lineEdit_ref_lines">
+             <property name="sizePolicy">
+              <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
+               <horstretch>0</horstretch>
+               <verstretch>0</verstretch>
+              </sizepolicy>
+             </property>
+            </widget>
+           </item>
+           <item row="0" column="0" colspan="2">
+            <widget class="QLabel" name="label_18">
              <property name="sizePolicy">
               <sizepolicy hsizetype="Maximum" vsizetype="Preferred">
                <horstretch>0</horstretch>
@@ -769,34 +898,11 @@ color: rgb(255, 255, 255);</string>
               </sizepolicy>
              </property>
              <property name="text">
-              <string>Max Points:</string>
-             </property>
-            </widget>
-           </item>
-           <item row="0" column="1">
-            <widget class="QLabel" name="label_18">
-             <property name="text">
               <string>Limits:</string>
              </property>
             </widget>
            </item>
-           <item row="1" column="0">
-            <widget class="QComboBox" name="comboBox_plot_type">
-             <item>
-              <property name="text">
-               <string>Key-Value</string>
-              </property>
-             </item>
-            </widget>
-           </item>
-           <item row="0" column="0">
-            <widget class="QLabel" name="label_4">
-             <property name="text">
-              <string>Plot Type:</string>
-             </property>
-            </widget>
-           </item>
-           <item row="1" column="1">
+           <item row="0" column="2">
             <widget class="QComboBox" name="comboBox_limits">
              <item>
               <property name="text">
@@ -810,26 +916,90 @@ color: rgb(255, 255, 255);</string>
              </item>
             </widget>
            </item>
-           <item row="0" column="2">
-            <widget class="QLabel" name="label_6">
+           <item row="3" column="1" colspan="4">
+            <widget class="QLineEdit" name="lineEdit_seps">
+             <property name="toolTip">
+              <string>Chars here will be used to separate incoming data into tokens</string>
+             </property>
              <property name="text">
-              <string>Target Keys: (comma separate)</string>
+              <string>,;\t\n|[] =:</string>
              </property>
             </widget>
            </item>
-           <item row="1" column="2">
-            <widget class="QLineEdit" name="lineEdit_target_keys"/>
-           </item>
-           <item row="1" column="4">
-            <widget class="QLineEdit" name="lineEdit_max_points">
-             <property name="maximumSize">
+           <item row="0" column="3">
+            <spacer name="horizontalSpacer_10">
+             <property name="orientation">
+              <enum>Qt::Horizontal</enum>
+             </property>
+             <property name="sizeHint" stdset="0">
               <size>
-               <width>80</width>
-               <height>16777215</height>
+               <width>40</width>
+               <height>20</height>
               </size>
              </property>
-             <property name="placeholderText">
-              <string>100</string>
+            </spacer>
+           </item>
+          </layout>
+         </widget>
+        </item>
+        <item row="4" column="0" colspan="6">
+         <widget class="QGroupBox" name="groupBox_2">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+          <property name="title">
+           <string/>
+          </property>
+          <property name="flat">
+           <bool>true</bool>
+          </property>
+          <layout class="QGridLayout" name="gridLayout_8">
+           <property name="leftMargin">
+            <number>0</number>
+           </property>
+           <property name="topMargin">
+            <number>0</number>
+           </property>
+           <property name="rightMargin">
+            <number>0</number>
+           </property>
+           <property name="bottomMargin">
+            <number>0</number>
+           </property>
+           <item row="0" column="0">
+            <spacer name="horizontalSpacer_9">
+             <property name="orientation">
+              <enum>Qt::Horizontal</enum>
+             </property>
+             <property name="sizeHint" stdset="0">
+              <size>
+               <width>267</width>
+               <height>20</height>
+              </size>
+             </property>
+            </spacer>
+           </item>
+           <item row="0" column="1">
+            <widget class="QPushButton" name="pushButton_clear_plot">
+             <property name="text">
+              <string>Clear Plot</string>
+             </property>
+            </widget>
+           </item>
+           <item row="0" column="2">
+            <widget class="QPushButton" name="pushButton_pause_plot">
+             <property name="text">
+              <string>Pause Plot</string>
+             </property>
+            </widget>
+           </item>
+           <item row="0" column="3">
+            <widget class="QPushButton" name="pushButton_start_plot">
+             <property name="text">
+              <string>Start Plot</string>
              </property>
             </widget>
            </item>
@@ -913,15 +1083,15 @@ color: rgb(255, 255, 255);</string>
         <item row="1" column="0" colspan="4">
          <widget class="QToolBox" name="toolBox">
           <property name="currentIndex">
-           <number>2</number>
+           <number>3</number>
           </property>
           <widget class="QWidget" name="page_send_settings">
            <property name="geometry">
             <rect>
              <x>0</x>
              <y>0</y>
-             <width>552</width>
-             <height>211</height>
+             <width>513</width>
+             <height>197</height>
             </rect>
            </property>
            <attribute name="label">
@@ -995,8 +1165,8 @@ color: rgb(255, 255, 255);</string>
             <rect>
              <x>0</x>
              <y>0</y>
-             <width>458</width>
-             <height>250</height>
+             <width>440</width>
+             <height>156</height>
             </rect>
            </property>
            <attribute name="label">
@@ -1249,6 +1419,14 @@ color: rgb(255, 255, 255);</string>
            </layout>
           </widget>
           <widget class="QWidget" name="page_log_settings">
+           <property name="geometry">
+            <rect>
+             <x>0</x>
+             <y>0</y>
+             <width>496</width>
+             <height>250</height>
+            </rect>
+           </property>
            <attribute name="label">
             <string>Log Settings</string>
            </attribute>
@@ -1411,6 +1589,14 @@ color: rgb(255, 255, 255);</string>
            </layout>
           </widget>
           <widget class="QWidget" name="page_command_settings">
+           <property name="geometry">
+            <rect>
+             <x>0</x>
+             <y>0</y>
+             <width>513</width>
+             <height>197</height>
+            </rect>
+           </property>
            <attribute name="label">
             <string>Command Settings</string>
            </attribute>
@@ -1499,7 +1685,7 @@ color: rgb(255, 255, 255);</string>
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>492</width>
+     <width>547</width>
      <height>21</height>
     </rect>
    </property>
@@ -1614,13 +1800,6 @@ color: rgb(255, 255, 255);</string>
   <tabstop>lineEdit_delay</tabstop>
   <tabstop>pushButton_run_script</tabstop>
   <tabstop>lineEdit_script_name</tabstop>
-  <tabstop>pushButton_clear_plot</tabstop>
-  <tabstop>pushButton_start_plot</tabstop>
-  <tabstop>pushButton_pause_plot</tabstop>
-  <tabstop>comboBox_plot_type</tabstop>
-  <tabstop>comboBox_limits</tabstop>
-  <tabstop>lineEdit_target_keys</tabstop>
-  <tabstop>lineEdit_max_points</tabstop>
   <tabstop>pushButton_clear_table</tabstop>
   <tabstop>pushButton_send</tabstop>
  </tabstops>
