@@ -1,6 +1,7 @@
 import subprocess
 import sys
 from sk_tools import DEBUG_LEVEL
+import traceback
 
 def update_ui_files():
     from sk_tools import INSTALL_FOLDER
@@ -113,6 +114,7 @@ def run_app(size_x = 600, size_y = 700, open_cmd = ""):
         from sk_tools import GITHUB_URL
     except Exception as E:
         print("ERROR:", E)
+        print(f"ERR: {traceback.format_exc()}\n")
         install_deps()
     from sk_help import GREETINGS_TEXT
     cprint(GREETINGS_TEXT, color='cyan')

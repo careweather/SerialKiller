@@ -130,11 +130,11 @@ class Plot_Widget(pg.GraphicsLayoutWidget):
     def end(self): #TODO 
         return
 
-    def update(self, input: str):
+    def update(self, input: str, wait_for_newline = True):
         if not self.started or self.paused:
             return
         self.str_buffer += input
-        if '\n' not in self.str_buffer:
+        if '\n' not in self.str_buffer and wait_for_newline:
             return
 
         elements = self.str_buffer.split("\n", 1)

@@ -107,9 +107,10 @@ def get_ports() -> dict:
     '''Get the Serial Ports Availiable'''
     ports = {}
     for port in list_ports.comports():
-        ports[port.device] = {
+        ports[port.name] = {
             'descr': str(port.description),
-            'name': str(port.name),
+            'dev': str(port.device),
+            'name':str(port.name),
             'mfgr': str(port.manufacturer),
             'hwid': str(port.hwid),
             'vid': str(port.vid),

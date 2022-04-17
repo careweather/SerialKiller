@@ -18,20 +18,19 @@ GREETINGS_TEXT = f'''\
 run with --h for CLI options
 '''
 SCRIPT_HELP = '''\
-USEAGE: 'script' [options]
-
+USEAGE: script [options]
 If NO options are provided, the script in the script tab will be run. 
-Use ESCAPE to exit a script mid-execution
-
 Options:
-    NONE        run the script in the script tab 
-    -h          print this help text
-    -s [name]   save the script.        OPTIONAL: as [name].txt
-    -n [name]   start a new script.     OPTIONAL: as [name].txt
-    -o [name]   open a script.          OPTIONAL: open [name].txt
-    -rm [name]  remove a script.        OPTIONAL: remove [name].txt
-    -ls         list the scripts in the script directory
-    -r [name]   run the script [name].txt.
+    NONE                run the script in the script tab 
+    -h, --help          print this help text
+    -s, --save [name]   save the script.   (optional: 'name'.txt)
+    -n, --new [name]    start a new script. (optional: 'name'.txt)
+    -o, --open [name]   open a script. (optional: 'name'.txt)
+    -rm [name]          remove a script. (optional: 'name'.txt)
+    -ls                 list the scripts in the script directory
+    -r [name]           run the script [name].txt.
+
+Use ESCAPE to exit a script mid-execution
 '''
 SCRIPT_SYNTAX_HELP = '''\
 Each line in this text will be evaluated as if it was typed into the 'output' line.
@@ -96,11 +95,11 @@ If no [portname] is given, it is selected from the "port" dropdown below.
 
 OPTIONS:
     -h, --help          Show this help message
-    -b, --baud [BAUD]   Set baud rate [BAUD]
+    -b, --baud <rate>   Set baud rate [rate] 
     -d, --dsrdtr        enable dsrdtr
     -x, --xonxoff       enable flow control (xonxoff)
     -r, --rtscts        enable rtscts 
-    -p, --parity [P]    set parity to [P] 
+    -p, --parity <p>    set parity to [p] 
 
 Examples (assuming ports are COM5 and COM10):
 con 10                (connect to COM10)

@@ -368,7 +368,12 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def connect(self, port: str, baud: str = "115200", xonxoff: bool = False, dsrdtr: bool = False, rtscts: str = False, parity: str = "NONE") -> bool:
         self.ui.comboBox_port.setCurrentText(port)
-        self.is_connected = serial_connect(port, baud, xonxoff, rtscts, dsrdtr, parity)
+
+        
+        if port in self.current_ports:
+            device = self.current_ports[port]["dev"]
+
+        self.is_connected = serial_connect(device, baud, xonxoff, rtscts, dsrdtr, parity)
         if not self.is_connected:
             self.debug_text(f"ERR: {port} COULD NOT CONNECT", color=COLOR_RED)
             self.add_text(f"ERR: {port} COULD NOT CONNECT \n", type=TYPE_ERROR)
@@ -418,8 +423,8 @@ class MainWindow(QtWidgets.QMainWindow):
             return input.upper()
         if "COM" + input in self.current_ports:
             return "COM" + input
-        if "dev/tty" + input in self.current_ports:
-            return "dev/tty" + input
+        if "tty" + input in self.current_ports:
+            return "tty" + input
         return None
 
     def handle_connect(self, *args, **kwargs):
@@ -491,6 +496,8 @@ class MainWindow(QtWidgets.QMainWindow):
                 self.debug_text("ERR: ALREADY CONNECTED", color=COLOR_RED)
             return
 
+        
+
         self.connect(port, baud, xonxoff, dsrdtr, rtscts, parity)
 
     def connect_clicked(self):
@@ -556,9 +563,9 @@ class MainWindow(QtWidgets.QMainWindow):
         for index, port in enumerate(self.current_ports):
             this_port = self.current_ports[port]
             if not args:
-                p_str += f'''({index}) {this_port["name"]}\t\t{this_port["mfgr"]}\n'''
+                p_str += f'''({index}) {port}\t\t{this_port["mfgr"]}\n'''
             elif args[0] not in this_port:
-                p_str += f'''({index}) {this_port["name"]}\n'''
+                p_str += f'''({index}) {port}\n'''
                 for item in this_port:
                     p_str += f"\t{item}:\t{str(this_port[item])}\n"
             else:
@@ -752,6 +759,7 @@ class MainWindow(QtWidgets.QMainWindow):
         cmd_plot.add_option(("-l", "--limits"))
         cmd_plot.add_option(("-r", "--ref"))
         cmd_plot.add_option(("-s", "--seps"))
+        cmd_plot.add_option(("-t", "--test"))
 
         self.cmd_list.append(cmd_plot)
 
@@ -1104,6 +1112,11 @@ class MainWindow(QtWidgets.QMainWindow):
         if '-h' in kwargs or '--help' in kwargs:
             self.add_text(PLOT_HELP, type=TYPE_HELP)
             return
+
+        if '-t' in kwargs:
+            print(kwargs['-t'])
+            if self.plot_started:
+                self.ui.widget_plot.update(kwargs['-t'], False)
 
         if '-s' in kwargs:
             separators = kwargs['-s']
