@@ -17,13 +17,10 @@ GREETINGS_TEXT = f'''\
 
 run with --h for CLI options
 '''
-
-
 SCRIPT_HELP = '''\
-USEAGE: 'script' [OPTIONS]
-Modify or run a script. 
-If NO args are provided, the script in the script tab will be run. 
+USEAGE: 'script' [options]
 
+If NO options are provided, the script in the script tab will be run. 
 Use ESCAPE to exit a script mid-execution
 
 Options:
@@ -32,9 +29,8 @@ Options:
     -s [name]   save the script.        OPTIONAL: as [name].txt
     -n [name]   start a new script.     OPTIONAL: as [name].txt
     -o [name]   open a script.          OPTIONAL: open [name].txt
-    -rm <name>  remove a script.        REQURIRED: remove [name].txt
+    -rm [name]  remove a script.        OPTIONAL: remove [name].txt
     -ls         list the scripts in the script directory
-    -d <DELAY>  start the script with delay [DELAY] 
     -r [name]   run the script [name].txt.
 '''
 SCRIPT_SYNTAX_HELP = '''\
@@ -63,39 +59,48 @@ USEAGE: log [OPTIONS]
 If NO options are provided, the most recent log is opened.
 
 Options:
-    -o          open a log 
-    -a [name]   archive the current log     OPTIONAL: as [name].txt
-    -rm [name]  remove a log                REQUIRED: remove [name].txt
-    -ls         list logs in the directory
+    -h, --help              Show this help message
+    -o, --open              open a log 
+    -a, --archive [name]    archive the current log (optional [name].txt)
+    -ls, --list             list all logs
+    --name <name>           Set the log "name"
+    --tfmt <format>         Set the log "time format"
+    --fmt <format>          Set the log "format"
 '''
 PLOT_HELP = '''\
-USEAGE: plot <-kv|-a> [OPTIONS]
-Start, or clear a plot
+USEAGE:
+    plot [command] [options]
 
-Command Line Options:
-    -h              Print this help message 
-    -kv             Start a plot in Key-Value mode
-    -a              Start a plot in Single-Array mode
-    -c              Clear the current plot
-    -t [targets]    Set the plot keyword targets. 
-                    Separate each with a comma
-    -m              Set the windowing option to 'Max'
-    -l [len]        Set the max length of [len] points
+Commands:
+    kv, key-value       Start a plot in Key-Value mode 
+    sv, single-value    Start a plot in Single-Value mode 
+    sa, single-array    Start a plot in Single-Array mode 
+    ka, key-array       Start a plot in Key-Array mode 
+    p, pause            Pause / Resume the plot 
+    c, clear            Clear the Plot 
+
+Options:
+    -h, --help              Print this help message
+    -s, --seps <seps>       Set the separators to [seps]
+    -r, --ref <refs>        Set the reference lines to [refs]
+    -l, --limits <limits>   Set the plot limit mode ("Max" or "Window")
+    -k, --keys <keys>       Set the target keywords (comma seperate)
+    -p, --points <points>   Set the number of plot points
 '''
 CONNECT_HELP = '''\
-USEAGE: con [OPTIONS]
-Connect to a port. 
-With NO arguments, the settings are selected from the 'Port' settings below.
+USEAGE: 
+con [portname] [options]
+
+If no [portname] is given, it is selected from the "port" dropdown below.
+[portname] can be the full port name or the COM number. i.e, 3 = COM3
 
 OPTIONS:
-[PORT]      The target port name.
-            If all ports begin with "COM", only the COM# is required. 
-            i.e, 3 = COM3
--b [BAUD]   connect at baud rate [BAUD]
--d          enable dsrdtr
--x          enable flow control (xonxoff)
--r          enable rtscts 
--p [PARITY] set parity to [PARITY] 
+    -h, --help          Show this help message
+    -b, --baud [BAUD]   Set baud rate [BAUD]
+    -d, --dsrdtr        enable dsrdtr
+    -x, --xonxoff       enable flow control (xonxoff)
+    -r, --rtscts        enable rtscts 
+    -p, --parity [P]    set parity to [P] 
 
 Examples (assuming ports are COM5 and COM10):
 con 10                (connect to COM10)
@@ -104,13 +109,13 @@ con 5 -p ODD          (connect to COM5. Set ODD parity)
 '''
 
 KEY_HELP = '''
-USEAGE plot -k <KEY> -s <SEND> 
-Add a key command
+USEAGE:
+    key                     Jump to "keyboard" text edit
+    key set <key> <value>   set <key> to <value> in table
+    key clear               Clear the current table
 
 Options:
-    -k <KEY>        set the key to be added
-    -s <SEND>       set the value to be sent on <KEY>
-    -c              clear the current key table
+    -h, --help      Show this help message
 
 '''
 
@@ -126,16 +131,16 @@ Navigation:
     CTRL+SHIFT+c    Connect or Disconnect
 
 Common Commands: 
-con [PORT] [OPTS]   Connect to a serial port. '-h' for help
-dcon                Disconnect from the serial port
-ports [-a]          List availiable ports. '-a' lists more info
-script [OPTS]       Run, open or save a script. '-h' for options
-log [OPTS]          Open, View, Edit logs. '-h' for options
-clear               Clear the terminal
-new                 Open a new window
-quit                Quit immediately
-key [OPTS]          Set key commands. '-h' for options
-help                Show help popup
+    con [port] [options]    Connect to a serial port. '-h' for help
+    dcon                    Disconnect from the serial port
+    ports [-a]              List availiable ports. '-a' lists more info
+    script [options]        Run, open or save a script. '-h' for help
+    log [options]           Open, View, Edit logs. '-h' for options
+    clear                   Clear the terminal
+    new                     Open a new window
+    quit                    Quit immediately
+    key [options]           Set key commands. '-h' for options
+    help                    Show help popup
 '''
 
 COW_BORED = """
@@ -178,4 +183,3 @@ COW_NERD = """
                 ||-------WW |
                 ||         ||
 """
-

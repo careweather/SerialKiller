@@ -8,7 +8,7 @@ from sk_tools import *
 
 class ScriptSyntaxHighlighter(QSyntaxHighlighter):
     cmd_format = QTextCharFormat()
-    cmd_format.setForeground(COLOR_LIGHT_BLUE)
+    cmd_format.setForeground(COLOR_LIGHT_GREEN)
 
     comment_format = QTextCharFormat()
     comment_format.setForeground(COLOR_MED_DARK_GREY)

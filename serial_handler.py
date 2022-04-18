@@ -143,6 +143,7 @@ class RescanWorker(QObject):
                 eprint(f"ERR: {traceback.format_exc()}\n", color='red')
 
     def stop(self):
+        vprint("Stopping Rescan Worker")
         self.active = False
 
 

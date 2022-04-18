@@ -37,8 +37,8 @@ def install_deps():
         quit()
 
     install_cmds = [
+        "pip install PyQt5-sip --upgrade"
         "pip install -r requirements.txt",
-        'pip install PyQt5-sip --upgrade'
     ]
 
     for cmd in install_cmds:
@@ -118,10 +118,12 @@ def run_app(size_x = 600, size_y = 700, open_cmd = ""):
     cprint(GREETINGS_TEXT, color='cyan')
     global app
     app = QtWidgets.QApplication(sys.argv)
-    main = sk_main_window.MainWindow(open_cmd=open_cmd)
+    
+    main = sk_main_window.MainWindow(app, open_cmd=open_cmd)
     main.setWindowIcon(QIcon("img/SK_Icon.png"))
     main.resize(size_x, size_y)
     main.show()
+    app.aboutToQuit.connect(main.about_to_quit)
     status = app.exec_()
     sys.exit(status)
 
