@@ -22,6 +22,11 @@ from sk_logging import SK_Logger
 from sk_scripting import ScriptSyntaxHighlighter, ScriptWorker
 from sk_tools import *
 
+import re 
+import random
+import math
+
+
 
 class MainWindow(QtWidgets.QMainWindow):
     target_port: str = None  # Port to auto-connect to.
@@ -168,29 +173,28 @@ class MainWindow(QtWidgets.QMainWindow):
         self.ui.pushButton_run_script.clicked.connect(self.start_script)
         self.ui.pushButton_start_plot.clicked.connect(self.start_plot_clicked)
         self.ui.pushButton_start_plot.setStyleSheet(STYLE_SHEET_BUTTON_INACTIVE)
-        self.ui.groupBox_adv_plot.toggled.connect(lambda: self.collapse_box(self.ui.groupBox_adv_plot))
-        self.collapse_box(self.ui.groupBox_adv_plot, True)
+        #self.ui.groupBox_adv_plot.toggled.connect(lambda: self.collapse_box(self.ui.groupBox_adv_plot))
+        #self.collapse_box(self.ui.groupBox_adv_plot, True)
 
-    def collapse_box(self, groupBox: QGroupBox, force_close=False):
-        children = groupBox.findChildren((QLineEdit, QLabel, QComboBox, QCheckBox, QPushButton))
-
-        if force_close == True:
-            groupBox.setChecked(False)
-            return
-        if groupBox.isChecked():  # Expand
-            groupBox.setTitle(groupBox.title().replace(ARROW_RIGHT, ARROW_DOWN))
-            groupBox.setContentsMargins(1, 15, 1, 1)
-            vprint("EXPAND Box:", groupBox.objectName())
-            for item in children:
-                item: QWidget
-                item.show()
-        else:
-            vprint("Collapsing Box:", groupBox.objectName())
-            groupBox.setTitle(groupBox.title().replace(ARROW_DOWN, ARROW_RIGHT))
-            groupBox.setContentsMargins(0, 0, 0, 0)
-            for item in children:
-                item: QWidget
-                item.hide()
+    # def collapse_box(self, groupBox: QGroupBox, force_close=False):
+    #     children = groupBox.findChildren((QLineEdit, QLabel, QComboBox, QCheckBox, QPushButton))
+    #     if force_close == True:
+    #         groupBox.setChecked(False)
+    #         return
+    #     if groupBox.isChecked():  # Expand
+    #         groupBox.setTitle(groupBox.title().replace(ARROW_RIGHT, ARROW_DOWN))
+    #         groupBox.setContentsMargins(1, 15, 1, 1)
+    #         vprint("EXPAND Box:", groupBox.objectName())
+    #         for item in children:
+    #             item: QWidget
+    #             item.show()
+        # else:
+        #     vprint("Collapsing Box:", groupBox.objectName())
+        #     groupBox.setTitle(groupBox.title().replace(ARROW_DOWN, ARROW_RIGHT))
+        #     groupBox.setContentsMargins(0, 0, 0, 0)
+        #     for item in children:
+        #         item: QWidget
+        #         item.hide()
 
     def scroll_history(self, scroll_down=True):
         if scroll_down:
@@ -276,40 +280,67 @@ class MainWindow(QtWidgets.QMainWindow):
         self.ui.label_debug.setText(label_text)
         vprint(label_text, color='cyan')
 
-    def input_text_evaluate(self, input: str):
-        input = input.replace("$UTS", str(int(time.time())))
-        if "${" in input and "}" in input:
-            between_brackets = input.split("${")[1].split("}")[0]
-            # print(between_brackets)
-            try:
-                resp = eval(between_brackets)
+    # def input_text_evaluate(self, input: str):
+    #     input = input.replace("$UTS", str(int(time.time())))
+    #     if "${" in input and "}" in input:
+    #         between_brackets = input.split("${")[1].split("}")[0]
+    #         # print(between_brackets)
+    #         try:
+    #             resp = eval(between_brackets)
+    #         except Exception as E:
+    #             resp = None
+    #             eprint(E)
+    #             self.add_text(str(E) + "\n", type=TYPE_ERROR)
+    #             return None
+
+    #         if resp is not None:
+    #             input = input.replace("${" + between_brackets + "}", str(resp))
+    #         else:
+    #             input = input.replace("${" + between_brackets + "}", "")
+
+    #     if self.ui.checkBox_interpret_escape.isChecked():
+    #         input = replace_escapes(input)
+    #     return input
+
+
+    def input_text_evaluate(self, text:str)-> str:
+        text = text.replace("$UTS", str(int(time.time())))
+        found_expressions = re.findall(r'\$\{(.*?)\}', text)
+        for expression in found_expressions:
+            try: 
+                if not expression:
+                    text = text.replace("${}", "")
+                    continue
+                expression_resp = str(eval(expression))
+                text = text.replace(f"${{{expression}}}", expression_resp, 1)
+                vprint(f"EXPRESSION ${{{expression}}} = {expression_resp}", color = "green")
             except Exception as E:
-                resp = None
                 eprint(E)
-                self.add_text(str(E) + "\n", type=TYPE_ERROR)
-                return None
-
-            if resp is not None:
-                input = input.replace("${" + between_brackets + "}", str(resp))
-            else:
-                input = input.replace("${" + between_brackets + "}", "")
-
-        if self.ui.checkBox_interpret_escape.isChecked():
-            input = replace_escapes(input)
-        return input
+                self.add_text(f"ERR IN EXPRESSION: ${{{expression}}} {str(E)}\n", type=TYPE_ERROR)
+                return None 
+        return text 
 
     def send_clicked(self, add_to_history=True):
         original_text = self.ui.lineEdit_input.text()
-        text = original_text + replace_escapes(self.ui.lineEdit_append_to_send.text())
         if self.ui.lineEdit_input.isEnabled():
             self.ui.lineEdit_input.clear()
-
         if add_to_history:
             self.append_to_history(original_text)
 
-        text = self.input_text_evaluate(text)
+        #print("RE: ", re.findall(r'\$\{([^]]*)\}', original_text), "\t", re.findall(r'\$\{(.*?)\}', original_text) )
+        
+
+        
+        text = self.input_text_evaluate(original_text)
         if text == None:
             return
+        
+        text = text + replace_escapes(self.ui.lineEdit_append_to_send.text())
+        if self.ui.checkBox_interpret_escape.isChecked():
+            text = replace_escapes(text)
+        #print(text)
+
+        #text = original_text + replace_escapes(self.ui.lineEdit_append_to_send.text())
         cmd_result = self.interpret_command(text)
         if cmd_result != None:
             if cmd_result == "":
@@ -549,28 +580,23 @@ class MainWindow(QtWidgets.QMainWindow):
             if self.target_port in self.current_ports and self.ui.checkBox_auto_reconnect.isChecked():
                 self.handle_connect(self.target_port)
 
-    def show_ports(self, *args):
-        p_str = "PORTS: "
-        for p in self.current_ports:
-            p_str += f"{p} "
-        self.debug_text(p_str, color=COLOR_BLACK)
-        p_str = "-----PORTS-----\n"
+    def show_ports(self, *args, **kwargs):
+        self.debug_text(f"PORTS: {' '.join(self.current_ports)}", color=COLOR_BLACK)
+        
         if not self.current_ports:
-            p_str += "NONE"
-        elif not args:
-            p_str += " #  NAME\t\tMFGR\n"
-
+            self.add_text("NO PORTS FOUND", type=TYPE_HELP)
+            return 
+        p_str = "-----PORTS-----\n #  NAME\n"
         for index, port in enumerate(self.current_ports):
             this_port = self.current_ports[port]
+            p_str += f'''({index}) {port}\t{this_port["descr"]}\n'''
             if not args:
-                p_str += f'''({index}) {port}\t\t{this_port["mfgr"]}\n'''
-            elif args[0] not in this_port:
-                p_str += f'''({index}) {port}\n'''
+                continue
+            if args and args[0] not in this_port:
                 for item in this_port:
-                    p_str += f"\t{item}:\t{str(this_port[item])}\n"
+                    p_str += f"    {item}:\t{str(this_port[item])}\n"
             else:
-                p_str += f'''({index}) {this_port["name"]}'''
-                p_str += f"\t{args[0]}:\t{str(this_port[args[0]])}\n"
+                p_str += f"    {args[0]}:\t{str(this_port[args[0]])}\n"
 
         self.add_text(p_str, type=TYPE_HELP)
 
@@ -1108,6 +1134,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 plot_type = "Key-Array"
             elif arg == "sv" or arg.upper() == "SINGLE-VALUE":
                 plot_type = "Single-Value"
+            
 
         if '-h' in kwargs or '--help' in kwargs:
             self.add_text(PLOT_HELP, type=TYPE_HELP)
@@ -1122,36 +1149,21 @@ class MainWindow(QtWidgets.QMainWindow):
             separators = kwargs['-s']
             if not separators:
                 separators = ""
-        if '--seps' in kwargs:
-            separators = kwargs['--seps']
-            if not separators:
-                separators = ""
 
         if '-r' in kwargs:
             reference_lines = kwargs['-r']
             if not reference_lines:
                 reference_lines = ""
-        if '--ref' in kwargs:
-            reference_lines = kwargs['--ref']
-            if not reference_lines:
-                reference_lines = ""
 
         if '-l' in kwargs:
             limits = kwargs['-l']
-        if '--limits' in kwargs:
-            limits = kwargs['--limits']
 
         if '-k' in kwargs:
             targets = kwargs['-k']
             self.ui.lineEdit_target_keys.setText(kwargs['-k'])
-        if '--keys' in kwargs:
-            targets = kwargs['--keys']
-            self.ui.lineEdit_target_keys.setText(kwargs['--keys'])
 
         if '-p' in kwargs:
             max_points = kwargs['-p']
-        if '--points' in kwargs:
-            max_points = kwargs['--points']
 
         if limits:
             if limits.upper() == "MAX":

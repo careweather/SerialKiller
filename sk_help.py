@@ -18,7 +18,8 @@ GREETINGS_TEXT = f'''\
 run with --h for CLI options
 '''
 SCRIPT_HELP = '''\
-USEAGE: script [options]
+USEAGE: 
+    script [options]
 If NO options are provided, the script in the script tab will be run. 
 Options:
     NONE                run the script in the script tab 
@@ -88,7 +89,7 @@ Options:
 '''
 CONNECT_HELP = '''\
 USEAGE: 
-con [portname] [options]
+    con [portname] [options]
 
 If no [portname] is given, it is selected from the "port" dropdown below.
 [portname] can be the full port name or the COM number. i.e, 3 = COM3

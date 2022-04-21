@@ -112,7 +112,7 @@ def get_ports() -> dict:
             'dev': str(port.device),
             'name':str(port.name),
             'mfgr': str(port.manufacturer),
-            'hwid': str(port.hwid),
+            #'hwid': str(port.hwid),
             'vid': str(port.vid),
             'pid': str(port.pid),
             's/n': str(port.serial_number),

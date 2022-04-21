@@ -164,6 +164,9 @@ def remove_from_string(input: str, removes=[]):
         input = input.replace(item, "")
     return input
 
+def get_between(input:str, start:str, end:str) -> list:
+    
+    pass 
 
 def replace_escapes(input: str) -> str:
     input = input.replace("\\\\n", '^n^').replace('\\\\r', '^r^').replace('\\\\t', '^t^')  # Temporary change any \\n, ,etc
