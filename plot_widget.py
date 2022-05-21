@@ -211,11 +211,13 @@ class Plot_Widget(pg.GraphicsLayoutWidget):
         for token in tokens:
             value = str_get_number(token)
             if value == None:
+                return 
                 continue
             if index > self.max_points - 1:
                 return
             if "a" not in self.elements:
                 self.add_element("a", 0, value)
+
             self.elements['a']['x'][index] = index
             self.elements['a']['y'][index] = value
             index += 1
