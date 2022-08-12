@@ -241,7 +241,7 @@ class MainWindow(QtWidgets.QMainWindow):
             if self.ui.checkBox_output_include_terminal.isChecked():
                 self.ui.textEdit_terminal.setTextColor(COLOR_LIGHT_BLUE)
                 self.ui.textEdit_terminal.insertPlainText(text)
-            if self.ui.checkBox_output_include_log.isChecked():
+            if self.ui.checkBox_output_include_log.isChecked() and self.ui.checkBox_autolog.isChecked():
                 self.log.write(text)
             vprint(text, color="blue", end="", flush=True)
 
@@ -250,7 +250,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 text = self.ui.lineEdit_info_chr.text() + text
                 self.ui.textEdit_terminal.setTextColor(COLOR_LIGHT_GREEN)
                 self.ui.textEdit_terminal.insertPlainText(text)
-            if self.ui.checkBox_info_include_log.isChecked():
+            if self.ui.checkBox_info_include_log.isChecked() and self.ui.checkBox_autolog.isChecked():
                 self.log.write(text)
             vprint(text, color="green", end="", flush=True)
 
@@ -259,7 +259,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 text = self.ui.lineEdit_err_chr.text() + text
                 self.ui.textEdit_terminal.setTextColor(COLOR_LIGHT_RED)
                 self.ui.textEdit_terminal.insertPlainText(text)
-            if self.ui.checkBox_error_include_log.isChecked():
+            if self.ui.checkBox_error_include_log.isChecked() and self.ui.checkBox_autolog.isChecked():
                 self.log.write(text)
             vprint(text, color="red", end="", flush=True)
 
@@ -340,7 +340,7 @@ class MainWindow(QtWidgets.QMainWindow):
     def serial_error(self):
         if self.is_connected:
             self.add_text(f"LOST {ser.port}\n", type=TYPE_ERROR)
-            self.disconnect(False)
+            self.disconnect(intentional = False)
             vprint("SERIAL PORT LOST", color="red")
 
     def disconnect(self, intentional=True):
@@ -589,7 +589,8 @@ class MainWindow(QtWidgets.QMainWindow):
                                 self.ui.checkBox_info_include_terminal,
                                 self.ui.checkBox_autoscroll,
                                 self.ui.checkBox_timestamp,
-                                self.ui.checkBox_allow_commands
+                                self.ui.checkBox_allow_commands,
+                                self.ui.checkBox_autolog,
                                 ]
 
         self.save_line_edits = [self.ui.lineEdit_err_chr,
@@ -774,6 +775,8 @@ class MainWindow(QtWidgets.QMainWindow):
         cmd_log.add_option(("--name"))
         cmd_log.add_option(("--tfmt"))
         cmd_log.add_option(("--fmt"))
+        cmd_log.add_option(("--disable"))
+        cmd_log.add_option(("--enable"))
         self.cmd_list.append(cmd_log)
 
         cmd_cow = Command("cowsay", self.cowsay)
@@ -1048,6 +1051,11 @@ class MainWindow(QtWidgets.QMainWindow):
             self.ui.lineEdit_time_format.setText(kwargs['--tfmt'])
         if '--fmt' in kwargs:
             self.ui.lineEdit_log_format.setText(kwargs['--fmt'])
+        if '--enable' in kwargs:
+            self.ui.checkBox_autolog.setChecked(True)
+        if '--disable' in kwargs:
+            self.ui.checkBox_autolog.setChecked(False)
+
 
     def set_log_folder(self, log_folder: str = None):
         if not log_folder:
