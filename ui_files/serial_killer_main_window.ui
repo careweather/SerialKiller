@@ -976,6 +976,9 @@ color: rgb(255, 255, 255);</string>
             <verstretch>0</verstretch>
            </sizepolicy>
           </property>
+          <property name="placeholderText">
+           <string>0,50</string>
+          </property>
          </widget>
         </item>
        </layout>
@@ -1062,8 +1065,8 @@ color: rgb(255, 255, 255);</string>
             <rect>
              <x>0</x>
              <y>0</y>
-             <width>397</width>
-             <height>69</height>
+             <width>394</width>
+             <height>68</height>
             </rect>
            </property>
            <attribute name="label">
@@ -1396,7 +1399,7 @@ color: rgb(255, 255, 255);</string>
              <x>0</x>
              <y>0</y>
              <width>316</width>
-             <height>250</height>
+             <height>247</height>
             </rect>
            </property>
            <attribute name="label">
@@ -1565,8 +1568,8 @@ color: rgb(255, 255, 255);</string>
             <rect>
              <x>0</x>
              <y>0</y>
-             <width>513</width>
-             <height>197</height>
+             <width>163</width>
+             <height>69</height>
             </rect>
            </property>
            <attribute name="label">

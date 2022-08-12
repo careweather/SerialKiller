@@ -41,6 +41,7 @@ class MainWindow(QtWidgets.QMainWindow):
     script_thread = QThread()
     plot_started = False
     is_connected = False
+    data_format = 'utf-8'
 
     def __init__(self, parent: QtWidgets.QApplication, open_cmd="", * args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
@@ -135,7 +136,6 @@ class MainWindow(QtWidgets.QMainWindow):
 
 
     def connect_ui(self):
-
         self.ui.action_save_script.triggered.connect(self.save_script)
         self.ui.action_save_as_script.triggered.connect(lambda: self.save_script(None, True))
         self.ui.action_open_script.triggered.connect(self.open_script)
@@ -280,29 +280,6 @@ class MainWindow(QtWidgets.QMainWindow):
         self.ui.label_debug.setText(label_text)
         vprint(label_text, color='cyan')
 
-    # def input_text_evaluate(self, input: str):
-    #     input = input.replace("$UTS", str(int(time.time())))
-    #     if "${" in input and "}" in input:
-    #         between_brackets = input.split("${")[1].split("}")[0]
-    #         # print(between_brackets)
-    #         try:
-    #             resp = eval(between_brackets)
-    #         except Exception as E:
-    #             resp = None
-    #             eprint(E)
-    #             self.add_text(str(E) + "\n", type=TYPE_ERROR)
-    #             return None
-
-    #         if resp is not None:
-    #             input = input.replace("${" + between_brackets + "}", str(resp))
-    #         else:
-    #             input = input.replace("${" + between_brackets + "}", "")
-
-    #     if self.ui.checkBox_interpret_escape.isChecked():
-    #         input = replace_escapes(input)
-    #     return input
-
-
     def input_text_evaluate(self, text:str)-> str:
         text = text.replace("$UTS", str(int(time.time())))
         found_expressions = re.findall(r'\$\{(.*?)\}', text)
@@ -327,10 +304,6 @@ class MainWindow(QtWidgets.QMainWindow):
         if add_to_history:
             self.append_to_history(original_text)
 
-        #print("RE: ", re.findall(r'\$\{([^]]*)\}', original_text), "\t", re.findall(r'\$\{(.*?)\}', original_text) )
-        
-
-        
         text = self.input_text_evaluate(original_text)
         if text == None:
             return
@@ -399,8 +372,6 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def connect(self, port: str, baud: str = "115200", xonxoff: bool = False, dsrdtr: bool = False, rtscts: str = False, parity: str = "NONE") -> bool:
         self.ui.comboBox_port.setCurrentText(port)
-
-        
         if port in self.current_ports:
             device = self.current_ports[port]["dev"]
 
@@ -431,6 +402,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
         self.serial_thread = QThread()
         self.serial_worker = SerialWorker()
+        self.serial_worker.format = self.data_format
         self.serial_worker.moveToThread(self.serial_thread)
         self.serial_thread.started.connect(self.serial_worker.run)
         self.serial_worker.out.connect(self.add_text)
@@ -811,6 +783,20 @@ class MainWindow(QtWidgets.QMainWindow):
         self.cmd_list.append(cmd_cow)
 
         self.cmd_list.append(Command("new", self.open_new_window))
+
+        cmd_format = Command("format", self.set_format, 1)
+        self.cmd_list.append(cmd_format)
+
+    def set_format(self, format:str):
+        if format in ['utf-8', 'hex', 'bin', 'dec']:
+            self.data_format = format
+            if self.is_connected:
+                self.serial_worker.format = self.data_format
+        else:
+            print("INVALID")
+
+        print(format)
+        
 
     def interpret_command(self, text: str):
         """execute a command. Returns NONE if no command found"""
