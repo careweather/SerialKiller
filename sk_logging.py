@@ -2,7 +2,6 @@ import os
 from datetime import date
 import logging
 
-from serial.win32 import FILE_FLAG_OVERLAPPED
 from sk_tools import *
 import traceback
 

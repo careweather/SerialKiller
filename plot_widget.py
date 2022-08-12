@@ -45,7 +45,6 @@ a:30    b=15 d=30\n
 
 Array:
 1,5,4,3,2,3,1,2,3\n
-
 '''
 
 class Plot_Widget(pg.GraphicsLayoutWidget):
@@ -130,30 +129,30 @@ class Plot_Widget(pg.GraphicsLayoutWidget):
     def end(self): #TODO 
         return
 
-    def update(self, input: str):
+    def update(self, input: str, wait_for_newline = True):
         if not self.started or self.paused:
             return
         self.str_buffer += input
-        if '\n' not in self.str_buffer:
+        if '\n' not in self.str_buffer and wait_for_newline:
             return
 
-        elements = self.str_buffer.split("\n", 1)
-        if len(elements) > 1:
-            self.str_buffer = elements[1]
+        lines = self.str_buffer.split("\n")
+        if len(lines) > 1:
+            self.str_buffer = lines.pop(-1) # Last part did not have a newline
         else:
             self.str_buffer = ""
 
-        elements[0] = elements[0].replace("\r", "")
-
-        if self.plot_type == 'Key-Value':
-            self.parse_data_key_value(elements[0])
-        elif self.plot_type == "Single-Array": # TODO
-            self.parse_data_single_array(elements[0])
-        elif self.plot_type == 'Single-Value':
-            self.parse_data_single_value(elements[0])
-        elif self.plot_type == "Key-Array":
-            pass 
-
+        for line in lines: 
+            line = line.replace("\r", '')
+            if not line: continue
+            if self.plot_type == 'Key-Value':
+                self.parse_data_key_value(line)
+            elif self.plot_type == "Single-Array": # TODO
+                self.parse_data_single_array(line)
+            elif self.plot_type == 'Single-Value':
+                self.parse_data_single_value(line)
+            elif self.plot_type == "Key-Array":
+                self.parse_data_key_array(line)
 
         for element in self.elements:
             self.elements[element]['line'].setData(self.elements[element]['x'], self.elements[element]['y'])
@@ -204,28 +203,6 @@ class Plot_Widget(pg.GraphicsLayoutWidget):
         self.elements["a"]['x'] = np.roll(self.elements["a"]['x'], 1)
         self.elements["a"]['y'] = np.roll(self.elements["a"]['y'], 1)
 
-    def parse_data_single_array(self, input:str):
-        tokens = char_split(input, self.separators)
-        vprint(f"\n[PLOT SA] TOKENS: {tokens}", color = 'yellow', end = "\t") # Debug
-        index = 0
-        for token in tokens:
-            value = str_get_number(token)
-            if value == None:
-                continue
-            if index > self.max_points - 1:
-                return
-            if "a" not in self.elements:
-                self.add_element("a", 0, value)
-            self.elements['a']['x'][index] = index
-            self.elements['a']['y'][index] = value
-            index += 1
-
-        self.elements['a']['x'] = self.elements['a']['x'][0:index]
-        self.elements['a']['y'] = self.elements['a']['y'][0:index]
-        
-            
-    def parse_data_key_array(self, input:str):
-        pass
 
     
     def parse_data_key_value(self, input: str):
@@ -266,8 +243,63 @@ class Plot_Widget(pg.GraphicsLayoutWidget):
                 self.min_value = value
 
             prev_key = None 
-
         vprint("\n") # Debug 
+
+
+
+    def parse_data_single_array(self, input:str):
+        tokens = char_split(input, self.separators)
+        vprint(f"\n[PLOT SA] TOKENS: {tokens}", color = 'yellow', end = "\t") # Debug
+        index = 0
+
+        if len(tokens < 10):
+            return 
+        for token in tokens:
+            value = str_get_number(token)
+            if value == None:
+                return 
+                continue
+            if index > self.max_points - 1:
+                return
+            if "a" not in self.elements:
+                self.add_element("a", 0, value)
+
+            self.elements['a']['x'][index] = index
+            self.elements['a']['y'][index] = value
+            index += 1
+
+        self.elements['a']['x'] = self.elements['a']['x'][0:index]
+        self.elements['a']['y'] = self.elements['a']['y'][0:index]
+        
+    def parse_data_key_array(self, input:str):
+        input = input.replace(" ", "")
+        elems = char_split(input, [':', '='])
+        
+        if len(elems) < 2:
+            vprint("[PLOT KA] BAD:", elems, color = 'yellow')
+            return 
+        name = elems[0]
+        tokens = char_split(elems[1], self.separators)
+        vprint(tokens, color = 'yellow')
+        index = 0
+        for token in tokens:
+            value = str_get_number(token)
+            if value == None:
+                continue
+            if index > self.max_points - 1:
+                return
+            if name not in self.elements:
+                self.add_element(name, 0, value)
+
+            self.elements[name]['x'][index] = index
+            self.elements[name]['y'][index] = value
+            index += 1
+
+        self.elements[name]['x'] = self.elements[name]['x'][0:index]
+        self.elements[name]['y'] = self.elements[name]['y'][0:index]
+        
+
+
 
 
 if __name__ == '__main__':

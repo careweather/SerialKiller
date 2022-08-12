@@ -17,7 +17,7 @@ class Help_Popup(QtWidgets.QWidget):
         self.ui.setupUi(self)
 
         help_text = ""
-        with open("readme.md", 'r') as file:
+        with open(f"{INSTALL_FOLDER}/readme.md", 'r') as file:
             file_text = file.read().split("# Usage:")[1].split("# Possible Future Features / Fixes")[0]
             file_text = remove_from_string(file_text, ['<details open>', '<details closed>', '</details>'])
             help_text = fmt_error_msg + file_text

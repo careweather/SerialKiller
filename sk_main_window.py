@@ -1,21 +1,15 @@
-from genericpath import exists
 import glob
 import json
 import os
 import time
 from datetime import datetime
-import re
 
-import random
-
-import PyQt5
 from PyQt5 import QtCore, QtGui, QtWidgets
-from PyQt5.QtCore import QThread, QTimer, flush
-from PyQt5.QtGui import QTextCharFormat, QTextCursor, QSyntaxHighlighter
-# library imports
-from PyQt5.QtWidgets import QCheckBox, QComboBox, QFileDialog, QGroupBox, QLabel, QLineEdit, QPushButton, QTableWidgetItem, QTextEdit, QWidget
-from pyqtgraph import plot
-from pyqtgraph.graphicsItems.LabelItem import LabelItem
+from PyQt5.QtCore import QThread, QTimer
+from PyQt5.QtGui import QTextCursor
+from PyQt5.QtWidgets import (QCheckBox, QComboBox, QFileDialog, QGroupBox,
+                             QLabel, QLineEdit, QPushButton, QTableWidgetItem,
+                             QWidget)
 
 # gui imports
 from gui.GUI_MAIN_WINDOW import Ui_MainWindow
@@ -25,8 +19,13 @@ from sk_help import *
 from sk_help_popup import Help_Popup, open_help_popup
 from sk_log_popup import Log_Viewer, open_log_viewer
 from sk_logging import SK_Logger
-from sk_scripting import ScriptWorker, ScriptSyntaxHighlighter
+from sk_scripting import ScriptSyntaxHighlighter, ScriptWorker
 from sk_tools import *
+
+import re 
+import random
+import math
+
 
 
 class MainWindow(QtWidgets.QMainWindow):
@@ -42,13 +41,17 @@ class MainWindow(QtWidgets.QMainWindow):
     script_thread = QThread()
     plot_started = False
     is_connected = False
+    data_format = 'utf-8'
 
-    def __init__(self, open_cmd="", * args, **kwargs) -> None:
+    def __init__(self, parent: QtWidgets.QApplication, open_cmd="", * args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
         self.last_save_time = time.perf_counter()
         self.cmd_list = []
-        self.ui = Ui_MainWindow()
         self.current_settings = {}
+        self.ui = Ui_MainWindow()
+
+        self.app: QtWidgets.QApplication = parent
+
         self.ui.setupUi(self)
         self.connect_ui()
         self.save_timer = QTimer()
@@ -67,7 +70,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.update_ports(get_ports())
 
         if open_cmd:
-            vprint("Has Open Command:", open_help_popup)
+            vprint("Has Open Command:", open_cmd)
             self.ui.lineEdit_input.setText(open_cmd)
             self.send_clicked()
 
@@ -133,7 +136,6 @@ class MainWindow(QtWidgets.QMainWindow):
 
 
     def connect_ui(self):
-
         self.ui.action_save_script.triggered.connect(self.save_script)
         self.ui.action_save_as_script.triggered.connect(lambda: self.save_script(None, True))
         self.ui.action_open_script.triggered.connect(self.open_script)
@@ -160,10 +162,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.ui.pushButton_connect.clicked.connect(self.connect_clicked)
         self.ui.pushButton_pause_plot.clicked.connect(self.pause_plot)
 
-        self.ui.comboBox_baud.clear()
-        bauds = [str(x) for x in baud_rates]
-        self.ui.comboBox_baud.addItems(bauds)
-        self.ui.comboBox_baud.setCurrentText("115200")
+        self.set_combobox_items(self.ui.comboBox_baud, baud_rates)
         self.ui.textEdit_script.setPlaceholderText(SCRIPT_SYNTAX_HELP)
         self.ui.textEdit_script.setStyleSheet(STYLE_SHEET_SCRIPT)
         self.ui.checkBox_auto_reconnect.toggled.connect(self.auto_reconnect_toggled)
@@ -174,29 +173,28 @@ class MainWindow(QtWidgets.QMainWindow):
         self.ui.pushButton_run_script.clicked.connect(self.start_script)
         self.ui.pushButton_start_plot.clicked.connect(self.start_plot_clicked)
         self.ui.pushButton_start_plot.setStyleSheet(STYLE_SHEET_BUTTON_INACTIVE)
-        self.ui.groupBox_adv_plot.toggled.connect(lambda: self.collapse_box(self.ui.groupBox_adv_plot))
-        self.collapse_box(self.ui.groupBox_adv_plot, True)
+        #self.ui.groupBox_adv_plot.toggled.connect(lambda: self.collapse_box(self.ui.groupBox_adv_plot))
+        #self.collapse_box(self.ui.groupBox_adv_plot, True)
 
-    def collapse_box(self, groupBox: QGroupBox, force_close=False):
-        children = groupBox.findChildren((QLineEdit, QLabel, QComboBox, QCheckBox, QPushButton))
-
-        if force_close == True:
-            groupBox.setChecked(False)
-            return
-        if groupBox.isChecked():  # Expand
-            groupBox.setTitle(groupBox.title().replace(ARROW_RIGHT, ARROW_DOWN))
-            groupBox.setContentsMargins(1, 15, 1, 1)
-            vprint("EXPAND Box:", groupBox.objectName())
-            for item in children:
-                item: QWidget
-                item.show()
-        else:
-            vprint("Collapsing Box:", groupBox.objectName())
-            groupBox.setTitle(groupBox.title().replace(ARROW_DOWN, ARROW_RIGHT))
-            groupBox.setContentsMargins(0, 0, 0, 0)
-            for item in children:
-                item: QWidget
-                item.hide()
+    # def collapse_box(self, groupBox: QGroupBox, force_close=False):
+    #     children = groupBox.findChildren((QLineEdit, QLabel, QComboBox, QCheckBox, QPushButton))
+    #     if force_close == True:
+    #         groupBox.setChecked(False)
+    #         return
+    #     if groupBox.isChecked():  # Expand
+    #         groupBox.setTitle(groupBox.title().replace(ARROW_RIGHT, ARROW_DOWN))
+    #         groupBox.setContentsMargins(1, 15, 1, 1)
+    #         vprint("EXPAND Box:", groupBox.objectName())
+    #         for item in children:
+    #             item: QWidget
+    #             item.show()
+        # else:
+        #     vprint("Collapsing Box:", groupBox.objectName())
+        #     groupBox.setTitle(groupBox.title().replace(ARROW_DOWN, ARROW_RIGHT))
+        #     groupBox.setContentsMargins(0, 0, 0, 0)
+        #     for item in children:
+        #         item: QWidget
+        #         item.hide()
 
     def scroll_history(self, scroll_down=True):
         if scroll_down:
@@ -243,7 +241,7 @@ class MainWindow(QtWidgets.QMainWindow):
             if self.ui.checkBox_output_include_terminal.isChecked():
                 self.ui.textEdit_terminal.setTextColor(COLOR_LIGHT_BLUE)
                 self.ui.textEdit_terminal.insertPlainText(text)
-            if self.ui.checkBox_output_include_log.isChecked():
+            if self.ui.checkBox_output_include_log.isChecked() and self.ui.checkBox_autolog.isChecked():
                 self.log.write(text)
             vprint(text, color="blue", end="", flush=True)
 
@@ -252,7 +250,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 text = self.ui.lineEdit_info_chr.text() + text
                 self.ui.textEdit_terminal.setTextColor(COLOR_LIGHT_GREEN)
                 self.ui.textEdit_terminal.insertPlainText(text)
-            if self.ui.checkBox_info_include_log.isChecked():
+            if self.ui.checkBox_info_include_log.isChecked() and self.ui.checkBox_autolog.isChecked():
                 self.log.write(text)
             vprint(text, color="green", end="", flush=True)
 
@@ -261,7 +259,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 text = self.ui.lineEdit_err_chr.text() + text
                 self.ui.textEdit_terminal.setTextColor(COLOR_LIGHT_RED)
                 self.ui.textEdit_terminal.insertPlainText(text)
-            if self.ui.checkBox_error_include_log.isChecked():
+            if self.ui.checkBox_error_include_log.isChecked() and self.ui.checkBox_autolog.isChecked():
                 self.log.write(text)
             vprint(text, color="red", end="", flush=True)
 
@@ -282,49 +280,46 @@ class MainWindow(QtWidgets.QMainWindow):
         self.ui.label_debug.setText(label_text)
         vprint(label_text, color='cyan')
 
-    def input_text_evaluate(self, input: str):
-        input = input.replace("$UTS", str(int(time.time())))
-        if "${" in input and "}" in input:
-            between_brackets = input.split("${")[1].split("}")[0]
-            # print(between_brackets)
-            try:
-                resp = eval(between_brackets)
+    def input_text_evaluate(self, text:str)-> str:
+        text = text.replace("$UTS", str(int(time.time())))
+        found_expressions = re.findall(r'\$\{(.*?)\}', text)
+        for expression in found_expressions:
+            try: 
+                if not expression:
+                    text = text.replace("${}", "")
+                    continue
+                expression_resp = str(eval(expression))
+                text = text.replace(f"${{{expression}}}", expression_resp, 1)
+                vprint(f"EXPRESSION ${{{expression}}} = {expression_resp}", color = "green")
             except Exception as E:
-                resp = None
                 eprint(E)
-                self.add_text(str(E) + "\n", type=TYPE_ERROR)
-                return None
-
-            if resp is not None:
-                input = input.replace("${" + between_brackets + "}", str(resp))
-            else:
-                input = input.replace("${" + between_brackets + "}", "")
-
-        if self.ui.checkBox_interpret_escape.isChecked():
-            input = replace_escapes(input)
-        return input
+                self.add_text(f"ERR IN EXPRESSION: ${{{expression}}} {str(E)}\n", type=TYPE_ERROR)
+                return None 
+        return text 
 
     def send_clicked(self, add_to_history=True):
         original_text = self.ui.lineEdit_input.text()
-        text = original_text + replace_escapes(self.ui.lineEdit_append_to_send.text())
         if self.ui.lineEdit_input.isEnabled():
             self.ui.lineEdit_input.clear()
-
         if add_to_history:
             self.append_to_history(original_text)
 
-        text = self.input_text_evaluate(text)
+        text = self.input_text_evaluate(original_text)
         if text == None:
             return
+        
+        text = text + replace_escapes(self.ui.lineEdit_append_to_send.text())
+        if self.ui.checkBox_interpret_escape.isChecked():
+            text = replace_escapes(text)
+        #print(text)
+
+        #text = original_text + replace_escapes(self.ui.lineEdit_append_to_send.text())
         cmd_result = self.interpret_command(text)
         if cmd_result != None:
-            if cmd_result == True:
+            if cmd_result == "":
                 return
-            if cmd_result.startswith("ERR:"):
-                self.debug_text(str(cmd_result), color=COLOR_RED)
-                self.add_text(str(cmd_result) + '\n', type=TYPE_ERROR)
             else:
-                self.add_text(str(cmd_result) + '\n', type=TYPE_INFO)
+                self.add_text(f"ERROR {cmd_result}\n", type=TYPE_ERROR)
             return
         self.add_text(text, type=TYPE_TX)
         if self.is_connected:
@@ -345,7 +340,7 @@ class MainWindow(QtWidgets.QMainWindow):
     def serial_error(self):
         if self.is_connected:
             self.add_text(f"LOST {ser.port}\n", type=TYPE_ERROR)
-            self.disconnect(False)
+            self.disconnect(intentional = False)
             vprint("SERIAL PORT LOST", color="red")
 
     def disconnect(self, intentional=True):
@@ -377,7 +372,10 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def connect(self, port: str, baud: str = "115200", xonxoff: bool = False, dsrdtr: bool = False, rtscts: str = False, parity: str = "NONE") -> bool:
         self.ui.comboBox_port.setCurrentText(port)
-        self.is_connected = serial_connect(port, baud, xonxoff, rtscts, dsrdtr, parity)
+        if port in self.current_ports:
+            device = self.current_ports[port]["dev"]
+
+        self.is_connected = serial_connect(device, baud, xonxoff, rtscts, dsrdtr, parity)
         if not self.is_connected:
             self.debug_text(f"ERR: {port} COULD NOT CONNECT", color=COLOR_RED)
             self.add_text(f"ERR: {port} COULD NOT CONNECT \n", type=TYPE_ERROR)
@@ -404,6 +402,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
         self.serial_thread = QThread()
         self.serial_worker = SerialWorker()
+        self.serial_worker.format = self.data_format
         self.serial_worker.moveToThread(self.serial_thread)
         self.serial_thread.started.connect(self.serial_worker.run)
         self.serial_worker.out.connect(self.add_text)
@@ -427,8 +426,8 @@ class MainWindow(QtWidgets.QMainWindow):
             return input.upper()
         if "COM" + input in self.current_ports:
             return "COM" + input
-        if "dev/tty" + input in self.current_ports:
-            return "dev/tty" + input
+        if "tty" + input in self.current_ports:
+            return "tty" + input
         return None
 
     def handle_connect(self, *args, **kwargs):
@@ -500,6 +499,8 @@ class MainWindow(QtWidgets.QMainWindow):
                 self.debug_text("ERR: ALREADY CONNECTED", color=COLOR_RED)
             return
 
+        
+
         self.connect(port, baud, xonxoff, dsrdtr, rtscts, parity)
 
     def connect_clicked(self):
@@ -543,8 +544,7 @@ class MainWindow(QtWidgets.QMainWindow):
             self.debug_text(p_str, color=COLOR_GREEN)
 
         current_selection = self.ui.comboBox_port.currentText()
-        self.ui.comboBox_port.clear()
-        self.ui.comboBox_port.addItems(self.current_ports)
+        self.set_combobox_items(self.ui.comboBox_port, self.current_ports)
         if current_selection in self.current_ports:
             self.ui.comboBox_port.setCurrentText(current_selection)
 
@@ -552,25 +552,23 @@ class MainWindow(QtWidgets.QMainWindow):
             if self.target_port in self.current_ports and self.ui.checkBox_auto_reconnect.isChecked():
                 self.handle_connect(self.target_port)
 
-    def show_ports(self, **kwargs):
-        p_str = "PORTS: "
-        for p in self.current_ports:
-            p_str += f"{p} "
-        self.debug_text(p_str, color=COLOR_BLACK)
-        p_str = "-----PORTS-----\n"
+    def show_ports(self, *args, **kwargs):
+        self.debug_text(f"PORTS: {' '.join(self.current_ports)}", color=COLOR_BLACK)
+        
         if not self.current_ports:
-            p_str += "NONE"
-        elif '-a' not in kwargs:
-            p_str += " #  NAME\t\tMFGR\n"
-
+            self.add_text("NO PORTS FOUND", type=TYPE_HELP)
+            return 
+        p_str = "-----PORTS-----\n #  NAME\n"
         for index, port in enumerate(self.current_ports):
             this_port = self.current_ports[port]
-            if '-a' in kwargs:
-                p_str += f'''({index}) {this_port["name"]}'''
+            p_str += f'''({index}) {port}\t{this_port["descr"]}\n'''
+            if not args:
+                continue
+            if args and args[0] not in this_port:
                 for item in this_port:
-                    p_str += f"\t{item}:\t{str(this_port[item])}\n"
+                    p_str += f"    {item}:\t{str(this_port[item])}\n"
             else:
-                p_str += f'''({index}) {this_port["name"]}\t\t{this_port["mfgr"]}\n'''
+                p_str += f"    {args[0]}:\t{str(this_port[args[0]])}\n"
 
         self.add_text(p_str, type=TYPE_HELP)
 
@@ -591,7 +589,8 @@ class MainWindow(QtWidgets.QMainWindow):
                                 self.ui.checkBox_info_include_terminal,
                                 self.ui.checkBox_autoscroll,
                                 self.ui.checkBox_timestamp,
-                                self.ui.checkBox_allow_commands
+                                self.ui.checkBox_allow_commands,
+                                self.ui.checkBox_autolog,
                                 ]
 
         self.save_line_edits = [self.ui.lineEdit_err_chr,
@@ -724,28 +723,83 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def create_commands(self):
         self.cmd_list.append(Command("help", self.print_help))
-        self.cmd_list.append(Command("ports", self.show_ports, 0, kw_options=['-a']))
-        self.cmd_list.append(Command("clear", self.clear_clicked))
-        self.cmd_list.append(Command("quit", quit))
-        self.cmd_list.append(Command("exit", quit))
-        self.cmd_list.append(Command("con", self.handle_connect, 1,
-                                     kw_options=['-b', '-d', '-x', '-r', '-p', '-h']))
-        self.cmd_list.append(Command("dcon", self.disconnect))
-        self.cmd_list.append(Command("script", self.handle_script_command, 0,
-                                     kw_options=['-f', '-h', '-o', '-t', '-n', '-rm', '-s', '-r', '-d', '-a', '-ls']))
-        self.cmd_list.append(Command("log", self.handle_log_command, 0,
-                                     kw_options=['-o', '-a', '-rm', '-ls', '-h', '-f', '--name', '--tfmt', '--fmt']))
-        self.cmd_list.append(Command("plot", self.handle_plot_command, 1,
-                                     kw_options=['-t', '--targets',
-                                                 '-p', '--points',
-                                                 '-h', '--help',
-                                                 '-l', '--limits',
-                                                 '-r', '--ref',
-                                                 '-s', '--seps']))
-        self.cmd_list.append(Command("key", self.handle_key_cmd, 0,
-                                     kw_options=['-k', '-v', '-c', '-h']))
-        self.cmd_list.append(Command("new", self.open_new_window, 1000))
-        self.cmd_list.append(Command("cowsay", self.cowsay, 1000))
+        self.cmd_list.append(Command("ports", self.show_ports, 1))
+        self.cmd_list.append(Command("clear", self.clear_clicked, 0))
+        self.cmd_list.append(Command("quit", self.make_quit))
+        self.cmd_list.append(Command("exit", self.make_quit))
+
+        cmd_con = Command("con", self.handle_connect, 1)
+        cmd_con.add_option(("-h", "--help"))
+        cmd_con.add_option(("-b", "--baud"))
+        cmd_con.add_option(("-d", "--dtscts"))
+        cmd_con.add_option(("-x", "--xonxoff"))
+        cmd_con.add_option(("-r", "--rtscts"))
+        cmd_con.add_option(("-p", "--parity"))
+        self.cmd_list.append(cmd_con)
+
+        self.cmd_list.append(Command("dcon", self.disconnect, 0))
+
+        cmd_script = Command("script", self.handle_script_command, 0)
+        cmd_script.add_option(("-h", "--help"))
+        cmd_script.add_option(("-o", "--open"))
+        cmd_script.add_option(("-t", "--tab"))
+        cmd_script.add_option(("-n", "--new"))
+        cmd_script.add_option(("-ls", "--list"))
+        cmd_script.add_option(("-rm", "--remove"))
+        cmd_script.add_option(("-s", "--save"))
+        cmd_script.add_option(("-r", "--run"))
+
+        self.cmd_list.append(cmd_script)
+
+        cmd_plot = Command("plot", self.handle_plot_command, 1)
+        cmd_plot.add_option(("-h", "--help"))
+        cmd_plot.add_option(("-p", "--points"))
+        cmd_plot.add_option(("-k", "--keys"))
+        cmd_plot.add_option(("-l", "--limits"))
+        cmd_plot.add_option(("-r", "--ref"))
+        cmd_plot.add_option(("-s", "--seps"))
+        cmd_plot.add_option(("-t", "--test"))
+
+        self.cmd_list.append(cmd_plot)
+
+        cmd_keys = Command("key", self.handle_key_cmd, 3)
+        cmd_keys.add_option(("-h", "--help"))
+
+        self.cmd_list.append(cmd_keys)
+
+        cmd_log = Command("log", self.handle_log_command, 0)
+        cmd_log.add_option(("-h", "--help"))
+        cmd_log.add_option(("-o", "--open"))
+        cmd_log.add_option(("-a", "--archive"))
+        cmd_log.add_option(("-ls", "--list"))
+        cmd_log.add_option(("--name"))
+        cmd_log.add_option(("--tfmt"))
+        cmd_log.add_option(("--fmt"))
+        cmd_log.add_option(("--disable"))
+        cmd_log.add_option(("--enable"))
+        self.cmd_list.append(cmd_log)
+
+        cmd_cow = Command("cowsay", self.cowsay)
+        cmd_cow.add_option(("-n", "--nerd"))
+        cmd_cow.add_option(("-d"))
+        cmd_cow.add_option(("-l"))
+        self.cmd_list.append(cmd_cow)
+
+        self.cmd_list.append(Command("new", self.open_new_window))
+
+        cmd_format = Command("format", self.set_format, 1)
+        self.cmd_list.append(cmd_format)
+
+    def set_format(self, format:str):
+        if format in ['utf-8', 'hex', 'bin', 'dec']:
+            self.data_format = format
+            if self.is_connected:
+                self.serial_worker.format = self.data_format
+        else:
+            print("INVALID")
+
+        print(format)
+        
 
     def interpret_command(self, text: str):
         """execute a command. Returns NONE if no command found"""
@@ -762,12 +816,11 @@ class MainWindow(QtWidgets.QMainWindow):
 
         for cmd in self.cmd_list:
             cmd: Command
-            result = cmd.execute(text)
+            result, error_str = cmd.execute(text)
             if result is None:
                 continue
             else:
-                return result
-
+                return error_str
         return None
 
 ########################################################################
@@ -781,6 +834,9 @@ class MainWindow(QtWidgets.QMainWindow):
         arg_str = ""
         run_script = True
         run_script_name = None
+
+        args = list(args)
+
         if '-h' in kwargs:
             self.add_text(SCRIPT_HELP, type=TYPE_HELP)
             return
@@ -814,15 +870,14 @@ class MainWindow(QtWidgets.QMainWindow):
             self.ui.textEdit_script.setFocus()
             return
         if '-o' in kwargs:
-            self.open_script(kwargs['-o'])
+            if not self.open_script(kwargs['-o']):
+                return
             run_script = False
         if '-s' in kwargs:
             self.save_script(kwargs['-s'])
             return
         if '-r' in kwargs:
             run_script = True
-            if kwargs['-r']:
-                run_script_name = kwargs['-r']
 
         if '-d' in kwargs:
             if kwargs['-d']:
@@ -837,16 +892,17 @@ class MainWindow(QtWidgets.QMainWindow):
     def open_script(self, file_name: str = None):
         file_path = find_file(self, SCRIPT_FOLDER, file_name)
         if file_path == "" or file_path == False:
-            return
+            return False
         if file_path == None:
             self.debug_text(f"ERR: file '{file_name}' not found", color=COLOR_RED)
-            return
+            return False
         vprint(f"OPENING SCRIPT {file_name}", color='blue')
         with open(file_path, 'r') as file:
             self.ui.textEdit_script.setPlainText(file.read())
         self.ui.lineEdit_script_name.setText(file_path.split('/')[-1].replace('.txt', ''))
         self.ui.tabWidget.setCurrentIndex(1)
         self.ui.textEdit_script.setFocus()
+        return True
 
     def delete_script(self, file_name: str = None):
         file_path = find_file(self, SCRIPT_FOLDER, file_name)
@@ -963,13 +1019,14 @@ class MainWindow(QtWidgets.QMainWindow):
     def handle_log_command(self, **kwargs):
         if not kwargs:
             self.open_log()
-        if '-h' in kwargs:
+
+        if '-h' in kwargs or "--help" in kwargs:
             self.add_text(LOG_HELP, type=TYPE_HELP)
             return
         if '-f' in kwargs:
             self.open_folder_location(DEFAULT_LOG_FOLDER)
             return
-        if '-o' in kwargs:
+        if '-o' in kwargs or '--open' in kwargs:
             if kwargs['-o']:
                 log_file = DEFAULT_LOG_FOLDER + kwargs["-o"]
                 if not log_file.endswith(".txt"):
@@ -994,6 +1051,11 @@ class MainWindow(QtWidgets.QMainWindow):
             self.ui.lineEdit_time_format.setText(kwargs['--tfmt'])
         if '--fmt' in kwargs:
             self.ui.lineEdit_log_format.setText(kwargs['--fmt'])
+        if '--enable' in kwargs:
+            self.ui.checkBox_autolog.setChecked(True)
+        if '--disable' in kwargs:
+            self.ui.checkBox_autolog.setChecked(False)
+
 
     def set_log_folder(self, log_folder: str = None):
         if not log_folder:
@@ -1044,9 +1106,9 @@ class MainWindow(QtWidgets.QMainWindow):
         plot_type = None
         targets = None
         max_points = None
-        reference_lines = None 
+        reference_lines = None
         limits = None
-        separators = None 
+        separators = None
 
         for arg in args:
             if arg == "pause" or arg == "p":
@@ -1054,61 +1116,48 @@ class MainWindow(QtWidgets.QMainWindow):
                 return
             if arg == "resume" or arg == 'r':
                 self.pause_plot()
+                return
             elif arg == "clear" or arg == "c":
                 self.end_plot()
                 return
             elif arg == "kv" or arg.upper() == "KEY-VALUE":
                 plot_type = "Key-Value"
             elif arg == "sa" or arg.upper() == "SINGLE-ARRAY":
-                plot_type = ("Single-Array")
+                plot_type = "Single-Array"
             elif arg == "ka" or arg.upper() == "KEY-ARRAY":
-                plot_type = ("Key-Array")
+                plot_type = "Key-Array"
             elif arg == "sv" or arg.upper() == "SINGLE-VALUE":
-                plot_type = ("Single-Value")
+                plot_type = "Single-Value"
+            
 
         if '-h' in kwargs or '--help' in kwargs:
             self.add_text(PLOT_HELP, type=TYPE_HELP)
             return
 
-        
+        if '-t' in kwargs:
+            print(kwargs['-t'])
+            if self.plot_started:
+                self.ui.widget_plot.update(kwargs['-t'], False)
+
         if '-s' in kwargs:
             separators = kwargs['-s']
             if not separators:
                 separators = ""
-        if '--seps' in kwargs:
-            separators = kwargs['--seps']
-            if not separators:
-                separators = ""
-
 
         if '-r' in kwargs:
             reference_lines = kwargs['-r']
             if not reference_lines:
                 reference_lines = ""
-        if '--ref' in kwargs:
-            reference_lines = kwargs['--ref']
-            if not reference_lines:
-                reference_lines = ""
 
-        
-        
         if '-l' in kwargs:
             limits = kwargs['-l']
-        if '--limits' in kwargs:
-            limits = kwargs['--limits']
-            
-        if '-t' in kwargs:
-            targets = kwargs['-t']
-            self.ui.lineEdit_target_keys.setText(kwargs['-t'])
-        if '--targets' in kwargs:
-            targets = kwargs['--targets']
-            self.ui.lineEdit_target_keys.setText(kwargs['--targets'])
-        
+
+        if '-k' in kwargs:
+            targets = kwargs['-k']
+            self.ui.lineEdit_target_keys.setText(kwargs['-k'])
+
         if '-p' in kwargs:
             max_points = kwargs['-p']
-        if '--points' in kwargs:
-            max_points = kwargs['--points']
-
 
         if limits:
             if limits.upper() == "MAX":
@@ -1143,7 +1192,7 @@ class MainWindow(QtWidgets.QMainWindow):
         max_points = self.lineEdit_to_numbers(self.ui.lineEdit_max_points)
 
         if max_points == None:
-            max_points = 100 
+            max_points = 100
 
         ref_lines = self.lineEdit_to_numbers(self.ui.lineEdit_ref_lines, separator=',')
         seps = [char for char in replace_escapes(self.ui.lineEdit_seps.text())]
@@ -1175,23 +1224,29 @@ class MainWindow(QtWidgets.QMainWindow):
 #               KEYBOARD FUNCTIONS
 #
 ########################################################################
-    def handle_key_cmd(self, **kwargs):
-        key = ""
-        value = ""
+    def handle_key_cmd(self, *args, **kwargs):
+
         if "-h" in kwargs:
             self.add_text(KEY_HELP, type=TYPE_HELP)
             return
-        if '-c' in kwargs:
-            self.clear_key_cmds()
-            return
-        if '-k' in kwargs:
-            key = kwargs['-k']
-        if '-v' in kwargs:
-            value = kwargs['-v']
-        if key or value:
-            self.add_key_cmd(key, value)
-        else:
+
+        args = list(args)
+
+        if not args:
             self.ui.lineEdit_keyboard_control.setFocus()
+            return
+
+        while args:
+            arg = args.pop(0)
+            if arg == "clear":
+                self.clear_key_cmds()
+                return
+            elif arg == "set":
+                if len(args) < 2:
+                    print("TOO FEW ARGUMENTS")
+                else:
+                    self.add_key_cmd(args[0], args[1])
+                    return
 
     def get_key_cmds(self):
         key_cmds = {}
@@ -1220,8 +1275,15 @@ class MainWindow(QtWidgets.QMainWindow):
         self.save_settings()
 
     def add_key_cmd(self, key: str, send: str):
-        indx = self.ui.tableWidget_keys.rowCount() - 1
-        self.ui.tableWidget_keys.setRowCount(indx + 2)
+        indx = None
+        items = self.ui.tableWidget_keys.findItems(key, QtCore.Qt.MatchExactly)
+        for item in items:
+            if item.column() == 0:  # Item is already a key
+                indx = item.row()
+
+        if indx == None:
+            indx = self.ui.tableWidget_keys.rowCount() - 1
+            self.ui.tableWidget_keys.setRowCount(indx + 2)
         self.ui.tableWidget_keys.setItem(indx, 0, QTableWidgetItem(str(key)))
         self.ui.tableWidget_keys.setItem(indx, 1, QTableWidgetItem(str(send)))
         self.key_cmds_edited()
@@ -1345,6 +1407,19 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def get_combobox_items(self, combobox: QtWidgets.QComboBox) -> list:
         return [combobox.itemText(i) for i in range(combobox.count())]
+
+    def set_combobox_items(self, combobox: QtWidgets.QComboBox, items: list) -> None:
+        items_str = [str(x) for x in items]
+        combobox.clear()
+        combobox.addItems(items_str)
+
+    def about_to_quit(self):
+        self.rescan_worker.stop()
+        self.rescan_thread.quit()
+        eprint("------EXITING------", color='red')
+
+    def make_quit(self):
+        self.app.quit()
 
 
 if __name__ == "__main__":

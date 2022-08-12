@@ -1,6 +1,7 @@
 import subprocess
 import sys
 from sk_tools import DEBUG_LEVEL
+import traceback
 
 def update_ui_files():
     from sk_tools import INSTALL_FOLDER
@@ -37,8 +38,8 @@ def install_deps():
         quit()
 
     install_cmds = [
+        "pip install PyQt5-sip --upgrade"
         "pip install -r requirements.txt",
-        'pip install PyQt5-sip --upgrade'
     ]
 
     for cmd in install_cmds:
@@ -113,15 +114,18 @@ def run_app(size_x = 600, size_y = 700, open_cmd = ""):
         from sk_tools import GITHUB_URL
     except Exception as E:
         print("ERROR:", E)
+        print(f"ERR: {traceback.format_exc()}\n")
         install_deps()
     from sk_help import GREETINGS_TEXT
     cprint(GREETINGS_TEXT, color='cyan')
     global app
     app = QtWidgets.QApplication(sys.argv)
-    main = sk_main_window.MainWindow(open_cmd=open_cmd)
+    
+    main = sk_main_window.MainWindow(app, open_cmd=open_cmd)
     main.setWindowIcon(QIcon("img/SK_Icon.png"))
     main.resize(size_x, size_y)
     main.show()
+    app.aboutToQuit.connect(main.about_to_quit)
     status = app.exec_()
     sys.exit(status)
 

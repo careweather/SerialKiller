@@ -12,21 +12,43 @@ parity_values = {"NONE": PARITY_NONE, "EVEN": PARITY_EVEN,
                  "ODD": PARITY_ODD, "MARK": PARITY_MARK, "SPACE": PARITY_SPACE}
 
 
-def serial_get_string() -> str:
+def serial_get_string(output = 'utf-8') -> str:
     if not ser.isOpen():
         return None
     waiting = ser.inWaiting()
     if waiting:
-        out_str = ""
-        for c in ser.read(waiting):
-            out_str += chr(c)
-        return out_str
+        if output == 'utf-8':
+            out_str = ""
+            for c in ser.read(waiting):
+                out_str += chr(c)
+            return out_str
+        elif output == 'hex':
+            out_str = ""
+            for c in ser.read(waiting):
+                out_str += hex(c) + ' '
+            return out_str
+        elif output == 'bin':
+            out_str = ""
+            for c in ser.read(waiting):
+                out_str += bin(c) + ' '
+            return out_str
+        elif output == 'dec':
+            out_str = ""
+            for c in ser.read(waiting):
+                out_str += str(c) + ' '
+            return out_str
     return None
+
+def serial_get_input() -> bytes:
+    if not ser.isOpen() or not ser.in_waiting:
+        return None 
+    return ser.read(ser.in_waiting)
+
 
 def serial_send_string(input: str = ""):
     try:
         ser.flush()
-        ser.write(input.encode('utf-8'))
+        ser.write(input.encode('utf-8', errors='replace'))
     except Exception as E:
         eprint("ERROR SENDING DATA:", E, color='red')
 
@@ -63,6 +85,7 @@ def serial_disconnect():
 class SerialWorker(QObject):  # THIS FETCHES SERIAL DATA. ASYNC.
     out = pyqtSignal(str)
     disconnected = pyqtSignal(bool)
+    format = 'utf-8'
 
     def __init__(self):
         super().__init__()
@@ -72,17 +95,32 @@ class SerialWorker(QObject):  # THIS FETCHES SERIAL DATA. ASYNC.
     def run(self):
         while self.active:
             try:
-                serial_data = serial_get_string()
-                if serial_data:
-                    self.out.emit(serial_data)
+                serial_data = serial_get_input()
+                if serial_data is not None:
+                    self.out.emit(serial_data.decode(self.format, errors = 'replace'))
                     self.last_activity = time.perf_counter()
-                elif time.perf_counter() - self.last_activity > 1:  # Throttle polling if no activity within .5 sec
-                    time.sleep(.005)
+                elif time.perf_counter() - self.last_activity > 1:  # Throttle polling if no activity within 1 sec
+                    time.sleep(.01)
             except Exception as E:
                 eprint("Serial Worker Error", E)
                 eprint(f"ERR: {traceback.format_exc()}\n", color='red')
                 self.active = False
                 self.disconnected.emit(False)
+
+    # def run(self):
+    #     while self.active:
+    #         try:
+    #             serial_data = serial_get_string(self.format)
+    #             if serial_data is not None:
+    #                 self.out.emit(serial_data)
+    #                 self.last_activity = time.perf_counter()
+    #             elif time.perf_counter() - self.last_activity > 1:  # Throttle polling if no activity within .5 sec
+    #                 time.sleep(.005)
+    #         except Exception as E:
+    #             eprint("Serial Worker Error", E)
+    #             eprint(f"ERR: {traceback.format_exc()}\n", color='red')
+    #             self.active = False
+    #             self.disconnected.emit(False)
 
     def stop(self):
         self.active = False
@@ -107,11 +145,12 @@ def get_ports() -> dict:
     '''Get the Serial Ports Availiable'''
     ports = {}
     for port in list_ports.comports():
-        ports[port.device] = {
+        ports[port.name] = {
             'descr': str(port.description),
-            'name': str(port.name),
+            'dev': str(port.device),
+            'name':str(port.name),
             'mfgr': str(port.manufacturer),
-            'hwid': str(port.hwid),
+            #'hwid': str(port.hwid),
             'vid': str(port.vid),
             'pid': str(port.pid),
             's/n': str(port.serial_number),
@@ -129,7 +168,7 @@ class RescanWorker(QObject):
     new_ports = pyqtSignal(dict)
     active = True
 
-    def __init__(self, update_interval=1) -> None:
+    def __init__(self, update_interval=.5) -> None:
         super().__init__()
         self.active = True
         self.update_interval = update_interval
@@ -143,6 +182,7 @@ class RescanWorker(QObject):
                 eprint(f"ERR: {traceback.format_exc()}\n", color='red')
 
     def stop(self):
+        vprint("Stopping Rescan Worker")
         self.active = False
 
 

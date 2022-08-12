@@ -133,14 +133,16 @@ def get_cow(*args, **kwargs):
     p_str = ""
 
     for arg in args:
-        if arg == "love":
-            cow = COW_IN_LOVE
-        elif arg == "nerd":
-            cow = COW_NERD
-        elif arg == "dead":
-            cow = COW_DEAD
-        else:
-            p_str += arg + " "
+        p_str += arg + " "
+
+    if "-n" in kwargs:
+        cow = COW_NERD
+    
+    if '-d' in kwargs:
+        cow = COW_DEAD
+    
+    if '-l' in kwargs:
+        cow = COW_IN_LOVE
 
     top = "_"
     for x in range(len(p_str)):
@@ -162,6 +164,9 @@ def remove_from_string(input: str, removes=[]):
         input = input.replace(item, "")
     return input
 
+def get_between(input:str, start:str, end:str) -> list:
+    
+    pass 
 
 def replace_escapes(input: str) -> str:
     input = input.replace("\\\\n", '^n^').replace('\\\\r', '^r^').replace('\\\\t', '^t^')  # Temporary change any \\n, ,etc
