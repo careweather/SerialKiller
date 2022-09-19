@@ -1,5 +1,6 @@
 import os
 import platform
+from tracemalloc import start
 from termcolor import cprint
 from datetime import date, datetime
 
@@ -14,6 +15,7 @@ CURRENT_FOLDER = os.getcwd()
 
 print(INSTALL_FOLDER)
 
+SETTINGS_FOLDER = INSTALL_FOLDER + '/settings'
 SETTINGS_FILE = INSTALL_FOLDER + "/user_settings.json"
 SCRIPT_FOLDER = INSTALL_FOLDER + "/scripts/"
 DEFAULT_LOG_FOLDER = INSTALL_FOLDER + "/logs/"
@@ -167,6 +169,16 @@ def remove_from_string(input: str, removes=[]):
 def get_between(input:str, start:str, end:str) -> list:
     
     pass 
+
+def get_file_name(input:str, start_folder:str, extension:str = None):
+    if not input.endswith(extension): 
+        input += extension
+    if os.path.exists(input):
+        return input, True
+    input = start_folder + '/' + input
+    if os.path.exists(input):
+        return input, True
+    return input, False
 
 def replace_escapes(input: str) -> str:
     input = input.replace("\\\\n", '^n^').replace('\\\\r', '^r^').replace('\\\\t', '^t^')  # Temporary change any \\n, ,etc

@@ -119,6 +119,29 @@ Options:
 
 '''
 
+SETTINGS_HELP = '''\
+USEAGE: 
+    settings <setting>=<value>
+    or 
+    settings <options>
+
+edit, save or load settings. 
+Use '-p' to see current settings.
+
+OPTIONS:
+    -p, --print [name]  Print a setting file [name].json to the terminal
+    -s, --save <name>   Save settings (optional as <name>.json)
+    -o, --open [name]   Open settings in file [name].json
+    -h, --help          Show this help text
+
+Examples:
+(modify lineEdit_delay and comboBox_baud)
+    settings lineEdit_delay=50 comboBox_baud=115200
+
+(load custom.json)
+    settings -o custom
+'''
+
 HELP_TEXT = '''\
 Serial from the device will appear here. 
 Type "help" for to view help pop-up.

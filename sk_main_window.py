@@ -176,25 +176,6 @@ class MainWindow(QtWidgets.QMainWindow):
         #self.ui.groupBox_adv_plot.toggled.connect(lambda: self.collapse_box(self.ui.groupBox_adv_plot))
         #self.collapse_box(self.ui.groupBox_adv_plot, True)
 
-    # def collapse_box(self, groupBox: QGroupBox, force_close=False):
-    #     children = groupBox.findChildren((QLineEdit, QLabel, QComboBox, QCheckBox, QPushButton))
-    #     if force_close == True:
-    #         groupBox.setChecked(False)
-    #         return
-    #     if groupBox.isChecked():  # Expand
-    #         groupBox.setTitle(groupBox.title().replace(ARROW_RIGHT, ARROW_DOWN))
-    #         groupBox.setContentsMargins(1, 15, 1, 1)
-    #         vprint("EXPAND Box:", groupBox.objectName())
-    #         for item in children:
-    #             item: QWidget
-    #             item.show()
-        # else:
-        #     vprint("Collapsing Box:", groupBox.objectName())
-        #     groupBox.setTitle(groupBox.title().replace(ARROW_DOWN, ARROW_RIGHT))
-        #     groupBox.setContentsMargins(0, 0, 0, 0)
-        #     for item in children:
-        #         item: QWidget
-        #         item.hide()
 
     def scroll_history(self, scroll_down=True):
         if scroll_down:
@@ -499,8 +480,6 @@ class MainWindow(QtWidgets.QMainWindow):
                 self.debug_text("ERR: ALREADY CONNECTED", color=COLOR_RED)
             return
 
-        
-
         self.connect(port, baud, xonxoff, dsrdtr, rtscts, parity)
 
     def connect_clicked(self):
@@ -583,6 +562,8 @@ class MainWindow(QtWidgets.QMainWindow):
     def create_settings(self):
         self.save_checkboxes = [self.ui.checkBox_auto_reconnect,
                                 self.ui.checkBox_auto_save_settings,
+                                self.ui.checkBox_output_include_terminal,
+                                self.ui.checkBox_output_include_log,
                                 self.ui.checkBox_error_include_log,
                                 self.ui.checkBox_error_include_terminal,
                                 self.ui.checkBox_info_include_log,
@@ -601,6 +582,9 @@ class MainWindow(QtWidgets.QMainWindow):
                                 self.ui.lineEdit_log_format,
                                 self.ui.lineEdit_command_char,
                                 self.ui.lineEdit_delay,
+                                self.ui.lineEdit_ref_lines,
+                                self.ui.lineEdit_target_keys,
+                                self.ui.lineEdit_seps,
                                 ]
 
         self.log_save_line_edits = [self.ui.lineEdit_time_format,
@@ -622,8 +606,11 @@ class MainWindow(QtWidgets.QMainWindow):
         for comboBox in self.save_combo_boxes:
             comboBox.currentTextChanged.connect(self.save_settings)
 
-    def save_item(self, object):
-        if isinstance(object, QtWidgets.QComboBox):
+    def save_item(self, object, filepath = SETTINGS_FILE):
+        if isinstance(object, (tuple, list)):
+            print("SETTING OBJECT", object)
+
+        elif isinstance(object, QtWidgets.QComboBox):
             object: QtWidgets.QComboBox
             self.current_settings[object.objectName()] = object.currentText()
         elif isinstance(object, QtWidgets.QLineEdit):
@@ -635,7 +622,7 @@ class MainWindow(QtWidgets.QMainWindow):
         elif isinstance(object, QtWidgets.QTextEdit):
             object: QtWidgets.QTextEdit
             self.current_settings[object.objectName()] = object.toPlainText()
-        with open(SETTINGS_FILE, 'w') as file:
+        with open(filepath, 'w') as file:
             json.dump(self.current_settings, file)
 
     def save_settings(self):
@@ -646,7 +633,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.save_timer.singleShot(1000, self._save_settings)
         self.last_save_time = time.perf_counter()
 
-    def _save_settings(self):
+    def _save_settings(self, filepath=SETTINGS_FILE):
         '''Actual Save Settings Here'''
         vprint("SAVED SETTINGS", color='green')
         for checkbox in self.save_checkboxes:
@@ -657,18 +644,19 @@ class MainWindow(QtWidgets.QMainWindow):
             self.current_settings[combo_box.objectName()] = combo_box.currentText()
         self.command_char = self.ui.lineEdit_command_char.text()
         self.current_settings['tableWidget_keys'] = self.get_key_cmds()
-        with open(SETTINGS_FILE, 'w') as file:
+        with open(filepath, 'w') as file:
             json.dump(self.current_settings, file)
 
-    def recall_settings(self):
-        if not os.path.exists(SETTINGS_FILE):
+    def recall_settings(self, filepath:str = SETTINGS_FILE):
+        vprint(f"Loading Settings from {filepath}", color = 'cyan')
+        if not os.path.exists(filepath):
             vprint("FIRST PROGRAM LOAD", color='yellow')
-            with open(SETTINGS_FILE, 'w') as file:
+            with open(filepath, 'w') as file:
                 pass
             self._save_settings()
             return
         try:
-            with open(SETTINGS_FILE, 'r') as file:
+            with open(filepath, 'r') as file:
                 self.current_settings = json.load(file)
 
             if 'lineEdit_log_folder' in self.current_settings and not self.current_settings['lineEdit_log_folder']:
@@ -713,6 +701,93 @@ class MainWindow(QtWidgets.QMainWindow):
         except Exception as E:
             eprint(f"\nERROR IN RECALLING SETTINGS: {E}", color='red')
 
+    def print_settings(self, filename=SETTINGS_FILE):
+        vprint(f"PRINTING SETTINGS {filename}")
+        
+        filepath, exists = get_file_name(filename, SETTINGS_FOLDER, '.json')
+        if not exists:
+            eprint("NO FILE", filename)
+            return 
+
+        settings:dict = {}
+        with open(filepath, 'r') as file:
+            settings:dict = json.load(file)
+        self.add_text(f"{filepath}\n", type = TYPE_HELP)
+        for name, value in settings.items():
+            if not isinstance(value, (list,dict)):
+                self.add_text(f"  {name}={value}\n", type = TYPE_HELP)
+
+    def handle_settings_command(self, *args, **kwargs):
+        if not args and not kwargs:
+            #self.add_text(SETTINGS_HELP, type=TYPE_HELP)
+            self.print_settings()
+            return 
+
+
+        if '-h' in kwargs:
+            self.add_text(SETTINGS_HELP, type=TYPE_HELP)
+            return 
+        if '-p' in kwargs:
+            if kwargs['-p']:
+                self.print_settings(kwargs['-p'])
+            else:
+                self.print_settings()
+            return 
+
+        if args:
+            temp_filename = SETTINGS_FOLDER + '/.tmp.json'
+            for arg in args:
+                arg:str 
+                print("arg", arg)
+                tokens=arg.split("=", 1)
+                if len(tokens) > 1 and tokens[0] in self.current_settings:
+                    print(tokens)
+                    if tokens[1] == 'False':
+                        tokens[1] = False
+                    elif tokens[1] == 'True':
+                        tokens[1] = True
+                    self.current_settings[tokens[0]] = tokens[1]
+                    print(self.current_settings) 
+                else:
+                    self.add_text(f"INVALID SETTING: {tokens}\n", type=TYPE_ERROR)
+                    return 
+            with open (temp_filename, 'w') as file:
+                json.dump(self.current_settings, file)
+            self.recall_settings(temp_filename)
+            os.remove(temp_filename)
+            self.ui.tabWidget.setCurrentIndex(0)
+                
+
+        
+
+
+        if '-s' in kwargs:
+            filepath = None
+            if kwargs['-s']:
+                filepath, exists = get_file_name(kwargs['-s'], SETTINGS_FOLDER, '.json')
+            else:
+                filepath = self.get_save_file(SETTINGS_FOLDER, extensions='*.json')
+                if not filepath:
+                    return 
+            self.add_text(f"Saved Settings: {filepath}\n", type=TYPE_INFO)
+            self._save_settings(filepath)
+            return 
+
+        if '-o' in kwargs:
+            filepath = None
+            if kwargs['-o']:
+                filepath, exists = get_file_name(kwargs['-o'], SETTINGS_FOLDER, '.json')
+                if not exists:
+                    self.add_text(f"Settings File NOT FOUND:\n'{filepath}'\n", type=TYPE_ERROR)
+                    return
+            else:
+                filepath = self.get_file(SETTINGS_FOLDER, extensions='*.json')
+                if not filepath:
+                    return 
+            self.recall_settings(filepath)
+            self.add_text(f"Loaded Settings: {filepath}\n", type=TYPE_INFO)
+            return 
+        
 
 ########################################################################
 #
@@ -781,7 +856,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
         cmd_cow = Command("cowsay", self.cowsay)
         cmd_cow.add_option(("-n", "--nerd"))
-        cmd_cow.add_option(("-d"))
+        cmd_cow.add_option(("-d", "--dead"))
         cmd_cow.add_option(("-l"))
         self.cmd_list.append(cmd_cow)
 
@@ -790,15 +865,22 @@ class MainWindow(QtWidgets.QMainWindow):
         cmd_format = Command("format", self.set_format, 1)
         self.cmd_list.append(cmd_format)
 
+        cmd_settings = Command("settings", self.handle_settings_command)
+        cmd_settings.add_option(('-s', '--save'))
+        cmd_settings.add_option(('-o', '--open'))
+        cmd_settings.add_option(('-h', '--help'))
+        cmd_settings.add_option(('-p', '--print'))
+        self.cmd_list.append(cmd_settings)
+
     def set_format(self, format:str):
         if format in ['utf-8', 'hex', 'bin', 'dec']:
             self.data_format = format
             if self.is_connected:
                 self.serial_worker.format = self.data_format
         else:
-            print("INVALID")
+            eprint("INVALID")
 
-        print(format)
+        vprint(format)
         
 
     def interpret_command(self, text: str):
@@ -1386,7 +1468,7 @@ class MainWindow(QtWidgets.QMainWindow):
         return files[0]
 
     def get_save_file(self, start_dir: str = None, extensions: str = None, title: str = "Save") -> str:
-        files = QFileDialog.getSaveFileName(self, directory=start_dir, filter=extensions)
+        files = QFileDialog.getSaveFileName(self, caption=title, directory=start_dir, filter=extensions)
         return files[0]
 
     def read_file(self, file_path: str = None) -> str:
