@@ -212,7 +212,8 @@ class MainWindow(QtWidgets.QMainWindow):
         if type == TYPE_RX:  # Incoming FROM device
             self.ui.textEdit_terminal.setTextColor(COLOR_WHITE)
             self.ui.textEdit_terminal.insertPlainText(text)
-            self.log.write(text)
+            if self.ui.checkBox_info_include_log.isChecked() and self.ui.checkBox_autolog.isChecked():
+                self.log.write(text)
             if self.plot_started:
                 self.ui.widget_plot.update(text)
             vprint(text, color="white", end="", flush=True)
@@ -796,6 +797,11 @@ class MainWindow(QtWidgets.QMainWindow):
 ########################################################################
 
 
+    def print_cmds(self):
+        for cmd in self.cmd_list:
+            self.add_text(cmd, type=TYPE_INFO)
+        return 
+
     def create_commands(self):
         self.cmd_list.append(Command("help", self.print_help))
         self.cmd_list.append(Command("ports", self.show_ports, 1))
@@ -865,6 +871,9 @@ class MainWindow(QtWidgets.QMainWindow):
         cmd_format = Command("format", self.set_format, 1)
         self.cmd_list.append(cmd_format)
 
+
+        self.cmd_list.append(Command("cmd", self.print_cmds, 0))
+
         cmd_settings = Command("settings", self.handle_settings_command)
         cmd_settings.add_option(('-s', '--save'))
         cmd_settings.add_option(('-o', '--open'))
@@ -885,7 +894,8 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def interpret_command(self, text: str):
         """execute a command. Returns NONE if no command found"""
-        text = text.replace("\n", "").replace("\r", "")
+        text = text.rstrip()
+        #text = text.replace("\n", "").replace("\r", "")
         if not text:
             return None
         if not self.ui.checkBox_allow_commands.isChecked():

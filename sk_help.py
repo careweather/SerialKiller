@@ -66,6 +66,8 @@ Options:
     --name <name>           Set the log "name"
     --tfmt <format>         Set the log "time format"
     --fmt <format>          Set the log "format"
+    --disable               Disable logging 
+    --enable                Enable Logging 
 '''
 PLOT_HELP = '''\
 USEAGE:
