@@ -201,3 +201,5 @@ STYLE_SHEET_TERMINAL_ACTIVE = f'background-color: {colorToStyleSheet(COLOR_BLACK
 STYLE_SHEET_BUTTON_INACTIVE = f"background-color: {colorToStyleSheet(COLOR_GREY)};"
 STYLE_SHEET_BUTTON_ACTIVE = f"background-color: {colorToStyleSheet(COLOR_GREEN)};"
 STYLE_SHEET_SCRIPT = f'background-color: {colorToStyleSheet(COLOR_DARK_RED)};color: rgb(255, 255, 255);font: 10pt "Consolas";'
+STYLE_SHEET_LINE_EDIT_ERROR = f'background-color: {colorToStyleSheet(COLOR_LIGHT_RED)};font: 10pt "Consolas";'
+STYLE_SHEET_LINE_EDIT_NORMAL = f'background-color: {colorToStyleSheet(COLOR_WHITE)};font: 10pt "Consolas";'

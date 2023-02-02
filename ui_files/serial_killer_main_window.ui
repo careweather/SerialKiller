@@ -520,7 +520,7 @@
     <item row="2" column="0">
      <widget class="QTabWidget" name="tabWidget">
       <property name="currentIndex">
-       <number>0</number>
+       <number>4</number>
       </property>
       <property name="elideMode">
        <enum>Qt::ElideNone</enum>
@@ -1147,16 +1147,19 @@ color: rgb(255, 255, 255);</string>
         </item>
         <item row="1" column="0" colspan="5">
          <widget class="QToolBox" name="toolBox">
+          <property name="statusTip">
+           <string>strftime formatting</string>
+          </property>
           <property name="currentIndex">
-           <number>3</number>
+           <number>1</number>
           </property>
           <widget class="QWidget" name="page_send_settings">
            <property name="geometry">
             <rect>
              <x>0</x>
              <y>0</y>
-             <width>394</width>
-             <height>68</height>
+             <width>492</width>
+             <height>193</height>
             </rect>
            </property>
            <attribute name="label">
@@ -1230,21 +1233,21 @@ color: rgb(255, 255, 255);</string>
             <rect>
              <x>0</x>
              <y>0</y>
-             <width>440</width>
-             <height>156</height>
+             <width>475</width>
+             <height>199</height>
             </rect>
            </property>
            <attribute name="label">
             <string>Terminal Settings</string>
            </attribute>
            <layout class="QGridLayout" name="gridLayout_6">
-            <item row="0" column="1">
-             <widget class="QLabel" name="label_17">
+            <item row="4" column="0">
+             <widget class="QLabel" name="label_8">
               <property name="text">
-               <string>Prepend *</string>
+               <string>Info:</string>
               </property>
               <property name="alignment">
-               <set>Qt::AlignCenter</set>
+               <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
               </property>
              </widget>
             </item>
@@ -1255,28 +1258,6 @@ color: rgb(255, 255, 255);</string>
               </property>
               <property name="checked">
                <bool>true</bool>
-              </property>
-             </widget>
-            </item>
-            <item row="4" column="1" rowspan="2">
-             <widget class="QLineEdit" name="lineEdit_info_chr">
-              <property name="minimumSize">
-               <size>
-                <width>0</width>
-                <height>20</height>
-               </size>
-              </property>
-              <property name="maximumSize">
-               <size>
-                <width>100</width>
-                <height>100</height>
-               </size>
-              </property>
-              <property name="text">
-               <string/>
-              </property>
-              <property name="alignment">
-               <set>Qt::AlignCenter</set>
               </property>
              </widget>
             </item>
@@ -1302,16 +1283,6 @@ color: rgb(255, 255, 255);</string>
               </property>
              </widget>
             </item>
-            <item row="4" column="0">
-             <widget class="QLabel" name="label_8">
-              <property name="text">
-               <string>Info:</string>
-              </property>
-              <property name="alignment">
-               <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-              </property>
-             </widget>
-            </item>
             <item row="1" column="0">
              <widget class="QLabel" name="label_7">
               <property name="text">
@@ -1322,42 +1293,24 @@ color: rgb(255, 255, 255);</string>
               </property>
              </widget>
             </item>
-            <item row="0" column="5" rowspan="2">
-             <spacer name="horizontalSpacer">
-              <property name="orientation">
-               <enum>Qt::Horizontal</enum>
-              </property>
-              <property name="sizeHint" stdset="0">
-               <size>
-                <width>148</width>
-                <height>20</height>
-               </size>
-              </property>
-             </spacer>
-            </item>
-            <item row="6" column="1">
-             <widget class="QLineEdit" name="lineEdit_err_chr">
-              <property name="minimumSize">
-               <size>
-                <width>0</width>
-                <height>20</height>
-               </size>
-              </property>
-              <property name="maximumSize">
-               <size>
-                <width>100</width>
-                <height>100</height>
-               </size>
-              </property>
+            <item row="8" column="4" colspan="2">
+             <widget class="QLabel" name="label_timestamp_preview">
               <property name="text">
                <string/>
+              </property>
+             </widget>
+            </item>
+            <item row="0" column="1">
+             <widget class="QLabel" name="label_17">
+              <property name="text">
+               <string>Prepend *</string>
               </property>
               <property name="alignment">
                <set>Qt::AlignCenter</set>
               </property>
              </widget>
             </item>
-            <item row="9" column="0">
+            <item row="11" column="0">
              <spacer name="verticalSpacer">
               <property name="orientation">
                <enum>Qt::Vertical</enum>
@@ -1369,22 +1322,6 @@ color: rgb(255, 255, 255);</string>
                </size>
               </property>
              </spacer>
-            </item>
-            <item row="0" column="2" colspan="2">
-             <widget class="QLabel" name="label_11">
-              <property name="sizePolicy">
-               <sizepolicy hsizetype="Minimum" vsizetype="Preferred">
-                <horstretch>0</horstretch>
-                <verstretch>0</verstretch>
-               </sizepolicy>
-              </property>
-              <property name="text">
-               <string>Add to</string>
-              </property>
-              <property name="alignment">
-               <set>Qt::AlignCenter</set>
-              </property>
-             </widget>
             </item>
             <item row="6" column="3">
              <widget class="QCheckBox" name="checkBox_error_include_log">
@@ -1434,6 +1371,42 @@ color: rgb(255, 255, 255);</string>
               </property>
              </widget>
             </item>
+            <item row="8" column="0" colspan="2">
+             <widget class="QLabel" name="label_22">
+              <property name="text">
+               <string>Timestamp Format**:</string>
+              </property>
+             </widget>
+            </item>
+            <item row="0" column="2" colspan="2">
+             <widget class="QLabel" name="label_11">
+              <property name="sizePolicy">
+               <sizepolicy hsizetype="Minimum" vsizetype="Preferred">
+                <horstretch>0</horstretch>
+                <verstretch>0</verstretch>
+               </sizepolicy>
+              </property>
+              <property name="text">
+               <string>Add to</string>
+              </property>
+              <property name="alignment">
+               <set>Qt::AlignCenter</set>
+              </property>
+             </widget>
+            </item>
+            <item row="0" column="5" rowspan="2">
+             <spacer name="horizontalSpacer">
+              <property name="orientation">
+               <enum>Qt::Horizontal</enum>
+              </property>
+              <property name="sizeHint" stdset="0">
+               <size>
+                <width>148</width>
+                <height>20</height>
+               </size>
+              </property>
+             </spacer>
+            </item>
             <item row="4" column="3" rowspan="2">
              <widget class="QCheckBox" name="checkBox_info_include_log">
               <property name="text">
@@ -1463,6 +1436,28 @@ color: rgb(255, 255, 255);</string>
               </property>
              </widget>
             </item>
+            <item row="4" column="1" rowspan="2">
+             <widget class="QLineEdit" name="lineEdit_info_chr">
+              <property name="minimumSize">
+               <size>
+                <width>0</width>
+                <height>20</height>
+               </size>
+              </property>
+              <property name="maximumSize">
+               <size>
+                <width>100</width>
+                <height>100</height>
+               </size>
+              </property>
+              <property name="text">
+               <string/>
+              </property>
+              <property name="alignment">
+               <set>Qt::AlignCenter</set>
+              </property>
+             </widget>
+            </item>
             <item row="5" column="0" rowspan="2">
              <widget class="QLabel" name="label_10">
               <property name="text">
@@ -1473,11 +1468,44 @@ color: rgb(255, 255, 255);</string>
               </property>
              </widget>
             </item>
-            <item row="7" column="1" colspan="5">
+            <item row="8" column="2" colspan="2">
+             <widget class="QLineEdit" name="lineEdit_timestamp_format">
+              <property name="whatsThis">
+               <string>Use strftime formatting</string>
+              </property>
+              <property name="text">
+               <string>[%I:%M:%S.%f] </string>
+              </property>
+             </widget>
+            </item>
+            <item row="6" column="1">
+             <widget class="QLineEdit" name="lineEdit_err_chr">
+              <property name="minimumSize">
+               <size>
+                <width>0</width>
+                <height>20</height>
+               </size>
+              </property>
+              <property name="maximumSize">
+               <size>
+                <width>100</width>
+                <height>100</height>
+               </size>
+              </property>
+              <property name="text">
+               <string/>
+              </property>
+              <property name="alignment">
+               <set>Qt::AlignCenter</set>
+              </property>
+             </widget>
+            </item>
+            <item row="10" column="0" colspan="6">
              <widget class="QLabel" name="label_12">
               <property name="text">
                <string>* Prepended Text is only displayed in the Log / Terminal. 
-  It is NOT sent to the device</string>
+  It is NOT sent to the device.
+**Use strftime formatting</string>
               </property>
              </widget>
             </item>
@@ -1488,8 +1516,8 @@ color: rgb(255, 255, 255);</string>
             <rect>
              <x>0</x>
              <y>0</y>
-             <width>276</width>
-             <height>247</height>
+             <width>475</width>
+             <height>250</height>
             </rect>
            </property>
            <attribute name="label">
@@ -1658,8 +1686,8 @@ color: rgb(255, 255, 255);</string>
             <rect>
              <x>0</x>
              <y>0</y>
-             <width>163</width>
-             <height>69</height>
+             <width>492</width>
+             <height>193</height>
             </rect>
            </property>
            <attribute name="label">

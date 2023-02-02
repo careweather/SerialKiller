@@ -43,6 +43,8 @@ class MainWindow(QtWidgets.QMainWindow):
     is_connected = False
     data_format = 'utf-8'
     needs_timestamp = True 
+    timestamp_format:str = '[%I:%M:%S.%f] '
+    open_time = datetime.now()
 
     def __init__(self, parent: QtWidgets.QApplication, open_cmd="", * args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
@@ -197,6 +199,9 @@ class MainWindow(QtWidgets.QMainWindow):
         self.ui.groupBox_port.clicked.connect(lambda: self.hide_groupbox(self.ui.groupBox_port))
         self.ui.groupBox_plot_settings.clicked.connect(lambda: self.hide_groupbox(self.ui.groupBox_plot_settings))
         self.ui.textEdit_script.setAcceptRichText(False)
+        self.ui.lineEdit_timestamp_format.textChanged.connect(self.change_timestamp_format)
+
+        self.change_timestamp_format()
         #self.ui.groupBox_adv_plot.toggled.connect(lambda: self.collapse_box(self.ui.groupBox_adv_plot))
         #self.collapse_box(self.ui.groupBox_adv_plot, True)
 
@@ -625,6 +630,7 @@ class MainWindow(QtWidgets.QMainWindow):
                                 self.ui.lineEdit_target_keys,
                                 self.ui.lineEdit_seps,
                                 self.ui.lineEdit_limits,
+                                self.ui.lineEdit_timestamp_format,
                                 ]
 
         self.log_save_line_edits = [self.ui.lineEdit_time_format,
@@ -1436,8 +1442,25 @@ class MainWindow(QtWidgets.QMainWindow):
 #
 ########################################################################
 
+    def change_timestamp_format(self, fmt:str = None):
+        
+        if fmt == None:
+            fmt = self.ui.lineEdit_timestamp_format.text()
+        fmt = replace_escapes(fmt)
+        try: 
+            vprint( f"FMT Changed: {fmt} {self.open_time.strftime(fmt)}", color = 'green')
+            self.timestamp_format = fmt
+            self.ui.lineEdit_timestamp_format.setStyleSheet(STYLE_SHEET_LINE_EDIT_NORMAL)
+            self.ui.label_timestamp_preview.setText(f"Preview:{self.open_time.strftime(fmt)}TEXT...")
+        except Exception as E:
+            eprint(f"FMT INVALID: {fmt} {E}", color = 'red')
+            self.ui.lineEdit_timestamp_format.setStyleSheet(STYLE_SHEET_LINE_EDIT_ERROR)
+            self.ui.label_timestamp_preview.setText(f"FORMAT INVALID")
+        
+        
+
     def get_time_string(self):
-        return '[' + datetime.utcnow().strftime('%I:%M:%S.%f')[:-3] + '] '
+        return datetime.now().strftime(self.timestamp_format)
 
     def lineEdit_to_numbers(self, lineEdit: QLineEdit, separator=None):
         text = lineEdit.text().replace(" ", "")
