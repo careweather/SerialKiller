@@ -108,7 +108,7 @@ class ScriptWorker(QObject):
             if cmd.startswith("delay="):
                 self.delay = get_number(cmd[6:], int, self.delay)
 
-            if cmd.startswith("info="):
+            elif cmd.startswith("info="):
                 self.send(cmd[5:] + "\n", TYPE_INFO)
 
             elif cmd.startswith("error="):

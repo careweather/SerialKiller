@@ -42,6 +42,7 @@ class MainWindow(QtWidgets.QMainWindow):
     plot_started = False
     is_connected = False
     data_format = 'utf-8'
+    needs_timestamp = True 
 
     def __init__(self, parent: QtWidgets.QApplication, open_cmd="", * args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
@@ -134,6 +135,23 @@ class MainWindow(QtWidgets.QMainWindow):
 #
 ########################################################################
 
+    def hide_groupbox(self, groupbox:QtWidgets.QGroupBox):
+        #print("box is", groupbox.isChecked())
+        box_title:str = groupbox.title()
+
+        if groupbox.isChecked():
+            groupbox.setTitle(box_title.replace(TRIANGLE_RIGHT, TRIANGLE_DOWN))
+        else:
+            groupbox.setTitle(box_title.replace(TRIANGLE_DOWN, TRIANGLE_RIGHT))
+
+        for child in groupbox.children():
+            if getattr(child, "show", None):
+                if groupbox.isChecked():
+                    child.show()
+                else:
+                    child.hide()
+            
+
 
     def connect_ui(self):
         self.ui.action_save_script.triggered.connect(self.save_script)
@@ -173,6 +191,12 @@ class MainWindow(QtWidgets.QMainWindow):
         self.ui.pushButton_run_script.clicked.connect(self.start_script)
         self.ui.pushButton_start_plot.clicked.connect(self.start_plot_clicked)
         self.ui.pushButton_start_plot.setStyleSheet(STYLE_SHEET_BUTTON_INACTIVE)
+
+        #self.ui.groupBox_port.toggled.connect(lambda: self.hide_groupbox(self.ui.groupBox_port))
+
+        self.ui.groupBox_port.clicked.connect(lambda: self.hide_groupbox(self.ui.groupBox_port))
+        self.ui.groupBox_plot_settings.clicked.connect(lambda: self.hide_groupbox(self.ui.groupBox_plot_settings))
+        self.ui.textEdit_script.setAcceptRichText(False)
         #self.ui.groupBox_adv_plot.toggled.connect(lambda: self.collapse_box(self.ui.groupBox_adv_plot))
         #self.collapse_box(self.ui.groupBox_adv_plot, True)
 
@@ -210,21 +234,35 @@ class MainWindow(QtWidgets.QMainWindow):
             text += str(arg)
 
         if type == TYPE_RX:  # Incoming FROM device
-            self.ui.textEdit_terminal.setTextColor(COLOR_WHITE)
-            self.ui.textEdit_terminal.insertPlainText(text)
+            
             if self.ui.checkBox_info_include_log.isChecked() and self.ui.checkBox_autolog.isChecked():
                 self.log.write(text)
             if self.plot_started:
                 self.ui.widget_plot.update(text)
+            text = text.replace("\r", '')
+            if self.ui.checkBox_timestamp.isChecked():
+                if self.needs_timestamp:
+                    text = self.get_time_string() + text 
+                if text.endswith("\n"):
+                    self.needs_timestamp = True
+                    text = text.replace("\n", '\n' + self.get_time_string(), text.count('\n')-1); 
+                else:
+                    text = text.replace("\n", '\n' + self.get_time_string()); 
+                    self.needs_timestamp = False 
+            self.ui.textEdit_terminal.setTextColor(COLOR_WHITE)
+            self.ui.textEdit_terminal.insertPlainText(text)
             vprint(text, color="white", end="", flush=True)
 
         elif type == TYPE_TX:  # Outgoing TO DEVICE
             text = self.ui.lineEdit_tx_chr.text() + text
+            
+            if self.ui.checkBox_output_include_log.isChecked() and self.ui.checkBox_autolog.isChecked():
+                self.log.write(text)
+            if self.ui.checkBox_timestamp.isChecked():
+                text = self.get_time_string() + text
             if self.ui.checkBox_output_include_terminal.isChecked():
                 self.ui.textEdit_terminal.setTextColor(COLOR_LIGHT_BLUE)
                 self.ui.textEdit_terminal.insertPlainText(text)
-            if self.ui.checkBox_output_include_log.isChecked() and self.ui.checkBox_autolog.isChecked():
-                self.log.write(text)
             vprint(text, color="blue", end="", flush=True)
 
         elif type == TYPE_INFO:
@@ -275,7 +313,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 vprint(f"EXPRESSION ${{{expression}}} = {expression_resp}", color = "green")
             except Exception as E:
                 eprint(E)
-                self.add_text(f"ERR IN EXPRESSION: ${{{expression}}} {str(E)}\n", type=TYPE_ERROR)
+                self.add_text(f"ERR IN EXPR: ${{{expression}}} {str(E)}\n", type=TYPE_ERROR)
                 return None 
         return text 
 
@@ -586,6 +624,7 @@ class MainWindow(QtWidgets.QMainWindow):
                                 self.ui.lineEdit_ref_lines,
                                 self.ui.lineEdit_target_keys,
                                 self.ui.lineEdit_seps,
+                                self.ui.lineEdit_limits,
                                 ]
 
         self.log_save_line_edits = [self.ui.lineEdit_time_format,
@@ -595,7 +634,6 @@ class MainWindow(QtWidgets.QMainWindow):
 
         self.save_combo_boxes = [self.ui.comboBox_baud,
                                  self.ui.comboBox_plot_type,
-                                 self.ui.comboBox_limits,
                                  ]
 
         for checkbox in self.save_checkboxes:
@@ -1252,10 +1290,7 @@ class MainWindow(QtWidgets.QMainWindow):
             max_points = kwargs['-p']
 
         if limits:
-            if limits.upper() == "MAX":
-                self.ui.comboBox_limits.setCurrentText("Max")
-            elif limits.upper() == "WINDOW":
-                self.ui.comboBox_limits.setCurrentText("Window")
+            self.ui.lineEdit_limits.setText(str(limits))
 
         if reference_lines != None:
             self.ui.lineEdit_ref_lines.setText(reference_lines)
@@ -1278,7 +1313,8 @@ class MainWindow(QtWidgets.QMainWindow):
             self.end_plot()
             self.start_plot()
 
-        limits = self.ui.comboBox_limits.currentText()
+        limits = self.lineEdit_to_numbers(self.ui.lineEdit_limits, ',')
+        # print(limits)
         type = self.ui.comboBox_plot_type.currentText()
         targets = self.ui.lineEdit_target_keys.text()
         max_points = self.lineEdit_to_numbers(self.ui.lineEdit_max_points)
@@ -1399,6 +1435,9 @@ class MainWindow(QtWidgets.QMainWindow):
 #               MISC FUNCTIONS
 #
 ########################################################################
+
+    def get_time_string(self):
+        return '[' + datetime.utcnow().strftime('%I:%M:%S.%f')[:-3] + '] '
 
     def lineEdit_to_numbers(self, lineEdit: QLineEdit, separator=None):
         text = lineEdit.text().replace(" ", "")

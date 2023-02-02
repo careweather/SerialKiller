@@ -154,8 +154,14 @@
            <height>16777215</height>
           </size>
          </property>
+         <property name="maxLength">
+          <number>4</number>
+         </property>
          <property name="placeholderText">
           <string>Type here</string>
+         </property>
+         <property name="cursorMoveStyle">
+          <enum>Qt::VisualMoveStyle</enum>
          </property>
         </widget>
        </item>
@@ -186,12 +192,21 @@
      </widget>
     </item>
     <item row="3" column="0">
-     <widget class="QGroupBox" name="groupBox">
+     <widget class="QGroupBox" name="groupBox_port">
       <property name="toolTip">
-       <string>The number of points plotted at once. Set to 0 for infinite.</string>
+       <string/>
       </property>
       <property name="title">
-       <string>Port</string>
+       <string>▼ Port</string>
+      </property>
+      <property name="flat">
+       <bool>false</bool>
+      </property>
+      <property name="checkable">
+       <bool>true</bool>
+      </property>
+      <property name="checked">
+       <bool>true</bool>
       </property>
       <layout class="QGridLayout" name="gridLayout_2">
        <property name="leftMargin">
@@ -316,6 +331,9 @@
            <height>16777215</height>
           </size>
          </property>
+         <property name="toolTip">
+          <string>Parity </string>
+         </property>
          <item>
           <property name="text">
            <string>NONE</string>
@@ -370,6 +388,9 @@
            <height>16777215</height>
           </size>
          </property>
+         <property name="toolTip">
+          <string>Attempt to reconnect if accidentally disconnected</string>
+         </property>
          <property name="text">
           <string>Auto-Reconnect</string>
          </property>
@@ -423,6 +444,9 @@
            <width>1000</width>
            <height>16777215</height>
           </size>
+         </property>
+         <property name="toolTip">
+          <string/>
          </property>
          <item>
           <property name="text">
@@ -496,7 +520,7 @@
     <item row="2" column="0">
      <widget class="QTabWidget" name="tabWidget">
       <property name="currentIndex">
-       <number>4</number>
+       <number>0</number>
       </property>
       <property name="elideMode">
        <enum>Qt::ElideNone</enum>
@@ -537,7 +561,7 @@
         <item row="1" column="1">
          <widget class="QCheckBox" name="checkBox_timestamp">
           <property name="enabled">
-           <bool>false</bool>
+           <bool>true</bool>
           </property>
           <property name="text">
            <string>Timestamp</string>
@@ -701,6 +725,9 @@ font: 10pt &quot;Courier New&quot;;</string>
             <height>16777215</height>
            </size>
           </property>
+          <property name="toolTip">
+           <string>Delay between sent messages (ms)</string>
+          </property>
           <property name="placeholderText">
            <string>200</string>
           </property>
@@ -720,7 +747,11 @@ font: 10pt &quot;Courier New&quot;;</string>
          </widget>
         </item>
         <item row="0" column="7">
-         <widget class="QLineEdit" name="lineEdit_script_name"/>
+         <widget class="QLineEdit" name="lineEdit_script_name">
+          <property name="toolTip">
+           <string>Name of the script file</string>
+          </property>
+         </widget>
         </item>
         <item row="1" column="0" colspan="11">
          <widget class="QTextEdit" name="textEdit_script">
@@ -737,6 +768,9 @@ color: rgb(255, 255, 255);</string>
           <property name="tabStopDistance">
            <double>40.000000000000000</double>
           </property>
+          <property name="acceptRichText">
+           <bool>false</bool>
+          </property>
          </widget>
         </item>
        </layout>
@@ -746,115 +780,7 @@ color: rgb(255, 255, 255);</string>
         <string>Plot</string>
        </attribute>
        <layout class="QGridLayout" name="gridLayout_15">
-        <item row="0" column="0">
-         <widget class="QLabel" name="label_4">
-          <property name="text">
-           <string>Type:</string>
-          </property>
-         </widget>
-        </item>
-        <item row="0" column="6">
-         <widget class="QLineEdit" name="lineEdit_target_keys">
-          <property name="sizePolicy">
-           <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
-            <horstretch>0</horstretch>
-            <verstretch>0</verstretch>
-           </sizepolicy>
-          </property>
-          <property name="toolTip">
-           <string>Separate Target Keys To Plot With Any Separator Defined in &quot;seps&quot;</string>
-          </property>
-          <property name="placeholderText">
-           <string>a,b,c,d</string>
-          </property>
-         </widget>
-        </item>
-        <item row="1" column="0">
-         <widget class="QLabel" name="label_18">
-          <property name="sizePolicy">
-           <sizepolicy hsizetype="Maximum" vsizetype="Preferred">
-            <horstretch>0</horstretch>
-            <verstretch>0</verstretch>
-           </sizepolicy>
-          </property>
-          <property name="text">
-           <string>Limits:</string>
-          </property>
-         </widget>
-        </item>
-        <item row="2" column="0" colspan="7">
-         <widget class="Plot_Widget" name="widget_plot" native="true">
-          <property name="enabled">
-           <bool>true</bool>
-          </property>
-          <property name="sizePolicy">
-           <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
-            <horstretch>0</horstretch>
-            <verstretch>0</verstretch>
-           </sizepolicy>
-          </property>
-         </widget>
-        </item>
-        <item row="1" column="6">
-         <widget class="QLineEdit" name="lineEdit_seps">
-          <property name="toolTip">
-           <string>Chars here will be used to separate incoming data into tokens</string>
-          </property>
-          <property name="text">
-           <string>,;\t\n|[] =:</string>
-          </property>
-         </widget>
-        </item>
-        <item row="1" column="5">
-         <widget class="QLabel" name="label_23">
-          <property name="sizePolicy">
-           <sizepolicy hsizetype="Maximum" vsizetype="Preferred">
-            <horstretch>0</horstretch>
-            <verstretch>0</verstretch>
-           </sizepolicy>
-          </property>
-          <property name="toolTip">
-           <string>Chars here will be used to split data into tokens</string>
-          </property>
-          <property name="text">
-           <string>Seps:</string>
-          </property>
-         </widget>
-        </item>
-        <item row="1" column="2">
-         <widget class="QLabel" name="label_24">
-          <property name="text">
-           <string>Y Lines:</string>
-          </property>
-         </widget>
-        </item>
-        <item row="0" column="2">
-         <widget class="QLabel" name="label_3">
-          <property name="sizePolicy">
-           <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
-            <horstretch>0</horstretch>
-            <verstretch>0</verstretch>
-           </sizepolicy>
-          </property>
-          <property name="text">
-           <string>Points:</string>
-          </property>
-         </widget>
-        </item>
-        <item row="1" column="4">
-         <widget class="QLineEdit" name="lineEdit_ref_lines">
-          <property name="sizePolicy">
-           <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
-            <horstretch>0</horstretch>
-            <verstretch>0</verstretch>
-           </sizepolicy>
-          </property>
-          <property name="placeholderText">
-           <string>0,50</string>
-          </property>
-         </widget>
-        </item>
-        <item row="3" column="0" colspan="7">
+        <item row="2" column="0" colspan="3">
          <widget class="QGroupBox" name="groupBox_2">
           <property name="sizePolicy">
            <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
@@ -918,76 +844,210 @@ color: rgb(255, 255, 255);</string>
           </layout>
          </widget>
         </item>
-        <item row="0" column="5">
-         <widget class="QLabel" name="label_6">
+        <item row="0" column="0">
+         <widget class="QGroupBox" name="groupBox_plot_settings">
+          <property name="title">
+           <string>▼ Settings</string>
+          </property>
+          <property name="checkable">
+           <bool>true</bool>
+          </property>
+          <layout class="QGridLayout" name="gridLayout_9">
+           <property name="leftMargin">
+            <number>4</number>
+           </property>
+           <property name="topMargin">
+            <number>4</number>
+           </property>
+           <property name="rightMargin">
+            <number>4</number>
+           </property>
+           <property name="bottomMargin">
+            <number>4</number>
+           </property>
+           <property name="spacing">
+            <number>3</number>
+           </property>
+           <item row="3" column="0">
+            <widget class="QLabel" name="label_18">
+             <property name="sizePolicy">
+              <sizepolicy hsizetype="Maximum" vsizetype="Preferred">
+               <horstretch>0</horstretch>
+               <verstretch>0</verstretch>
+              </sizepolicy>
+             </property>
+             <property name="text">
+              <string>Limits:</string>
+             </property>
+            </widget>
+           </item>
+           <item row="3" column="2">
+            <widget class="QLabel" name="label_24">
+             <property name="text">
+              <string>Y Lines:</string>
+             </property>
+            </widget>
+           </item>
+           <item row="1" column="1">
+            <widget class="QComboBox" name="comboBox_plot_type">
+             <item>
+              <property name="text">
+               <string>Key-Value</string>
+              </property>
+             </item>
+             <item>
+              <property name="text">
+               <string>Single-Value</string>
+              </property>
+             </item>
+             <item>
+              <property name="text">
+               <string>Single-Array</string>
+              </property>
+             </item>
+             <item>
+              <property name="text">
+               <string>Key-Array</string>
+              </property>
+             </item>
+            </widget>
+           </item>
+           <item row="1" column="0">
+            <widget class="QLabel" name="label_4">
+             <property name="text">
+              <string>Type:</string>
+             </property>
+            </widget>
+           </item>
+           <item row="3" column="3">
+            <widget class="QLineEdit" name="lineEdit_ref_lines">
+             <property name="sizePolicy">
+              <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
+               <horstretch>0</horstretch>
+               <verstretch>0</verstretch>
+              </sizepolicy>
+             </property>
+             <property name="toolTip">
+              <string>Reference lines on the Y axis</string>
+             </property>
+             <property name="placeholderText">
+              <string>0,50</string>
+             </property>
+            </widget>
+           </item>
+           <item row="1" column="3">
+            <widget class="QLineEdit" name="lineEdit_max_points">
+             <property name="sizePolicy">
+              <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+               <horstretch>0</horstretch>
+               <verstretch>0</verstretch>
+              </sizepolicy>
+             </property>
+             <property name="maximumSize">
+              <size>
+               <width>50000</width>
+               <height>16777215</height>
+              </size>
+             </property>
+             <property name="toolTip">
+              <string>Max points shown. Set to 0 for infinite</string>
+             </property>
+             <property name="placeholderText">
+              <string>100</string>
+             </property>
+            </widget>
+           </item>
+           <item row="1" column="2">
+            <widget class="QLabel" name="label_3">
+             <property name="sizePolicy">
+              <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+               <horstretch>0</horstretch>
+               <verstretch>0</verstretch>
+              </sizepolicy>
+             </property>
+             <property name="text">
+              <string>Points:</string>
+             </property>
+            </widget>
+           </item>
+           <item row="1" column="5">
+            <widget class="QLineEdit" name="lineEdit_target_keys">
+             <property name="sizePolicy">
+              <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
+               <horstretch>0</horstretch>
+               <verstretch>0</verstretch>
+              </sizepolicy>
+             </property>
+             <property name="toolTip">
+              <string>Separate Target Keys To Plot With Any Separator Defined in &quot;seps&quot;</string>
+             </property>
+             <property name="placeholderText">
+              <string>a,b,c,d</string>
+             </property>
+            </widget>
+           </item>
+           <item row="1" column="4">
+            <widget class="QLabel" name="label_6">
+             <property name="sizePolicy">
+              <sizepolicy hsizetype="Maximum" vsizetype="Preferred">
+               <horstretch>0</horstretch>
+               <verstretch>0</verstretch>
+              </sizepolicy>
+             </property>
+             <property name="toolTip">
+              <string>The target keys to plot</string>
+             </property>
+             <property name="text">
+              <string>Keys:</string>
+             </property>
+            </widget>
+           </item>
+           <item row="3" column="5">
+            <widget class="QLineEdit" name="lineEdit_seps">
+             <property name="toolTip">
+              <string>Chars here will be used to separate incoming data into tokens</string>
+             </property>
+             <property name="text">
+              <string>,;\t\n|[] =:</string>
+             </property>
+            </widget>
+           </item>
+           <item row="3" column="4">
+            <widget class="QLabel" name="label_23">
+             <property name="sizePolicy">
+              <sizepolicy hsizetype="Maximum" vsizetype="Preferred">
+               <horstretch>0</horstretch>
+               <verstretch>0</verstretch>
+              </sizepolicy>
+             </property>
+             <property name="toolTip">
+              <string>Chars here will be used to split data into tokens</string>
+             </property>
+             <property name="text">
+              <string>Seps:</string>
+             </property>
+            </widget>
+           </item>
+           <item row="3" column="1">
+            <widget class="QLineEdit" name="lineEdit_limits">
+             <property name="placeholderText">
+              <string>min,max</string>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </widget>
+        </item>
+        <item row="1" column="0" colspan="3">
+         <widget class="Plot_Widget" name="widget_plot" native="true">
+          <property name="enabled">
+           <bool>true</bool>
+          </property>
           <property name="sizePolicy">
-           <sizepolicy hsizetype="Maximum" vsizetype="Preferred">
+           <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
             <horstretch>0</horstretch>
             <verstretch>0</verstretch>
            </sizepolicy>
-          </property>
-          <property name="toolTip">
-           <string>The target keys to plot</string>
-          </property>
-          <property name="text">
-           <string>Keys:</string>
-          </property>
-         </widget>
-        </item>
-        <item row="1" column="1">
-         <widget class="QComboBox" name="comboBox_limits">
-          <item>
-           <property name="text">
-            <string>Window</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>Max</string>
-           </property>
-          </item>
-         </widget>
-        </item>
-        <item row="0" column="1">
-         <widget class="QComboBox" name="comboBox_plot_type">
-          <item>
-           <property name="text">
-            <string>Key-Value</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>Single-Value</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>Single-Array</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>Key-Array</string>
-           </property>
-          </item>
-         </widget>
-        </item>
-        <item row="0" column="4">
-         <widget class="QLineEdit" name="lineEdit_max_points">
-          <property name="sizePolicy">
-           <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
-            <horstretch>0</horstretch>
-            <verstretch>0</verstretch>
-           </sizepolicy>
-          </property>
-          <property name="maximumSize">
-           <size>
-            <width>50000</width>
-            <height>16777215</height>
-           </size>
-          </property>
-          <property name="placeholderText">
-           <string>100</string>
           </property>
          </widget>
         </item>
@@ -1088,15 +1148,15 @@ color: rgb(255, 255, 255);</string>
         <item row="1" column="0" colspan="5">
          <widget class="QToolBox" name="toolBox">
           <property name="currentIndex">
-           <number>0</number>
+           <number>3</number>
           </property>
           <widget class="QWidget" name="page_send_settings">
            <property name="geometry">
             <rect>
              <x>0</x>
              <y>0</y>
-             <width>492</width>
-             <height>193</height>
+             <width>394</width>
+             <height>68</height>
             </rect>
            </property>
            <attribute name="label">
@@ -1170,8 +1230,8 @@ color: rgb(255, 255, 255);</string>
             <rect>
              <x>0</x>
              <y>0</y>
-             <width>488</width>
-             <height>198</height>
+             <width>440</width>
+             <height>156</height>
             </rect>
            </property>
            <attribute name="label">
@@ -1427,9 +1487,9 @@ color: rgb(255, 255, 255);</string>
            <property name="geometry">
             <rect>
              <x>0</x>
-             <y>-12</y>
-             <width>475</width>
-             <height>250</height>
+             <y>0</y>
+             <width>276</width>
+             <height>247</height>
             </rect>
            </property>
            <attribute name="label">
@@ -1598,8 +1658,8 @@ color: rgb(255, 255, 255);</string>
             <rect>
              <x>0</x>
              <y>0</y>
-             <width>513</width>
-             <height>197</height>
+             <width>163</width>
+             <height>69</height>
             </rect>
            </property>
            <attribute name="label">
