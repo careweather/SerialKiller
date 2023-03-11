@@ -75,7 +75,7 @@ Options:
 def execute():
     x_size = 600
     y_size = 700
-    open_cmd = ""
+    open_cmd = []
     input_args = sys.argv[1:]
     while input_args:
         arg = input_args.pop(0)
@@ -84,9 +84,9 @@ def execute():
         elif arg == '-x':
             x_size = int(input_args.pop(0))
         elif arg == '-c':
-            open_cmd = ""
-            for s in input_args:
-                open_cmd += s + " "
+            open_cmd_str = str(input_args.pop(0))
+            for s in open_cmd_str.split(";"):
+                open_cmd.append(s)
             break
         elif arg == '-q' or arg == '--quit':
             quit()
@@ -120,6 +120,7 @@ def run_app(size_x = 600, size_y = 700, open_cmd = ""):
     cprint(GREETINGS_TEXT, color='cyan')
     global app
     app = QtWidgets.QApplication(sys.argv)
+    app.setWindowIcon(QIcon("img/SK_Icon.png"))
     
     main = sk_main_window.MainWindow(app, open_cmd=open_cmd)
     main.setWindowIcon(QIcon("img/SK_Icon.png"))

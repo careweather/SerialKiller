@@ -46,7 +46,7 @@ class MainWindow(QtWidgets.QMainWindow):
     timestamp_format:str = '[%I:%M:%S.%f] '
     open_time = datetime.now()
 
-    def __init__(self, parent: QtWidgets.QApplication, open_cmd="", * args, **kwargs) -> None:
+    def __init__(self, parent: QtWidgets.QApplication, open_cmd=[], * args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
         self.last_save_time = time.perf_counter()
         self.cmd_list = []
@@ -73,9 +73,10 @@ class MainWindow(QtWidgets.QMainWindow):
         self.update_ports(get_ports())
 
         if open_cmd:
-            vprint("Has Open Command:", open_cmd)
-            self.ui.lineEdit_input.setText(open_cmd)
-            self.send_clicked()
+            for cmd in open_cmd:
+                vprint("Open Command:", cmd)
+                self.ui.lineEdit_input.setText(cmd)
+                self.send_clicked()
 
         self.ui.pushButton_restart_logger.setEnabled(False)
 
@@ -238,9 +239,11 @@ class MainWindow(QtWidgets.QMainWindow):
         for arg in args:
             text += str(arg)
 
+        self.ui.textEdit_terminal.moveCursor(QTextCursor.End)
+
         if type == TYPE_RX:  # Incoming FROM device
             
-            if self.ui.checkBox_info_include_log.isChecked() and self.ui.checkBox_autolog.isChecked():
+            if self.ui.checkBox_autolog.isChecked():
                 self.log.write(text)
             if self.plot_started:
                 self.ui.widget_plot.update(text)
@@ -294,7 +297,6 @@ class MainWindow(QtWidgets.QMainWindow):
             vprint(text, color="yellow", end="", flush=True)
 
         if self.ui.checkBox_autoscroll.isChecked():
-            self.ui.textEdit_terminal.moveCursor(QTextCursor.End)
             self.ui.textEdit_terminal.ensureCursorVisible()
 
     def debug_text(self, *args, color: QColor = COLOR_BLACK):
@@ -480,6 +482,10 @@ class MainWindow(QtWidgets.QMainWindow):
         else:
             port = self.ui.comboBox_port.currentText()
 
+        if '-a' in kwargs:
+            self.set_auto_reconnect(True, port)
+            
+
         if '-d' in kwargs:
             dsrdtr = True
             self.ui.checkBox_dsrdtr.setChecked(True)
@@ -532,6 +538,17 @@ class MainWindow(QtWidgets.QMainWindow):
         else:
             self.handle_connect()
 
+    
+    def set_auto_reconnect(self, enabled:bool = True, port:str = None):
+        if enabled:
+            if port:
+                self.target_port = port 
+                self.ui.label_port.setText(f"Ports: (Auto {self.target_port})")
+        else:
+            self.ui.label_port.setText(f"Ports:")
+            self.target_port = None
+            
+    
     def auto_reconnect_toggled(self):
         if self.ui.checkBox_auto_reconnect.isChecked():
             if self.is_connected:
@@ -552,11 +569,19 @@ class MainWindow(QtWidgets.QMainWindow):
     def update_ports(self, ports: dict = None):
         if not ports:
             return
+
+        #print("PORT UPDATE")
         ports_lost = set(self.current_ports).difference(set(ports))
         ports_found = set(ports).difference(set(self.current_ports))
+        self.current_ports = ports
+
+        if self.target_port and self.is_connected == False:
+            if self.target_port in self.current_ports and self.ui.checkBox_auto_reconnect.isChecked():
+                self.handle_connect(self.target_port)
+
         if not ports_found and not ports_lost:
             return
-        self.current_ports = ports
+        
         if ports_lost:
             p_str = "LOST PORT(s): " + str(ports_lost)
             p_str = p_str.replace("{", '').replace("}", '').replace("'", '')
@@ -571,9 +596,7 @@ class MainWindow(QtWidgets.QMainWindow):
         if current_selection in self.current_ports:
             self.ui.comboBox_port.setCurrentText(current_selection)
 
-        if self.target_port and self.is_connected == False:
-            if self.target_port in self.current_ports and self.ui.checkBox_auto_reconnect.isChecked():
-                self.handle_connect(self.target_port)
+        
 
     def show_ports(self, *args, **kwargs):
         self.debug_text(f"PORTS: {' '.join(self.current_ports)}", color=COLOR_BLACK)
@@ -860,6 +883,7 @@ class MainWindow(QtWidgets.QMainWindow):
         cmd_con.add_option(("-x", "--xonxoff"))
         cmd_con.add_option(("-r", "--rtscts"))
         cmd_con.add_option(("-p", "--parity"))
+        cmd_con.add_option(("-a", "--auto"))
         self.cmd_list.append(cmd_con)
 
         self.cmd_list.append(Command("dcon", self.disconnect, 0))
