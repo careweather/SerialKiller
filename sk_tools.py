@@ -1,5 +1,6 @@
 import os
 import platform
+from tracemalloc import start
 from termcolor import cprint
 from datetime import date, datetime
 
@@ -14,6 +15,7 @@ CURRENT_FOLDER = os.getcwd()
 
 print(INSTALL_FOLDER)
 
+SETTINGS_FOLDER = INSTALL_FOLDER + '/settings'
 SETTINGS_FILE = INSTALL_FOLDER + "/user_settings.json"
 SCRIPT_FOLDER = INSTALL_FOLDER + "/scripts/"
 DEFAULT_LOG_FOLDER = INSTALL_FOLDER + "/logs/"
@@ -28,6 +30,8 @@ COLOR_BLACK = QColor(0, 0, 0)
 
 COLOR_DARK_BLUE = QColor(0, 0, 255)
 COLOR_LIGHT_BLUE = QColor(105, 207, 255)
+COLOR_LAVENDER = QColor(171, 195, 255)
+
 
 COLOR_LIGHT_GREEN = QColor(97, 255, 142)
 COLOR_GREEN = QColor(24, 160, 0)
@@ -44,6 +48,14 @@ ARROW_LEFT = "L"
 ARROW_RIGHT = "R"
 ARROW_DOWN = "D"
 ARROW_UP = "U"
+
+ARROW_UP = '↑'
+ARROW_DOWN = '↓'
+ARROW_RIGHT = "→"
+ARROW_LEFT = "←"
+
+TRIANGLE_DOWN = "▼"
+TRIANGLE_RIGHT = "▶"
 
 TYPE_RX = 0
 TYPE_TX = 1
@@ -168,9 +180,19 @@ def get_between(input:str, start:str, end:str) -> list:
     
     pass 
 
+def get_file_name(input:str, start_folder:str, extension:str = None):
+    if not input.endswith(extension): 
+        input += extension
+    if os.path.exists(input):
+        return input, True
+    input = start_folder + '/' + input
+    if os.path.exists(input):
+        return input, True
+    return input, False
+
 def replace_escapes(input: str) -> str:
-    input = input.replace("\\\\n", '^n^').replace('\\\\r', '^r^').replace('\\\\t', '^t^')  # Temporary change any \\n, ,etc
-    input = input.replace("\\n", '\n').replace('\\r', '\r').replace('\\t', '\t')
+    input = input.replace(r"\\n", '^n^').replace(r'\\r', '^r^').replace(r'\\t', '^t^')  # Temporary change any \\n, ,etc
+    input = input.replace(r"\n", '\n').replace(r'\r', '\r').replace(r'\t', '\t')
     return input.replace("^n^", '\\n').replace('^r^', '\\r').replace('^t^', '\\t')  # Replace any \\n, etc
 
 
@@ -179,3 +201,5 @@ STYLE_SHEET_TERMINAL_ACTIVE = f'background-color: {colorToStyleSheet(COLOR_BLACK
 STYLE_SHEET_BUTTON_INACTIVE = f"background-color: {colorToStyleSheet(COLOR_GREY)};"
 STYLE_SHEET_BUTTON_ACTIVE = f"background-color: {colorToStyleSheet(COLOR_GREEN)};"
 STYLE_SHEET_SCRIPT = f'background-color: {colorToStyleSheet(COLOR_DARK_RED)};color: rgb(255, 255, 255);font: 10pt "Consolas";'
+STYLE_SHEET_LINE_EDIT_ERROR = f'background-color: {colorToStyleSheet(COLOR_LIGHT_RED)};font: 10pt "Consolas";'
+STYLE_SHEET_LINE_EDIT_NORMAL = f'background-color: {colorToStyleSheet(COLOR_WHITE)};font: 10pt "Consolas";'

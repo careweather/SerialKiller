@@ -318,7 +318,7 @@ Exit Serial Killer immediately.
 
 </details>
 
-## Scripts
+# Scripts
 
 <details open>
 

@@ -4,6 +4,7 @@ import traceback
 
 from sk_tools import *
 
+
 class Command:
     def __init__(self, name: str, function, max_args=None) -> None:
         self.name = name
@@ -23,7 +24,11 @@ class Command:
                               "type": val_type,
                               "required": require_values}
 
-        pass
+    def __repr__(self) -> str:
+        rstr = f"{self.name}\n"
+        for option in self.options: 
+            rstr += f"    {option} required: {self.options[option]['required']}\n"
+        return rstr
 
     def execute(self, input: str) -> tuple:
         if not (input.split(" ")[0] == self.name):  # keyword matched

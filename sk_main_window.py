@@ -22,10 +22,9 @@ from sk_logging import SK_Logger
 from sk_scripting import ScriptSyntaxHighlighter, ScriptWorker
 from sk_tools import *
 
-import re 
+import re
 import random
 import math
-
 
 
 class MainWindow(QtWidgets.QMainWindow):
@@ -42,8 +41,12 @@ class MainWindow(QtWidgets.QMainWindow):
     plot_started = False
     is_connected = False
     data_format = 'utf-8'
+    needs_timestamp = True
+    timestamp_format: str = '[%I:%M:%S.%f] '
+    open_time = datetime.now()
+    preference_port: str = None
 
-    def __init__(self, parent: QtWidgets.QApplication, open_cmd="", * args, **kwargs) -> None:
+    def __init__(self, parent: QtWidgets.QApplication, open_cmd=[], * args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
         self.last_save_time = time.perf_counter()
         self.cmd_list = []
@@ -70,9 +73,10 @@ class MainWindow(QtWidgets.QMainWindow):
         self.update_ports(get_ports())
 
         if open_cmd:
-            vprint("Has Open Command:", open_cmd)
-            self.ui.lineEdit_input.setText(open_cmd)
-            self.send_clicked()
+            for cmd in open_cmd:
+                vprint("Open Command:", cmd)
+                self.ui.lineEdit_input.setText(cmd)
+                self.send_clicked()
 
         self.ui.pushButton_restart_logger.setEnabled(False)
 
@@ -134,6 +138,21 @@ class MainWindow(QtWidgets.QMainWindow):
 #
 ########################################################################
 
+    def hide_groupbox(self, groupbox: QtWidgets.QGroupBox):
+        #print("box is", groupbox.isChecked())
+        box_title: str = groupbox.title()
+
+        if groupbox.isChecked():
+            groupbox.setTitle(box_title.replace(TRIANGLE_RIGHT, TRIANGLE_DOWN))
+        else:
+            groupbox.setTitle(box_title.replace(TRIANGLE_DOWN, TRIANGLE_RIGHT))
+
+        for child in groupbox.children():
+            if getattr(child, "show", None):
+                if groupbox.isChecked():
+                    child.show()
+                else:
+                    child.hide()
 
     def connect_ui(self):
         self.ui.action_save_script.triggered.connect(self.save_script)
@@ -173,28 +192,17 @@ class MainWindow(QtWidgets.QMainWindow):
         self.ui.pushButton_run_script.clicked.connect(self.start_script)
         self.ui.pushButton_start_plot.clicked.connect(self.start_plot_clicked)
         self.ui.pushButton_start_plot.setStyleSheet(STYLE_SHEET_BUTTON_INACTIVE)
+
+        #self.ui.groupBox_port.toggled.connect(lambda: self.hide_groupbox(self.ui.groupBox_port))
+
+        self.ui.groupBox_port.clicked.connect(lambda: self.hide_groupbox(self.ui.groupBox_port))
+        self.ui.groupBox_plot_settings.clicked.connect(lambda: self.hide_groupbox(self.ui.groupBox_plot_settings))
+        self.ui.textEdit_script.setAcceptRichText(False)
+        self.ui.lineEdit_timestamp_format.textChanged.connect(self.change_timestamp_format)
+
+        self.change_timestamp_format()
         #self.ui.groupBox_adv_plot.toggled.connect(lambda: self.collapse_box(self.ui.groupBox_adv_plot))
         #self.collapse_box(self.ui.groupBox_adv_plot, True)
-
-    # def collapse_box(self, groupBox: QGroupBox, force_close=False):
-    #     children = groupBox.findChildren((QLineEdit, QLabel, QComboBox, QCheckBox, QPushButton))
-    #     if force_close == True:
-    #         groupBox.setChecked(False)
-    #         return
-    #     if groupBox.isChecked():  # Expand
-    #         groupBox.setTitle(groupBox.title().replace(ARROW_RIGHT, ARROW_DOWN))
-    #         groupBox.setContentsMargins(1, 15, 1, 1)
-    #         vprint("EXPAND Box:", groupBox.objectName())
-    #         for item in children:
-    #             item: QWidget
-    #             item.show()
-        # else:
-        #     vprint("Collapsing Box:", groupBox.objectName())
-        #     groupBox.setTitle(groupBox.title().replace(ARROW_DOWN, ARROW_RIGHT))
-        #     groupBox.setContentsMargins(0, 0, 0, 0)
-        #     for item in children:
-        #         item: QWidget
-        #         item.hide()
 
     def scroll_history(self, scroll_down=True):
         if scroll_down:
@@ -228,21 +236,38 @@ class MainWindow(QtWidgets.QMainWindow):
         for arg in args:
             text += str(arg)
 
+        self.ui.textEdit_terminal.moveCursor(QTextCursor.End)
+
         if type == TYPE_RX:  # Incoming FROM device
-            self.ui.textEdit_terminal.setTextColor(COLOR_WHITE)
-            self.ui.textEdit_terminal.insertPlainText(text)
-            self.log.write(text)
+
+            if self.ui.checkBox_autolog.isChecked():
+                self.log.write(text)
             if self.plot_started:
                 self.ui.widget_plot.update(text)
+            text = text.replace("\r", '')
+            if self.ui.checkBox_timestamp.isChecked():
+                if self.needs_timestamp:
+                    text = self.get_time_string() + text
+                if text.endswith("\n"):
+                    self.needs_timestamp = True
+                    text = text.replace("\n", '\n' + self.get_time_string(), text.count('\n')-1)
+                else:
+                    text = text.replace("\n", '\n' + self.get_time_string())
+                    self.needs_timestamp = False
+            self.ui.textEdit_terminal.setTextColor(COLOR_WHITE)
+            self.ui.textEdit_terminal.insertPlainText(text)
             vprint(text, color="white", end="", flush=True)
 
         elif type == TYPE_TX:  # Outgoing TO DEVICE
             text = self.ui.lineEdit_tx_chr.text() + text
+
+            if self.ui.checkBox_output_include_log.isChecked() and self.ui.checkBox_autolog.isChecked():
+                self.log.write(text)
+            if self.ui.checkBox_timestamp.isChecked():
+                text = self.get_time_string() + text
             if self.ui.checkBox_output_include_terminal.isChecked():
                 self.ui.textEdit_terminal.setTextColor(COLOR_LIGHT_BLUE)
                 self.ui.textEdit_terminal.insertPlainText(text)
-            if self.ui.checkBox_output_include_log.isChecked() and self.ui.checkBox_autolog.isChecked():
-                self.log.write(text)
             vprint(text, color="blue", end="", flush=True)
 
         elif type == TYPE_INFO:
@@ -269,7 +294,6 @@ class MainWindow(QtWidgets.QMainWindow):
             vprint(text, color="yellow", end="", flush=True)
 
         if self.ui.checkBox_autoscroll.isChecked():
-            self.ui.textEdit_terminal.moveCursor(QTextCursor.End)
             self.ui.textEdit_terminal.ensureCursorVisible()
 
     def debug_text(self, *args, color: QColor = COLOR_BLACK):
@@ -280,22 +304,22 @@ class MainWindow(QtWidgets.QMainWindow):
         self.ui.label_debug.setText(label_text)
         vprint(label_text, color='cyan')
 
-    def input_text_evaluate(self, text:str)-> str:
+    def input_text_evaluate(self, text: str) -> str:
         text = text.replace("$UTS", str(int(time.time())))
         found_expressions = re.findall(r'\$\{(.*?)\}', text)
         for expression in found_expressions:
-            try: 
+            try:
                 if not expression:
                     text = text.replace("${}", "")
                     continue
                 expression_resp = str(eval(expression))
                 text = text.replace(f"${{{expression}}}", expression_resp, 1)
-                vprint(f"EXPRESSION ${{{expression}}} = {expression_resp}", color = "green")
+                vprint(f"EXPRESSION ${{{expression}}} = {expression_resp}", color="green")
             except Exception as E:
                 eprint(E)
-                self.add_text(f"ERR IN EXPRESSION: ${{{expression}}} {str(E)}\n", type=TYPE_ERROR)
-                return None 
-        return text 
+                self.add_text(f"ERR IN EXPR: ${{{expression}}} {str(E)}\n", type=TYPE_ERROR)
+                return None
+        return text
 
     def send_clicked(self, add_to_history=True):
         original_text = self.ui.lineEdit_input.text()
@@ -307,11 +331,11 @@ class MainWindow(QtWidgets.QMainWindow):
         text = self.input_text_evaluate(original_text)
         if text == None:
             return
-        
+
         text = text + replace_escapes(self.ui.lineEdit_append_to_send.text())
         if self.ui.checkBox_interpret_escape.isChecked():
             text = replace_escapes(text)
-        #print(text)
+        # print(text)
 
         #text = original_text + replace_escapes(self.ui.lineEdit_append_to_send.text())
         cmd_result = self.interpret_command(text)
@@ -340,7 +364,7 @@ class MainWindow(QtWidgets.QMainWindow):
     def serial_error(self):
         if self.is_connected:
             self.add_text(f"LOST {ser.port}\n", type=TYPE_ERROR)
-            self.disconnect(intentional = False)
+            self.disconnect(intentional=False)
             vprint("SERIAL PORT LOST", color="red")
 
     def disconnect(self, intentional=True):
@@ -351,7 +375,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
         if intentional:
             self.target_port = None
-            self.ui.label_port.setText("Ports:")
+            self.ui.label_port.setText(f"Ports: ({self.preference_port})")
             self.add_text(f"DISCONNECTED FROM: {ser.port}\n", type=TYPE_INFO)
             self.debug_text(f"DISCONNECTED FROM: {ser.port}")
 
@@ -371,9 +395,10 @@ class MainWindow(QtWidgets.QMainWindow):
         self.log.set_port("NONE")
 
     def connect(self, port: str, baud: str = "115200", xonxoff: bool = False, dsrdtr: bool = False, rtscts: str = False, parity: str = "NONE") -> bool:
-        self.ui.comboBox_port.setCurrentText(port)
+        #self.ui.comboBox_port.setCurrentText(port)
         if port in self.current_ports:
             device = self.current_ports[port]["dev"]
+            self.ui.comboBox_port.setCurrentText(port)
 
         self.is_connected = serial_connect(device, baud, xonxoff, rtscts, dsrdtr, parity)
         if not self.is_connected:
@@ -386,8 +411,10 @@ class MainWindow(QtWidgets.QMainWindow):
         self.debug_text(f"CONNECTED TO {port} at {ser.baudrate} BAUD", color=COLOR_GREEN)
         self.add_text(f"CONNECTED TO {port} at {ser.baudrate} BAUD\n", type=TYPE_INFO)
 
+        self.preference_port = port
         if self.ui.checkBox_auto_reconnect.isChecked():
             self.target_port = port
+
             self.ui.label_port.setText(f"Port: Auto ({self.target_port})")
 
         self.ui.textEdit_terminal.setStyleSheet(STYLE_SHEET_TERMINAL_ACTIVE)
@@ -422,6 +449,10 @@ class MainWindow(QtWidgets.QMainWindow):
                 return None
         if input in self.current_ports:
             return input
+        for port in self.current_ports:
+            print(port)
+            if self.current_ports[port]['disp'] == input:
+                return self.current_ports[port]['dev']
         if input.upper() in self.current_ports:
             return input.upper()
         if "COM" + input in self.current_ports:
@@ -453,7 +484,11 @@ class MainWindow(QtWidgets.QMainWindow):
                 self.debug_text(f"ERR: PORT {args[0]} NOT FOUND", color=COLOR_RED)
                 return
         else:
-            port = self.ui.comboBox_port.currentText()
+            port = self.find_port_name(self.ui.comboBox_port.currentText())
+
+
+        if '-a' in kwargs:
+            self.set_auto_reconnect(True, port)
 
         if '-d' in kwargs:
             dsrdtr = True
@@ -499,8 +534,6 @@ class MainWindow(QtWidgets.QMainWindow):
                 self.debug_text("ERR: ALREADY CONNECTED", color=COLOR_RED)
             return
 
-        
-
         self.connect(port, baud, xonxoff, dsrdtr, rtscts, parity)
 
     def connect_clicked(self):
@@ -508,6 +541,15 @@ class MainWindow(QtWidgets.QMainWindow):
             self.disconnect()
         else:
             self.handle_connect()
+
+    def set_auto_reconnect(self, enabled: bool = True, port: str = None):
+        if enabled:
+            if port:
+                self.target_port = port
+                self.ui.label_port.setText(f"Ports: (Auto {self.target_port})")
+        else:
+            self.ui.label_port.setText(f"Ports:")
+            self.target_port = None
 
     def auto_reconnect_toggled(self):
         if self.ui.checkBox_auto_reconnect.isChecked():
@@ -529,11 +571,18 @@ class MainWindow(QtWidgets.QMainWindow):
     def update_ports(self, ports: dict = None):
         if not ports:
             return
+
         ports_lost = set(self.current_ports).difference(set(ports))
         ports_found = set(ports).difference(set(self.current_ports))
+        self.current_ports = ports
+
+        if self.target_port and self.is_connected == False:
+            if self.target_port in self.current_ports and self.ui.checkBox_auto_reconnect.isChecked():
+                self.handle_connect(self.target_port)
+
         if not ports_found and not ports_lost:
             return
-        self.current_ports = ports
+
         if ports_lost:
             p_str = "LOST PORT(s): " + str(ports_lost)
             p_str = p_str.replace("{", '').replace("}", '').replace("'", '')
@@ -544,24 +593,27 @@ class MainWindow(QtWidgets.QMainWindow):
             self.debug_text(p_str, color=COLOR_GREEN)
 
         current_selection = self.ui.comboBox_port.currentText()
+
         self.set_combobox_items(self.ui.comboBox_port, self.current_ports)
+
+        if self.preference_port:
+            if self.preference_port in self.current_ports:
+                self.ui.comboBox_port.setCurrentText(self.preference_port)
+                return
+
         if current_selection in self.current_ports:
             self.ui.comboBox_port.setCurrentText(current_selection)
 
-        if self.target_port and self.is_connected == False:
-            if self.target_port in self.current_ports and self.ui.checkBox_auto_reconnect.isChecked():
-                self.handle_connect(self.target_port)
-
     def show_ports(self, *args, **kwargs):
         self.debug_text(f"PORTS: {' '.join(self.current_ports)}", color=COLOR_BLACK)
-        
+
         if not self.current_ports:
             self.add_text("NO PORTS FOUND", type=TYPE_HELP)
-            return 
+            return
         p_str = "-----PORTS-----\n #  NAME\n"
         for index, port in enumerate(self.current_ports):
             this_port = self.current_ports[port]
-            p_str += f'''({index}) {port}\t{this_port["descr"]}\n'''
+            p_str += f'''({index}) {port}\t{this_port["disp"]}\n'''
             if not args:
                 continue
             if args and args[0] not in this_port:
@@ -579,10 +631,11 @@ class MainWindow(QtWidgets.QMainWindow):
 #
 ########################################################################
 
-
     def create_settings(self):
         self.save_checkboxes = [self.ui.checkBox_auto_reconnect,
                                 self.ui.checkBox_auto_save_settings,
+                                self.ui.checkBox_output_include_terminal,
+                                self.ui.checkBox_output_include_log,
                                 self.ui.checkBox_error_include_log,
                                 self.ui.checkBox_error_include_terminal,
                                 self.ui.checkBox_info_include_log,
@@ -601,6 +654,11 @@ class MainWindow(QtWidgets.QMainWindow):
                                 self.ui.lineEdit_log_format,
                                 self.ui.lineEdit_command_char,
                                 self.ui.lineEdit_delay,
+                                self.ui.lineEdit_ref_lines,
+                                self.ui.lineEdit_target_keys,
+                                self.ui.lineEdit_seps,
+                                self.ui.lineEdit_limits,
+                                self.ui.lineEdit_timestamp_format,
                                 ]
 
         self.log_save_line_edits = [self.ui.lineEdit_time_format,
@@ -610,7 +668,6 @@ class MainWindow(QtWidgets.QMainWindow):
 
         self.save_combo_boxes = [self.ui.comboBox_baud,
                                  self.ui.comboBox_plot_type,
-                                 self.ui.comboBox_limits,
                                  ]
 
         for checkbox in self.save_checkboxes:
@@ -622,8 +679,11 @@ class MainWindow(QtWidgets.QMainWindow):
         for comboBox in self.save_combo_boxes:
             comboBox.currentTextChanged.connect(self.save_settings)
 
-    def save_item(self, object):
-        if isinstance(object, QtWidgets.QComboBox):
+    def save_item(self, object, filepath=SETTINGS_FILE):
+        if isinstance(object, (tuple, list)):
+            print("SETTING OBJECT", object)
+
+        elif isinstance(object, QtWidgets.QComboBox):
             object: QtWidgets.QComboBox
             self.current_settings[object.objectName()] = object.currentText()
         elif isinstance(object, QtWidgets.QLineEdit):
@@ -635,7 +695,7 @@ class MainWindow(QtWidgets.QMainWindow):
         elif isinstance(object, QtWidgets.QTextEdit):
             object: QtWidgets.QTextEdit
             self.current_settings[object.objectName()] = object.toPlainText()
-        with open(SETTINGS_FILE, 'w') as file:
+        with open(filepath, 'w') as file:
             json.dump(self.current_settings, file)
 
     def save_settings(self):
@@ -646,7 +706,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.save_timer.singleShot(1000, self._save_settings)
         self.last_save_time = time.perf_counter()
 
-    def _save_settings(self):
+    def _save_settings(self, filepath=SETTINGS_FILE):
         '''Actual Save Settings Here'''
         vprint("SAVED SETTINGS", color='green')
         for checkbox in self.save_checkboxes:
@@ -657,19 +717,23 @@ class MainWindow(QtWidgets.QMainWindow):
             self.current_settings[combo_box.objectName()] = combo_box.currentText()
         self.command_char = self.ui.lineEdit_command_char.text()
         self.current_settings['tableWidget_keys'] = self.get_key_cmds()
-        with open(SETTINGS_FILE, 'w') as file:
+        with open(filepath, 'w') as file:
             json.dump(self.current_settings, file)
 
-    def recall_settings(self):
-        if not os.path.exists(SETTINGS_FILE):
+    def recall_settings(self, filepath: str = SETTINGS_FILE):
+        vprint(f"Loading Settings from {filepath}", color='cyan')
+        if not os.path.exists(filepath):
             vprint("FIRST PROGRAM LOAD", color='yellow')
-            with open(SETTINGS_FILE, 'w') as file:
+            with open(filepath, 'w') as file:
                 pass
             self._save_settings()
             return
         try:
-            with open(SETTINGS_FILE, 'r') as file:
+            with open(filepath, 'r') as file:
                 self.current_settings = json.load(file)
+
+                if 'port_aliases' not in self.current_settings:
+                    self.current_settings['port_aliases'] = {}
 
             if 'lineEdit_log_folder' in self.current_settings and not self.current_settings['lineEdit_log_folder']:
                 self.current_settings['lineEdit_log_folder'] = DEFAULT_LOG_FOLDER
@@ -713,6 +777,88 @@ class MainWindow(QtWidgets.QMainWindow):
         except Exception as E:
             eprint(f"\nERROR IN RECALLING SETTINGS: {E}", color='red')
 
+    def print_settings(self, filename=SETTINGS_FILE):
+        vprint(f"PRINTING SETTINGS {filename}")
+
+        filepath, exists = get_file_name(filename, SETTINGS_FOLDER, '.json')
+        if not exists:
+            eprint("NO FILE", filename)
+            return
+
+        settings: dict = {}
+        with open(filepath, 'r') as file:
+            settings: dict = json.load(file)
+        self.add_text(f"{filepath}\n", type=TYPE_HELP)
+        for name, value in settings.items():
+            if not isinstance(value, (list, dict)):
+                self.add_text(f"  {name}={value}\n", type=TYPE_HELP)
+
+    def handle_settings_command(self, *args, **kwargs):
+        if not args and not kwargs:
+            #self.add_text(SETTINGS_HELP, type=TYPE_HELP)
+            self.print_settings()
+            return
+
+        if '-h' in kwargs:
+            self.add_text(SETTINGS_HELP, type=TYPE_HELP)
+            return
+        if '-p' in kwargs:
+            if kwargs['-p']:
+                self.print_settings(kwargs['-p'])
+            else:
+                self.print_settings()
+            return
+
+        if args:
+            temp_filename = SETTINGS_FOLDER + '/.tmp.json'
+            for arg in args:
+                arg: str
+                print("arg", arg)
+                tokens = arg.split("=", 1)
+                if len(tokens) > 1 and tokens[0] in self.current_settings:
+                    print(tokens)
+                    if tokens[1] == 'False':
+                        tokens[1] = False
+                    elif tokens[1] == 'True':
+                        tokens[1] = True
+                    self.current_settings[tokens[0]] = tokens[1]
+                    print(self.current_settings)
+                else:
+                    self.add_text(f"INVALID SETTING: {tokens}\n", type=TYPE_ERROR)
+                    return
+            with open(temp_filename, 'w') as file:
+                json.dump(self.current_settings, file)
+            self.recall_settings(temp_filename)
+            os.remove(temp_filename)
+            self.ui.tabWidget.setCurrentIndex(0)
+
+        if '-s' in kwargs:
+            filepath = None
+            if kwargs['-s']:
+                filepath, exists = get_file_name(kwargs['-s'], SETTINGS_FOLDER, '.json')
+            else:
+                filepath = self.get_save_file(SETTINGS_FOLDER, extensions='*.json')
+                if not filepath:
+                    return
+            self.add_text(f"Saved Settings: {filepath}\n", type=TYPE_INFO)
+            self._save_settings(filepath)
+            return
+
+        if '-o' in kwargs:
+            filepath = None
+            if kwargs['-o']:
+                filepath, exists = get_file_name(kwargs['-o'], SETTINGS_FOLDER, '.json')
+                if not exists:
+                    self.add_text(f"Settings File NOT FOUND:\n'{filepath}'\n", type=TYPE_ERROR)
+                    return
+            else:
+                filepath = self.get_file(SETTINGS_FOLDER, extensions='*.json')
+                if not filepath:
+                    return
+            self.recall_settings(filepath)
+            self.add_text(f"Loaded Settings: {filepath}\n", type=TYPE_INFO)
+            return
+
 
 ########################################################################
 #
@@ -720,6 +866,10 @@ class MainWindow(QtWidgets.QMainWindow):
 #
 ########################################################################
 
+    def print_cmds(self):
+        for cmd in self.cmd_list:
+            self.add_text(cmd, type=TYPE_INFO)
+        return
 
     def create_commands(self):
         self.cmd_list.append(Command("help", self.print_help))
@@ -735,6 +885,7 @@ class MainWindow(QtWidgets.QMainWindow):
         cmd_con.add_option(("-x", "--xonxoff"))
         cmd_con.add_option(("-r", "--rtscts"))
         cmd_con.add_option(("-p", "--parity"))
+        cmd_con.add_option(("-a", "--auto"))
         self.cmd_list.append(cmd_con)
 
         self.cmd_list.append(Command("dcon", self.disconnect, 0))
@@ -748,6 +899,7 @@ class MainWindow(QtWidgets.QMainWindow):
         cmd_script.add_option(("-rm", "--remove"))
         cmd_script.add_option(("-s", "--save"))
         cmd_script.add_option(("-r", "--run"))
+        cmd_script.add_option(("-a", "--arg"))
 
         self.cmd_list.append(cmd_script)
 
@@ -781,7 +933,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
         cmd_cow = Command("cowsay", self.cowsay)
         cmd_cow.add_option(("-n", "--nerd"))
-        cmd_cow.add_option(("-d"))
+        cmd_cow.add_option(("-d", "--dead"))
         cmd_cow.add_option(("-l"))
         self.cmd_list.append(cmd_cow)
 
@@ -790,20 +942,49 @@ class MainWindow(QtWidgets.QMainWindow):
         cmd_format = Command("format", self.set_format, 1)
         self.cmd_list.append(cmd_format)
 
-    def set_format(self, format:str):
+        self.cmd_list.append(Command("cmd", self.print_cmds, 0))
+
+        cmd_settings = Command("settings", self.handle_settings_command)
+        cmd_settings.add_option(('-s', '--save'))
+        cmd_settings.add_option(('-o', '--open'))
+        cmd_settings.add_option(('-h', '--help'))
+        cmd_settings.add_option(('-p', '--print'))
+        self.cmd_list.append(cmd_settings)
+
+        cmd_port_alias = Command("alias", self.port_alias)
+        cmd_port_alias.add_option(("-rm", "--remove"), require_values=1)
+        self.cmd_list.append(cmd_port_alias)
+
+    def set_format(self, format: str):
         if format in ['utf-8', 'hex', 'bin', 'dec']:
             self.data_format = format
             if self.is_connected:
                 self.serial_worker.format = self.data_format
         else:
-            print("INVALID")
+            eprint("INVALID")
 
-        print(format)
-        
+        vprint(format)
+
+    def port_alias(self, *args, **kwargs):
+        vprint("PORT ALIAS: ", args)
+        if '-rm' in kwargs:
+            if kwargs["-rm"] and kwargs['-rm'] in self.current_settings['port_aliases']:
+                self.current_settings['port_aliases'].pop(kwargs['-rm'])
+
+            return
+            #self.current_settings['port_aliases'][args[0]] = args[1]
+
+        if len(args) == 0:
+            self.add_text(self.current_settings['port_aliases'], '\n', type=TYPE_INFO)
+        if len(args) == 2:
+            self.current_settings['port_aliases'][args[0]] = args[1]
+            self.save_settings()
+        pass
 
     def interpret_command(self, text: str):
         """execute a command. Returns NONE if no command found"""
-        text = text.replace("\n", "").replace("\r", "")
+        text = text.rstrip()
+        #text = text.replace("\n", "").replace("\r", "")
         if not text:
             return None
         if not self.ui.checkBox_allow_commands.isChecked():
@@ -838,7 +1019,7 @@ class MainWindow(QtWidgets.QMainWindow):
         args = list(args)
 
         if '-h' in kwargs:
-            self.add_text(SCRIPT_HELP, type=TYPE_HELP)
+            self.add_text(SCRIPT_HELP + SCRIPT_SYNTAX_HELP, type=TYPE_HELP)
             return
         if '-f' in kwargs:
             self.open_folder_location(SCRIPT_FOLDER)
@@ -1056,7 +1237,6 @@ class MainWindow(QtWidgets.QMainWindow):
         if '--disable' in kwargs:
             self.ui.checkBox_autolog.setChecked(False)
 
-
     def set_log_folder(self, log_folder: str = None):
         if not log_folder:
             log_folder = self.get_directory(DEFAULT_LOG_FOLDER)
@@ -1095,7 +1275,6 @@ class MainWindow(QtWidgets.QMainWindow):
 #
 ########################################################################
 
-
     def start_plot_clicked(self):
         if self.plot_started:
             self.end_plot()
@@ -1128,7 +1307,6 @@ class MainWindow(QtWidgets.QMainWindow):
                 plot_type = "Key-Array"
             elif arg == "sv" or arg.upper() == "SINGLE-VALUE":
                 plot_type = "Single-Value"
-            
 
         if '-h' in kwargs or '--help' in kwargs:
             self.add_text(PLOT_HELP, type=TYPE_HELP)
@@ -1160,10 +1338,7 @@ class MainWindow(QtWidgets.QMainWindow):
             max_points = kwargs['-p']
 
         if limits:
-            if limits.upper() == "MAX":
-                self.ui.comboBox_limits.setCurrentText("Max")
-            elif limits.upper() == "WINDOW":
-                self.ui.comboBox_limits.setCurrentText("Window")
+            self.ui.lineEdit_limits.setText(str(limits))
 
         if reference_lines != None:
             self.ui.lineEdit_ref_lines.setText(reference_lines)
@@ -1186,7 +1361,8 @@ class MainWindow(QtWidgets.QMainWindow):
             self.end_plot()
             self.start_plot()
 
-        limits = self.ui.comboBox_limits.currentText()
+        limits = self.lineEdit_to_numbers(self.ui.lineEdit_limits, ',')
+        # print(limits)
         type = self.ui.comboBox_plot_type.currentText()
         targets = self.ui.lineEdit_target_keys.text()
         max_points = self.lineEdit_to_numbers(self.ui.lineEdit_max_points)
@@ -1308,6 +1484,24 @@ class MainWindow(QtWidgets.QMainWindow):
 #
 ########################################################################
 
+    def change_timestamp_format(self, fmt: str = None):
+
+        if fmt == None:
+            fmt = self.ui.lineEdit_timestamp_format.text()
+        fmt = replace_escapes(fmt)
+        try:
+            vprint(f"FMT Changed: {fmt} {self.open_time.strftime(fmt)}", color='green')
+            self.timestamp_format = fmt
+            self.ui.lineEdit_timestamp_format.setStyleSheet(STYLE_SHEET_LINE_EDIT_NORMAL)
+            self.ui.label_timestamp_preview.setText(f"Preview:{self.open_time.strftime(fmt)}TEXT...")
+        except Exception as E:
+            eprint(f"FMT INVALID: {fmt} {E}", color='red')
+            self.ui.lineEdit_timestamp_format.setStyleSheet(STYLE_SHEET_LINE_EDIT_ERROR)
+            self.ui.label_timestamp_preview.setText(f"FORMAT INVALID")
+
+    def get_time_string(self):
+        return datetime.now().strftime(self.timestamp_format)
+
     def lineEdit_to_numbers(self, lineEdit: QLineEdit, separator=None):
         text = lineEdit.text().replace(" ", "")
         if not separator:
@@ -1386,7 +1580,7 @@ class MainWindow(QtWidgets.QMainWindow):
         return files[0]
 
     def get_save_file(self, start_dir: str = None, extensions: str = None, title: str = "Save") -> str:
-        files = QFileDialog.getSaveFileName(self, directory=start_dir, filter=extensions)
+        files = QFileDialog.getSaveFileName(self, caption=title, directory=start_dir, filter=extensions)
         return files[0]
 
     def read_file(self, file_path: str = None) -> str:

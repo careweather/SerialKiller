@@ -3,6 +3,7 @@ import traceback
 
 import serial
 import serial.tools.list_ports as list_ports
+from serial.tools.list_ports_common import ListPortInfo
 from PyQt5.QtCore import QObject, pyqtSignal
 from serial.serialutil import (PARITY_EVEN, PARITY_MARK, PARITY_NONE, PARITY_ODD, PARITY_SPACE)
 from sk_tools import *
@@ -141,19 +142,23 @@ def get_serial_port_number(input: str) -> int:
 
     return port_numb
 
+
 def get_ports() -> dict:
     '''Get the Serial Ports Availiable'''
     ports = {}
     for port in list_ports.comports():
+        port:ListPortInfo
         ports[port.name] = {
+            'disp' : str(port.name),
             'descr': str(port.description),
             'dev': str(port.device),
             'name':str(port.name),
             'mfgr': str(port.manufacturer),
-            #'hwid': str(port.hwid),
+            'hwid': str(port.hwid),
             'vid': str(port.vid),
             'pid': str(port.pid),
             's/n': str(port.serial_number),
+            'prod' : str(port.product),
             'numb': get_serial_port_number(port.device),
         }
 

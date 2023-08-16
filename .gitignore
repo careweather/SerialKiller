@@ -1,5 +1,7 @@
 logs/*.txt
 scripts/*.txt
+settings/*.json
+!scripts/default.json
 !scripts/example.txt
 !logs/example.txt
 **/.vscode

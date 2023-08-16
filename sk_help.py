@@ -21,6 +21,8 @@ SCRIPT_HELP = '''\
 USEAGE: 
     script [options]
 If NO options are provided, the script in the script tab will be run. 
+Use ESCAPE to exit a script mid-execution
+
 Options:
     NONE                run the script in the script tab 
     -h, --help          print this help text
@@ -30,29 +32,31 @@ Options:
     -rm [name]          remove a script. (optional: 'name'.txt)
     -ls                 list the scripts in the script directory
     -r [name]           run the script [name].txt.
+    -a <arg>            run the script with argument <arg>
 
-Use ESCAPE to exit a script mid-execution
 '''
 SCRIPT_SYNTAX_HELP = '''\
+SYNTAX:
 Each line in this text will be evaluated as if it was typed into the 'output' line.
 Lines are evaluated with a delay between sends.
 Lines starting with '#' are evaluated as commands. 
 '//' Is a comment. It is not included. 
 
-Script Commands:
-#name=[name]                Save the script as [name].txt
-#delay=[milliseconds]       Delay between sends [milliseconds] (int)
-#ARG=[default]              Set the default argument if none is provided from a command
-#info=[string]              Print [string] to the terminal as info
-#error=[string]             Print [string] to the terminal as an error
-#loop=[numb_loops]          Run the code between this line and #endloop [numb_loops] times.
-                            If no '=[numb_loops]' is provided, it will run infinitely
-#endloop                    Signals the end of the loop 
-#exit                       Exit the script at this line. 
+Additional Script Commands:
+  #arg=<str>                  Set the default $ARG value 
+  #delay=<milliseconds>       Delay between sends [milliseconds] (int)
+  #pause=<milliseconds>       One-Time pause for <milliseconds>
+  #info=[string]              Print [string] to the terminal as info
+  #error=[string]             Print [string] to the terminal as an error
+  #loop=[numb_loops]          Run the code between this line and #endloop [numb_loops] times.
+                              If no '=[numb_loops]' is provided, it will run infinitely
+  #endloop                    Signals the end of the loop 
+  #exit=<exit str>            This line will be executed whenever the script exits 
 
 Script Special Words:
-$LOOP                       Replaced with the current loop index.
-$ARG                        Replaced with the arguments passed with script call -a
+  $LOOP                       Replaced with the current loop index.
+  $ARG                        Replaced with the arguments passed with script call -a
+  ${<code>}                   Run python line <code>
 '''
 LOG_HELP = '''\
 USEAGE: log [OPTIONS]
@@ -66,6 +70,8 @@ Options:
     --name <name>           Set the log "name"
     --tfmt <format>         Set the log "time format"
     --fmt <format>          Set the log "format"
+    --disable               Disable logging 
+    --enable                Enable Logging 
 '''
 PLOT_HELP = '''\
 USEAGE:
@@ -86,7 +92,22 @@ Options:
     -l, --limits <limits>   Set the plot limit mode ("Max" or "Window")
     -k, --keys <keys>       Set the target keywords (comma seperate)
     -p, --points <points>   Set the number of plot points
+
 '''
+PLOT_TYPES_HELP = '''\
+Plot Types (comma used as separator):
+Single-Value: 
+    <val>\\n
+    <val>\\n
+Key-Value: 
+    <key1>=<val>,<key2>=<val>\\n
+    <key1>=<val>,<key2>=<val>\\n
+Single-Array: 
+    <val>,<val>,<val>
+Key-Array: 
+    <key>=<val>,<val>,<key2>=<val>,<val>
+'''
+
 CONNECT_HELP = '''\
 USEAGE: 
     con [portname] [options]
@@ -117,6 +138,29 @@ USEAGE:
 Options:
     -h, --help      Show this help message
 
+'''
+
+SETTINGS_HELP = '''\
+USEAGE: 
+    settings <setting>=<value>
+    or 
+    settings <options>
+
+edit, save or load settings. 
+Use '-p' to see current settings.
+
+OPTIONS:
+    -p, --print [name]  Print a setting file [name].json to the terminal
+    -s, --save <name>   Save settings (optional as <name>.json)
+    -o, --open [name]   Open settings in file [name].json
+    -h, --help          Show this help text
+
+Examples:
+(modify lineEdit_delay and comboBox_baud)
+    settings lineEdit_delay=50 comboBox_baud=115200
+
+(load custom.json)
+    settings -o custom
 '''
 
 HELP_TEXT = '''\
