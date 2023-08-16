@@ -191,8 +191,8 @@ def get_file_name(input:str, start_folder:str, extension:str = None):
     return input, False
 
 def replace_escapes(input: str) -> str:
-    input = input.replace("\\\\n", '^n^').replace('\\\\r', '^r^').replace('\\\\t', '^t^')  # Temporary change any \\n, ,etc
-    input = input.replace("\\n", '\n').replace('\\r', '\r').replace('\\t', '\t')
+    input = input.replace(r"\\n", '^n^').replace(r'\\r', '^r^').replace(r'\\t', '^t^')  # Temporary change any \\n, ,etc
+    input = input.replace(r"\n", '\n').replace(r'\r', '\r').replace(r'\t', '\t')
     return input.replace("^n^", '\\n').replace('^r^', '\\r').replace('^t^', '\\t')  # Replace any \\n, etc
 
 

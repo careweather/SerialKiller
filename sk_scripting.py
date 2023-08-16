@@ -13,6 +13,9 @@ class ScriptSyntaxHighlighter(QSyntaxHighlighter):
     comment_format = QTextCharFormat()
     comment_format.setForeground(COLOR_MED_DARK_GREY)
 
+    var_format = QTextCharFormat()
+    var_format.setForeground(COLOR_LIGHT_BLUE)
+
     def __init__(self, parent: QTextEdit = None):
         super().__init__(parent)
 
@@ -33,9 +36,24 @@ class ScriptSyntaxHighlighter(QSyntaxHighlighter):
                 comment_sections.append([block_start, input.index('\n')])
             else:
                 comment_sections.append([block_start, len(input)])
-
         for section in comment_sections:
             self.setFormat(section[0], section[1] - section[0] + 1, self.comment_format)
+        
+        var_sections = []
+        if '$ARG' in input:
+            block_start = input.index("$ARG")
+            var_sections.append([block_start, block_start + 4])
+        if '$LOOP' in input:
+            block_start = input.index("$LOOP")
+            var_sections.append([block_start, block_start + 5])
+        if '${' in input and '}' in input:
+            block_start = input.index("${")
+            block_stop = input.index("}")
+            if block_start < block_stop:
+                var_sections.append([block_start, block_stop])
+        for section in var_sections:
+            self.setFormat(section[0], section[1] - section[0] + 1, self.var_format)
+            
 
 
 class ScriptWorker(QObject):
@@ -47,7 +65,7 @@ class ScriptWorker(QObject):
         self.on_exit_str = ""
         self.arg_str = arg_str
         self.delay = delay
-        vprint("SCRIPT DELAY:", self.delay)
+        vprint("SCRIPT DELAY:", self.delay, " SCRIPT COMMAND: ", self.arg_str)
         self.lines: list = text.splitlines(False)
         self.active = False
         self.line_total = len(self.lines)
@@ -105,7 +123,10 @@ class ScriptWorker(QObject):
                 continue
             cmd = cmd.strip()
 
-            if cmd.startswith("delay="):
+            if cmd.startswith("exit="):
+                self.on_exit_str = cmd[5:]
+
+            elif cmd.startswith("delay="):
                 self.delay = get_number(cmd[6:], int, self.delay)
 
             elif cmd.startswith("info="):
@@ -116,6 +137,10 @@ class ScriptWorker(QObject):
 
             elif cmd.startswith("pause="):
                 time.sleep(get_number(cmd[6:]) / 1000)
+            
+            elif cmd.startswith("arg="):
+                if self.arg_str == "":
+                    self.arg_str = cmd[4:]
 
             elif cmd.startswith("loop"):
                 self.start_loop(cmd)
@@ -135,7 +160,7 @@ class ScriptWorker(QObject):
             line = line.split("//")[0]
             if not line.replace(" ", ""):
                 return
-        line = line.replace("$LOOP", str(abs(self.loop_counter)))
+        line = line.replace("$LOOP", str(abs(self.loop_counter))).replace("$ARG", self.arg_str)
 
         if line.strip().startswith("#"):
             return self.handle_command(line)

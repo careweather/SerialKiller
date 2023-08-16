@@ -8,10 +8,11 @@ i am loop number $LOOP
 #endloop
 #delay=1000
 #info=DECREMENTING LOOP...
-#delay=100 #loop=-10
+#delay=100 
+#loop=-10
 i am loop number $LOOP
 #endloop
 goodbye...
 #pause=2000
-#clear #cowsay ${GITHUB_URL}
+#cowsay ${GITHUB_URL}
 // Another comment

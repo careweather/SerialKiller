@@ -142,12 +142,14 @@ def get_serial_port_number(input: str) -> int:
 
     return port_numb
 
+
 def get_ports() -> dict:
     '''Get the Serial Ports Availiable'''
     ports = {}
     for port in list_ports.comports():
         port:ListPortInfo
         ports[port.name] = {
+            'disp' : str(port.name),
             'descr': str(port.description),
             'dev': str(port.device),
             'name':str(port.name),
