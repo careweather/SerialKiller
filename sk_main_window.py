@@ -3,6 +3,8 @@ import json
 import os
 import time
 from datetime import datetime
+import socket
+import json
 
 from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.QtCore import QThread, QTimer
@@ -45,6 +47,7 @@ class MainWindow(QtWidgets.QMainWindow):
     timestamp_format: str = '[%I:%M:%S.%f] '
     open_time = datetime.now()
     preference_port: str = None
+    fwd_buffer = ""
 
     def __init__(self, parent: QtWidgets.QApplication, open_cmd=[], * args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
@@ -79,6 +82,48 @@ class MainWindow(QtWidgets.QMainWindow):
                 self.send_clicked()
 
         self.ui.pushButton_restart_logger.setEnabled(False)
+
+        self.forwarder = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+
+    def initForwarder(self, host, port, targets):
+        self.forwarder.connect((host, port))
+        self.forwarding_targets = targets.split(',')
+
+    def isForwarding(self):
+        try:
+            remote_address = self.forwarder.getpeername()
+            return True
+        except socket.error:
+            return False
+
+    def forward(self, input: str, wait_for_newline=True):
+        self.fwd_buffer += input
+        if '\n' not in self.fwd_buffer and wait_for_newline:
+            return
+
+        lines = self.fwd_buffer.split("\n")
+        if len(lines) > 1:
+            self.fwd_buffer = lines.pop(-1)  # Last part did not have a newline
+        else:
+            self.fwd_buffer = ""
+
+        for line in lines:
+            line = line.replace("\r", '')
+            if not line: continue
+
+            if line.startswith('|') and line.endswith('|'):
+                continue
+
+            # clean_line = re.sub(r"\s+", '', line)
+
+            # data = {token.split(':')[0]:token.split(':')[1] for token in clean_line.split('\\s+')}
+            
+            # self.forwarder.sendall(json.dumps(data).encode())
+
+            self.forwarder.sendall(line.encode())
+
+    def close_forwarder(self):
+        self.forwarder.close()
 
     def keyPressEvent(self, event: QtGui.QKeyEvent) -> None:
         key = event.key()
@@ -244,6 +289,8 @@ class MainWindow(QtWidgets.QMainWindow):
                 self.log.write(text)
             if self.plot_started:
                 self.ui.widget_plot.update(text)
+            if self.isForwarding():
+                self.forward(text)
             text = text.replace("\r", '')
             if self.ui.checkBox_timestamp.isChecked():
                 if self.needs_timestamp:
@@ -914,6 +961,13 @@ class MainWindow(QtWidgets.QMainWindow):
 
         self.cmd_list.append(cmd_plot)
 
+        cmd_fwd = Command("forward", self.handle_fwd_command, 1)
+        cmd_fwd.add_option(("-h", "--help"))
+        cmd_fwd.add_option(("-k", "--keys"))
+        cmd_fwd.add_option(("-p", "--port"))
+
+        self.cmd_list.append(cmd_fwd)
+
         cmd_keys = Command("key", self.handle_key_cmd, 3)
         cmd_keys.add_option(("-h", "--help"))
 
@@ -1190,6 +1244,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.script_worker.stop()
         self.script_worker = None
         self.debug_text("SCRIPT ENDED", color=COLOR_GREEN)
+        self.close_forwarder()
         return
 ########################################################################
 #
@@ -1355,6 +1410,23 @@ class MainWindow(QtWidgets.QMainWindow):
         if plot_type:
             self.ui.comboBox_plot_type.setCurrentText(plot_type)
             self.start_plot()
+
+    def handle_fwd_command(self, **kwargs):
+        HOST = '127.0.0.1' # Local host
+        PORT = 65432 # Default sk port
+        targets = None
+
+        if '-h' in kwargs:
+            self.add_text(FWD_HELP, type=TYPE_HELP)
+            return
+        elif '-k' in kwargs:
+            targets = kwargs['-k']
+            self.ui.lineEdit_target_keys.setText(targets)
+
+        elif '-p' in kwargs:
+            PORT = kwargs['-p']
+
+        self.initForwarder(HOST, PORT, targets)
 
     def start_plot(self):
         if self.plot_started:
