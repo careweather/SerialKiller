@@ -27,6 +27,67 @@ import random
 import math
 
 
+def print_keyPress(event:QtGui.QKeyEvent):
+    modifiers = {
+        QtCore.Qt.NoModifier: "NONE", 
+        QtCore.Qt.ShiftModifier : "SHIFT", 
+        QtCore.Qt.ControlModifier : "CTRL", 
+        QtCore.Qt.AltModifier: "ALT", 
+        QtCore.Qt.MetaModifier: "META", 
+        QtCore.Qt.KeypadModifier: "KEYPAD", 
+        QtCore.Qt.GroupSwitchModifier: "GROUP", 
+        QtCore.Qt.KeyboardModifierMask : "MASK", 
+    }
+
+    print(f"Key: {event.key().real} {event.key().imag} {event.key().as_integer_ratio()} Mod: {modifiers[event.modifiers()]}")
+
+
+
+class CaptureLineEdit(QtWidgets.QLineEdit):
+    keyPress = pyqtSignal(str)
+    def __init__(self, *args):
+        QLineEdit.__init__(self, *args)
+
+    def focusNextPrevChild(self, next: bool) -> bool:
+        return False
+        return super().focusNextPrevChild(next)
+    
+    def keyPressEvent(self, event: QtGui.QKeyEvent) -> None:
+        key = event.key()
+        self.setText("")
+        text = event.text() 
+        if key == QtCore.Qt.Key_Return or key == QtCore.Qt.Key_Enter:
+            self.keyPress.emit('\n')
+            return 
+        if text:
+            self.keyPress.emit(text)
+        return 
+        try: 
+            c = ord(text)
+            if c == 13:
+                c = ord('\n')
+            print(c)
+            self.keyPress.emit(c)
+        except Exception as E:
+            print(E)
+        return 
+        print("ORD: ", ord(text))
+        if text.isprintable():
+            self.keyPress.emit(event.text())
+        else:
+            print("TEXT NOT PRINTABLE: ", text)
+        return 
+        if key == QtCore.Qt.Key_Tab:
+            self.keyPress.emit("\t")
+            event.accept()
+        elif key == QtCore.Qt.Key_Return or key == QtCore.Qt.Key_Enter:
+            self.keyPress.emit("\n")
+        elif key.real < 0x110000:
+            self.keyPress.emit(event.text())
+
+
+
+
 class MainWindow(QtWidgets.QMainWindow):
     target_port: str = None  # Port to auto-connect to.
     current_ports: dict = {}  # List of current ports
@@ -57,6 +118,9 @@ class MainWindow(QtWidgets.QMainWindow):
 
         self.ui.setupUi(self)
         self.connect_ui()
+        self.ui.lineEdit_pass = CaptureLineEdit(self.ui.lineEdit_pass)
+        self.ui.lineEdit_pass.setPlaceholderText("pass")
+        self.ui.lineEdit_pass.setMaximumSize(50, 1000)
         self.save_timer = QTimer()
 
         self.create_settings()
@@ -79,12 +143,19 @@ class MainWindow(QtWidgets.QMainWindow):
                 self.send_clicked()
 
         self.ui.pushButton_restart_logger.setEnabled(False)
+        self.ui.lineEdit_pass.keyPress.connect(self.passTextEntered)
+        #self.installEventFilter(self.ui.lineEdit_pass, )
+        
+
+
+
+
 
     def keyPressEvent(self, event: QtGui.QKeyEvent) -> None:
         key = event.key()
         modifier = event.modifiers()
 
-        #print(key, modifier)
+        #vprint(f"Key: {key} Mod: {modifier}")
         if self.ui.lineEdit_input.hasFocus():
             if key == QtCore.Qt.Key_Return or key == QtCore.Qt.Key_Enter:
                 self.send_clicked()
@@ -320,6 +391,13 @@ class MainWindow(QtWidgets.QMainWindow):
                 self.add_text(f"ERR IN EXPR: ${{{expression}}} {str(E)}\n", type=TYPE_ERROR)
                 return None
         return text
+
+    def passTextEntered(self, val:str):
+        #vprint("Pass: ", val)
+        if self.is_connected:
+            serial_send_string(val)
+        else:
+            self.add_text(val)
 
     def send_clicked(self, add_to_history=True):
         original_text = self.ui.lineEdit_input.text()

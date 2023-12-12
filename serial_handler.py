@@ -45,11 +45,18 @@ def serial_get_input() -> bytes:
         return None 
     return ser.read(ser.in_waiting)
 
+def serial_send_int(input: int = 0):
+    try:
+        ser.flush()
+        ser.write(input)
+    except Exception as E:
+        eprint("ERROR SENDING DATA:", E, color='red')
 
 def serial_send_string(input: str = ""):
     try:
         ser.flush()
         ser.write(input.encode('utf-8', errors='replace'))
+        # print(input.encode('utf-8', errors='replace'))
     except Exception as E:
         eprint("ERROR SENDING DATA:", E, color='red')
 
