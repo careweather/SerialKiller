@@ -53,6 +53,14 @@ def install_deps():
 
     quit()
 
+def show_ports(): 
+    import serial_handler
+    ports = serial_handler.get_ports()
+    print("PORT--------ATTR--------VALUE")
+    for port in ports: 
+        print(ports[port]['dev'])
+        for elem in ports[port]:
+            print(f'{"":<12}{elem:<12}{ports[port][elem]:<12}')
 
 def show_help():
     help_str = '''\
@@ -99,8 +107,11 @@ def execute():
         elif arg == '-v' or arg == '--verbose':
             import sk_tools
             sk_tools.DEBUG_LEVEL = 2
+        elif arg == 'ports':
+            show_ports()
+            quit()
         else:
-            print(f"-----\nWARNING: ARGUMENT {arg} NOT RECOGNIZED\n------")
+            print(f"-----\nWARNING: ARGUMENT '{arg}' NOT RECOGNIZED\n------")
             show_help()
 
     run_app(x_size, y_size, open_cmd)
