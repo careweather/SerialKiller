@@ -2,7 +2,7 @@ import subprocess
 import sys
 from sk_tools import DEBUG_LEVEL
 import traceback
-
+from sk_tools import INSTALL_FOLDER
 def update_ui_files():
     from sk_tools import INSTALL_FOLDER
     update_ui_commands = [
@@ -65,7 +65,8 @@ def show_ports():
 def show_help():
     help_str = '''\
 Usage:
-    py serial_killer.py [options]
+    sk [options]
+    sk ports 
     
 Options:
   -h, --help      show this help message
@@ -130,11 +131,15 @@ def run_app(size_x = 600, size_y = 700, open_cmd = ""):
     from sk_help import GREETINGS_TEXT
     cprint(GREETINGS_TEXT, color='cyan')
     global app
+
+
     app = QtWidgets.QApplication(sys.argv)
-    app.setWindowIcon(QIcon("img/SK_Icon.png"))
+    app_icon = QIcon()
+    app_icon.addFile(f"{INSTALL_FOLDER}/img/SK_Icon.ico")
+    app.setWindowIcon(app_icon)
     
     main = sk_main_window.MainWindow(app, open_cmd=open_cmd)
-    main.setWindowIcon(QIcon("img/SK_Icon.png"))
+    main.setWindowIcon(app_icon)
     main.resize(size_x, size_y)
     main.show()
     app.aboutToQuit.connect(main.about_to_quit)
