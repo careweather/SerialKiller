@@ -94,6 +94,17 @@ Options:
     -p, --points <points>   Set the number of plot points
 
 '''
+
+FWD_HELP = '''\
+USEAGE:
+    forward [options]
+
+Options:
+    -h, --help              Print this help message
+    -k, --keys <keys>       Set the target keywords (comma seperate)
+    -p, --port <port>       Set the forwarding port
+
+'''
 PLOT_TYPES_HELP = '''\
 Plot Types (comma used as separator):
 Single-Value: 

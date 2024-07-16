@@ -109,6 +109,9 @@
          <property name="text">
           <string>DEBUG TEXT HERE</string>
          </property>
+         <property name="wordWrap">
+          <bool>true</bool>
+         </property>
         </widget>
        </item>
        <item row="2" column="3">
@@ -1181,8 +1184,8 @@ color: rgb(255, 255, 255);</string>
             <rect>
              <x>0</x>
              <y>0</y>
-             <width>397</width>
-             <height>69</height>
+             <width>430</width>
+             <height>78</height>
             </rect>
            </property>
            <attribute name="label">
@@ -1256,8 +1259,8 @@ color: rgb(255, 255, 255);</string>
             <rect>
              <x>0</x>
              <y>0</y>
-             <width>475</width>
-             <height>199</height>
+             <width>480</width>
+             <height>216</height>
             </rect>
            </property>
            <attribute name="label">
@@ -1539,8 +1542,8 @@ color: rgb(255, 255, 255);</string>
             <rect>
              <x>0</x>
              <y>0</y>
-             <width>276</width>
-             <height>250</height>
+             <width>299</width>
+             <height>270</height>
             </rect>
            </property>
            <attribute name="label">
@@ -1709,8 +1712,8 @@ color: rgb(255, 255, 255);</string>
             <rect>
              <x>0</x>
              <y>0</y>
-             <width>166</width>
-             <height>69</height>
+             <width>176</width>
+             <height>78</height>
             </rect>
            </property>
            <attribute name="label">
@@ -1789,7 +1792,7 @@ color: rgb(255, 255, 255);</string>
      <x>0</x>
      <y>0</y>
      <width>526</width>
-     <height>21</height>
+     <height>22</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuLog">
