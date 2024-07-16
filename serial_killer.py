@@ -2,7 +2,7 @@ import subprocess
 import sys
 from sk_tools import DEBUG_LEVEL
 import traceback
-
+from sk_tools import INSTALL_FOLDER
 def update_ui_files():
     from sk_tools import INSTALL_FOLDER
     update_ui_commands = [
@@ -53,11 +53,20 @@ def install_deps():
 
     quit()
 
+def show_ports(): 
+    import serial_handler
+    ports = serial_handler.get_ports()
+    print("PORT--------ATTR--------VALUE")
+    for port in ports: 
+        print(ports[port]['dev'])
+        for elem in ports[port]:
+            print(f'{"":<12}{elem:<12}{ports[port][elem]:<12}')
 
 def show_help():
     help_str = '''\
 Usage:
-    py serial_killer.py [options]
+    sk [options]
+    sk ports 
     
 Options:
   -h, --help      show this help message
@@ -99,8 +108,11 @@ def execute():
         elif arg == '-v' or arg == '--verbose':
             import sk_tools
             sk_tools.DEBUG_LEVEL = 2
+        elif arg == 'ports':
+            show_ports()
+            quit()
         else:
-            print(f"-----\nWARNING: ARGUMENT {arg} NOT RECOGNIZED\n------")
+            print(f"-----\nWARNING: ARGUMENT '{arg}' NOT RECOGNIZED\n------")
             show_help()
 
     run_app(x_size, y_size, open_cmd)
@@ -119,11 +131,15 @@ def run_app(size_x = 600, size_y = 700, open_cmd = ""):
     from sk_help import GREETINGS_TEXT
     cprint(GREETINGS_TEXT, color='cyan')
     global app
+
+
     app = QtWidgets.QApplication(sys.argv)
-    app.setWindowIcon(QIcon("img/SK_Icon.png"))
+    app_icon = QIcon()
+    app_icon.addFile(f"{INSTALL_FOLDER}/img/SK_Icon.ico")
+    app.setWindowIcon(app_icon)
     
     main = sk_main_window.MainWindow(app, open_cmd=open_cmd)
-    main.setWindowIcon(QIcon("img/SK_Icon.png"))
+    main.setWindowIcon(app_icon)
     main.resize(size_x, size_y)
     main.show()
     app.aboutToQuit.connect(main.about_to_quit)

@@ -91,6 +91,26 @@
        <property name="verticalSpacing">
         <number>3</number>
        </property>
+       <item row="2" column="0" colspan="2">
+        <widget class="QLabel" name="label_debug">
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Minimum" vsizetype="Preferred">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
+         <property name="font">
+          <font>
+           <family>Consolas</family>
+           <pointsize>10</pointsize>
+           <bold>true</bold>
+          </font>
+         </property>
+         <property name="text">
+          <string>DEBUG TEXT HERE</string>
+         </property>
+        </widget>
+       </item>
        <item row="2" column="3">
         <widget class="QLabel" name="label_5">
          <property name="sizePolicy">
@@ -110,6 +130,28 @@
          </property>
         </widget>
        </item>
+       <item row="2" column="4">
+        <widget class="QLineEdit" name="lineEdit_keyboard_control">
+         <property name="enabled">
+          <bool>true</bool>
+         </property>
+         <property name="maximumSize">
+          <size>
+           <width>50</width>
+           <height>16777215</height>
+          </size>
+         </property>
+         <property name="maxLength">
+          <number>4</number>
+         </property>
+         <property name="placeholderText">
+          <string>Type</string>
+         </property>
+         <property name="cursorMoveStyle">
+          <enum>Qt::VisualMoveStyle</enum>
+         </property>
+        </widget>
+       </item>
        <item row="2" column="2">
         <spacer name="horizontalSpacer_11">
          <property name="orientation">
@@ -123,11 +165,30 @@
          </property>
         </spacer>
        </item>
-       <item row="0" column="4">
+       <item row="2" column="5">
+        <widget class="QLineEdit" name="lineEdit_pass">
+         <property name="maximumSize">
+          <size>
+           <width>50</width>
+           <height>16777215</height>
+          </size>
+         </property>
+         <property name="maxLength">
+          <number>2</number>
+         </property>
+         <property name="placeholderText">
+          <string>pass</string>
+         </property>
+         <property name="clearButtonEnabled">
+          <bool>false</bool>
+         </property>
+        </widget>
+       </item>
+       <item row="1" column="4" colspan="2">
         <widget class="QPushButton" name="pushButton_send">
          <property name="maximumSize">
           <size>
-           <width>80</width>
+           <width>1000</width>
            <height>16777215</height>
           </size>
          </property>
@@ -143,48 +204,10 @@
          </property>
         </widget>
        </item>
-       <item row="2" column="4">
-        <widget class="QLineEdit" name="lineEdit_keyboard_control">
-         <property name="enabled">
-          <bool>true</bool>
-         </property>
-         <property name="maximumSize">
-          <size>
-           <width>80</width>
-           <height>16777215</height>
-          </size>
-         </property>
-         <property name="maxLength">
-          <number>4</number>
-         </property>
-         <property name="placeholderText">
-          <string>Type here</string>
-         </property>
-         <property name="cursorMoveStyle">
-          <enum>Qt::VisualMoveStyle</enum>
-         </property>
-        </widget>
-       </item>
-       <item row="0" column="0" colspan="4">
-        <widget class="QLineEdit" name="lineEdit_input"/>
-       </item>
-       <item row="2" column="0" colspan="2">
-        <widget class="QLabel" name="label_debug">
-         <property name="sizePolicy">
-          <sizepolicy hsizetype="Minimum" vsizetype="Preferred">
-           <horstretch>0</horstretch>
-           <verstretch>0</verstretch>
-          </sizepolicy>
-         </property>
-         <property name="font">
-          <font>
-           <family>Consolas</family>
-           <pointsize>10</pointsize>
-           <bold>true</bold>
-          </font>
-         </property>
-         <property name="text">
-          <string>DEBUG TEXT HERE</string>
+       <item row="1" column="0" colspan="4">
+        <widget class="QLineEdit" name="lineEdit_input">
+         <property name="clearButtonEnabled">
+          <bool>false</bool>
          </property>
         </widget>
        </item>
@@ -1158,8 +1181,8 @@ color: rgb(255, 255, 255);</string>
             <rect>
              <x>0</x>
              <y>0</y>
-             <width>492</width>
-             <height>193</height>
+             <width>397</width>
+             <height>69</height>
             </rect>
            </property>
            <attribute name="label">
@@ -1516,7 +1539,7 @@ color: rgb(255, 255, 255);</string>
             <rect>
              <x>0</x>
              <y>0</y>
-             <width>475</width>
+             <width>276</width>
              <height>250</height>
             </rect>
            </property>
@@ -1686,8 +1709,8 @@ color: rgb(255, 255, 255);</string>
             <rect>
              <x>0</x>
              <y>0</y>
-             <width>492</width>
-             <height>193</height>
+             <width>166</width>
+             <height>69</height>
             </rect>
            </property>
            <attribute name="label">
@@ -1860,13 +1883,12 @@ color: rgb(255, 255, 255);</string>
   </customwidget>
  </customwidgets>
  <tabstops>
-  <tabstop>lineEdit_input</tabstop>
-  <tabstop>lineEdit_keyboard_control</tabstop>
-  <tabstop>comboBox_port</tabstop>
-  <tabstop>comboBox_baud</tabstop>
-  <tabstop>pushButton_connect</tabstop>
   <tabstop>comboBox_parity</tabstop>
+  <tabstop>lineEdit_pass</tabstop>
+  <tabstop>pushButton_connect</tabstop>
   <tabstop>checkBox_auto_reconnect</tabstop>
+  <tabstop>comboBox_port</tabstop>
+  <tabstop>lineEdit_input</tabstop>
   <tabstop>textEdit_script</tabstop>
   <tabstop>tableWidget_keys</tabstop>
   <tabstop>tabWidget</tabstop>
@@ -1882,7 +1904,62 @@ color: rgb(255, 255, 255);</string>
   <tabstop>lineEdit_script_name</tabstop>
   <tabstop>pushButton_clear_table</tabstop>
   <tabstop>pushButton_send</tabstop>
+  <tabstop>comboBox_baud</tabstop>
+  <tabstop>groupBox_port</tabstop>
+  <tabstop>checkBox_autolog</tabstop>
+  <tabstop>pushButton_clear_plot</tabstop>
+  <tabstop>pushButton_start_plot</tabstop>
+  <tabstop>pushButton_pause_plot</tabstop>
+  <tabstop>groupBox_plot_settings</tabstop>
+  <tabstop>comboBox_plot_type</tabstop>
+  <tabstop>lineEdit_ref_lines</tabstop>
+  <tabstop>lineEdit_max_points</tabstop>
+  <tabstop>lineEdit_target_keys</tabstop>
+  <tabstop>lineEdit_seps</tabstop>
+  <tabstop>lineEdit_limits</tabstop>
+  <tabstop>pushButton_load_settings</tabstop>
+  <tabstop>pushButton_save_settings</tabstop>
+  <tabstop>checkBox_auto_save_settings</tabstop>
+  <tabstop>lineEdit_append_to_send</tabstop>
+  <tabstop>checkBox_interpret_escape</tabstop>
+  <tabstop>checkBox_output_include_log</tabstop>
+  <tabstop>lineEdit_tx_chr</tabstop>
+  <tabstop>checkBox_error_include_log</tabstop>
+  <tabstop>checkBox_output_include_terminal</tabstop>
+  <tabstop>checkBox_info_include_terminal</tabstop>
+  <tabstop>checkBox_info_include_log</tabstop>
+  <tabstop>checkBox_error_include_terminal</tabstop>
+  <tabstop>lineEdit_info_chr</tabstop>
+  <tabstop>lineEdit_timestamp_format</tabstop>
+  <tabstop>lineEdit_err_chr</tabstop>
+  <tabstop>pushButton_log_path_select</tabstop>
+  <tabstop>lineEdit_time_format</tabstop>
+  <tabstop>lineEdit_log_format</tabstop>
+  <tabstop>pushButton_restart_logger</tabstop>
+  <tabstop>comboBox_log_name_extension</tabstop>
+  <tabstop>lineEdit_log_folder</tabstop>
+  <tabstop>lineEdit_log_name</tabstop>
+  <tabstop>checkBox_allow_commands</tabstop>
+  <tabstop>lineEdit_command_char</tabstop>
+  <tabstop>lineEdit_keyboard_control</tabstop>
  </tabstops>
  <resources/>
  <connections/>
+ <designerdata>
+  <property name="gridDeltaX">
+   <number>10</number>
+  </property>
+  <property name="gridDeltaY">
+   <number>10</number>
+  </property>
+  <property name="gridSnapX">
+   <bool>true</bool>
+  </property>
+  <property name="gridSnapY">
+   <bool>true</bool>
+  </property>
+  <property name="gridVisible">
+   <bool>true</bool>
+  </property>
+ </designerdata>
 </ui>
