@@ -38,7 +38,7 @@ def install_deps():
         quit()
 
     install_cmds = [
-        "pip install PyQt5-sip --upgrade"
+        "pip install PyQt5-sip --upgrade",
         "pip install -r requirements.txt",
     ]
 
