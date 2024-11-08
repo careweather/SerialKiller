@@ -371,8 +371,17 @@ class MainWindow(QtWidgets.QMainWindow):
         label_text = ""
         for arg in args:
             label_text += str(arg)
+        DEBUG_TEXT_LEN = 60
+        if len(label_text) > DEBUG_TEXT_LEN: 
+            label_text = label_text[0:DEBUG_TEXT_LEN] + "..."
+            # lines = []
+            # for i in range(0, len(label_text), DEBUG_TEXT_LEN):
+            #     lines.append(label_text[i:i+DEBUG_TEXT_LEN])
+            # label_text = '\n'.join(lines)
+
         self.ui.label_debug.setStyleSheet(f"color:{colorToStyleSheet(color)}")
         self.ui.label_debug.setText(label_text)
+        #self.ui.label_debug.setWordWrap(True)
         vprint(label_text, color='cyan')
 
     def input_text_evaluate(self, text: str) -> str:
@@ -688,10 +697,11 @@ class MainWindow(QtWidgets.QMainWindow):
         if not self.current_ports:
             self.add_text("NO PORTS FOUND", type=TYPE_HELP)
             return
-        p_str = "-----PORTS-----\n #  NAME\n"
+        p_str = ""
+        p_str += f"--#---NAME------------DISP----------------MFGR \n"
         for index, port in enumerate(self.current_ports):
             this_port = self.current_ports[port]
-            p_str += f'''({index}) {port}\t{this_port["disp"]}\n'''
+            p_str += f'''({index :>3}) {port :<15} {this_port["disp"]:<20}{this_port["mfgr"]}\n'''
             if not args:
                 continue
             if args and args[0] not in this_port:

@@ -171,7 +171,8 @@ def get_ports() -> dict:
 
     sorted_ports = {}
     for name in sorted(ports, key=lambda x: ports[x]['numb']):
-        sorted_ports[name] = ports[name]
+        if ports[name]['mfgr'] != "None":
+            sorted_ports[name] = ports[name]
 
     return sorted_ports
 
@@ -180,7 +181,7 @@ class RescanWorker(QObject):
     new_ports = pyqtSignal(dict)
     active = True
 
-    def __init__(self, update_interval=.5) -> None:
+    def __init__(self, update_interval=.3) -> None:
         super().__init__()
         self.active = True
         self.update_interval = update_interval

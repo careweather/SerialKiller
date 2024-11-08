@@ -55,6 +55,8 @@ class Plot_Widget(pg.GraphicsLayoutWidget):
         if separators:
             self.separators = separators
 
+
+        self.targets = {}
         if isinstance(targets, str):
             targetList = char_split(targets, [','])
             for item in targetList:
@@ -63,6 +65,10 @@ class Plot_Widget(pg.GraphicsLayoutWidget):
                     itemtokens = item.split("*")
                     if len(itemtokens) > 1:
                         self.targets[itemtokens[0]] = {'m': str_get_number(itemtokens[1])}
+                if "/" in item: 
+                    itemtokens = item.split("/")
+                    if len(itemtokens) > 1:
+                        self.targets[itemtokens[0]] = {'m': 1.00 / str_get_number(itemtokens[1])}
 
                 else: 
                     self.targets[item] = {"m": 1}
@@ -160,7 +166,6 @@ class Plot_Widget(pg.GraphicsLayoutWidget):
     def add_element(self, element_name: str, start_x: float = 0, start_y: float = 0):
         if not element_name:
             return
-
 
         mval = 1
         if element_name in self.targets:

@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>526</width>
-    <height>573</height>
+    <width>633</width>
+    <height>608</height>
    </rect>
   </property>
   <property name="palette">
@@ -75,6 +75,12 @@
     </property>
     <item row="0" column="0">
      <widget class="QGroupBox" name="groupBox_output">
+      <property name="sizePolicy">
+       <sizepolicy hsizetype="Preferred" vsizetype="Maximum">
+        <horstretch>0</horstretch>
+        <verstretch>0</verstretch>
+       </sizepolicy>
+      </property>
       <property name="title">
        <string>TX</string>
       </property>
@@ -91,46 +97,7 @@
        <property name="verticalSpacing">
         <number>3</number>
        </property>
-       <item row="2" column="0" colspan="2">
-        <widget class="QLabel" name="label_debug">
-         <property name="sizePolicy">
-          <sizepolicy hsizetype="Minimum" vsizetype="Preferred">
-           <horstretch>0</horstretch>
-           <verstretch>0</verstretch>
-          </sizepolicy>
-         </property>
-         <property name="font">
-          <font>
-           <family>Consolas</family>
-           <pointsize>10</pointsize>
-           <bold>true</bold>
-          </font>
-         </property>
-         <property name="text">
-          <string>DEBUG TEXT HERE</string>
-         </property>
-        </widget>
-       </item>
        <item row="2" column="3">
-        <widget class="QLabel" name="label_5">
-         <property name="sizePolicy">
-          <sizepolicy hsizetype="Maximum" vsizetype="Preferred">
-           <horstretch>0</horstretch>
-           <verstretch>0</verstretch>
-          </sizepolicy>
-         </property>
-         <property name="maximumSize">
-          <size>
-           <width>100000</width>
-           <height>16777215</height>
-          </size>
-         </property>
-         <property name="text">
-          <string>Key Ctrl:</string>
-         </property>
-        </widget>
-       </item>
-       <item row="2" column="4">
         <widget class="QLineEdit" name="lineEdit_keyboard_control">
          <property name="enabled">
           <bool>true</bool>
@@ -153,19 +120,25 @@
         </widget>
        </item>
        <item row="2" column="2">
-        <spacer name="horizontalSpacer_11">
-         <property name="orientation">
-          <enum>Qt::Horizontal</enum>
+        <widget class="QLabel" name="label_5">
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Fixed" vsizetype="Preferred">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
          </property>
-         <property name="sizeHint" stdset="0">
+         <property name="maximumSize">
           <size>
-           <width>40</width>
-           <height>20</height>
+           <width>66</width>
+           <height>16777215</height>
           </size>
          </property>
-        </spacer>
+         <property name="text">
+          <string>Key Ctrl:</string>
+         </property>
+        </widget>
        </item>
-       <item row="2" column="5">
+       <item row="2" column="4">
         <widget class="QLineEdit" name="lineEdit_pass">
          <property name="maximumSize">
           <size>
@@ -184,7 +157,41 @@
          </property>
         </widget>
        </item>
-       <item row="1" column="4" colspan="2">
+       <item row="1" column="0" colspan="3">
+        <widget class="QLineEdit" name="lineEdit_input">
+         <property name="clearButtonEnabled">
+          <bool>false</bool>
+         </property>
+        </widget>
+       </item>
+       <item row="2" column="0" colspan="2">
+        <widget class="QLabel" name="label_debug">
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Minimum" vsizetype="Maximum">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
+         <property name="font">
+          <font>
+           <family>Consolas</family>
+           <pointsize>9</pointsize>
+           <weight>75</weight>
+           <bold>true</bold>
+          </font>
+         </property>
+         <property name="frameShape">
+          <enum>QFrame::NoFrame</enum>
+         </property>
+         <property name="text">
+          <string>DEBUG TEXT HERE</string>
+         </property>
+         <property name="wordWrap">
+          <bool>false</bool>
+         </property>
+        </widget>
+       </item>
+       <item row="1" column="3" colspan="2">
         <widget class="QPushButton" name="pushButton_send">
          <property name="maximumSize">
           <size>
@@ -196,6 +203,7 @@
           <font>
            <family>Consolas</family>
            <pointsize>9</pointsize>
+           <weight>50</weight>
            <bold>false</bold>
           </font>
          </property>
@@ -204,18 +212,17 @@
          </property>
         </widget>
        </item>
-       <item row="1" column="0" colspan="4">
-        <widget class="QLineEdit" name="lineEdit_input">
-         <property name="clearButtonEnabled">
-          <bool>false</bool>
-         </property>
-        </widget>
-       </item>
       </layout>
      </widget>
     </item>
     <item row="3" column="0">
      <widget class="QGroupBox" name="groupBox_port">
+      <property name="sizePolicy">
+       <sizepolicy hsizetype="Preferred" vsizetype="Maximum">
+        <horstretch>0</horstretch>
+        <verstretch>0</verstretch>
+       </sizepolicy>
+      </property>
       <property name="toolTip">
        <string/>
       </property>
@@ -242,7 +249,7 @@
         <number>9</number>
        </property>
        <property name="bottomMargin">
-        <number>4</number>
+        <number>1</number>
        </property>
        <property name="horizontalSpacing">
         <number>8</number>
@@ -440,6 +447,7 @@
           <font>
            <family>Consolas</family>
            <pointsize>9</pointsize>
+           <weight>50</weight>
            <bold>false</bold>
           </font>
          </property>
@@ -542,8 +550,22 @@
     </item>
     <item row="2" column="0">
      <widget class="QTabWidget" name="tabWidget">
+      <property name="sizePolicy">
+       <sizepolicy hsizetype="MinimumExpanding" vsizetype="Minimum">
+        <horstretch>0</horstretch>
+        <verstretch>0</verstretch>
+       </sizepolicy>
+      </property>
+      <property name="font">
+       <font>
+        <family>Consolas</family>
+        <pointsize>9</pointsize>
+        <weight>50</weight>
+        <bold>false</bold>
+       </font>
+      </property>
       <property name="currentIndex">
-       <number>4</number>
+       <number>2</number>
       </property>
       <property name="elideMode">
        <enum>Qt::ElideNone</enum>
@@ -603,10 +625,17 @@
         </item>
         <item row="0" column="0" colspan="5">
          <widget class="QTextEdit" name="textEdit_terminal">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Expanding" vsizetype="Minimum">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
           <property name="font">
            <font>
             <family>Courier New</family>
             <pointsize>10</pointsize>
+            <weight>50</weight>
             <italic>false</italic>
             <bold>false</bold>
            </font>
@@ -782,6 +811,8 @@ font: 10pt &quot;Courier New&quot;;</string>
            <font>
             <family>Consolas</family>
             <pointsize>10</pointsize>
+            <weight>50</weight>
+            <bold>false</bold>
            </font>
           </property>
           <property name="styleSheet">
@@ -806,7 +837,7 @@ color: rgb(255, 255, 255);</string>
         <item row="2" column="0" colspan="3">
          <widget class="QGroupBox" name="groupBox_2">
           <property name="sizePolicy">
-           <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
+           <sizepolicy hsizetype="Expanding" vsizetype="Maximum">
             <horstretch>0</horstretch>
             <verstretch>0</verstretch>
            </sizepolicy>
@@ -829,6 +860,9 @@ color: rgb(255, 255, 255);</string>
            </property>
            <property name="bottomMargin">
             <number>0</number>
+           </property>
+           <property name="horizontalSpacing">
+            <number>6</number>
            </property>
            <item row="1" column="1">
             <widget class="QPushButton" name="pushButton_clear_plot">
@@ -869,10 +903,19 @@ color: rgb(255, 255, 255);</string>
         </item>
         <item row="0" column="0">
          <widget class="QGroupBox" name="groupBox_plot_settings">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Preferred" vsizetype="Maximum">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
           <property name="title">
            <string>▼ Settings</string>
           </property>
           <property name="checkable">
+           <bool>true</bool>
+          </property>
+          <property name="checked">
            <bool>true</bool>
           </property>
           <layout class="QGridLayout" name="gridLayout_9">
@@ -880,13 +923,13 @@ color: rgb(255, 255, 255);</string>
             <number>4</number>
            </property>
            <property name="topMargin">
-            <number>4</number>
+            <number>2</number>
            </property>
            <property name="rightMargin">
             <number>4</number>
            </property>
            <property name="bottomMargin">
-            <number>4</number>
+            <number>2</number>
            </property>
            <property name="spacing">
             <number>3</number>
@@ -1067,7 +1110,7 @@ color: rgb(255, 255, 255);</string>
            <bool>true</bool>
           </property>
           <property name="sizePolicy">
-           <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+           <sizepolicy hsizetype="Minimum" vsizetype="Minimum">
             <horstretch>0</horstretch>
             <verstretch>0</verstretch>
            </sizepolicy>
@@ -1174,15 +1217,15 @@ color: rgb(255, 255, 255);</string>
            <string>strftime formatting</string>
           </property>
           <property name="currentIndex">
-           <number>1</number>
+           <number>0</number>
           </property>
           <widget class="QWidget" name="page_send_settings">
            <property name="geometry">
             <rect>
              <x>0</x>
              <y>0</y>
-             <width>397</width>
-             <height>69</height>
+             <width>601</width>
+             <height>203</height>
             </rect>
            </property>
            <attribute name="label">
@@ -1256,8 +1299,8 @@ color: rgb(255, 255, 255);</string>
             <rect>
              <x>0</x>
              <y>0</y>
-             <width>475</width>
-             <height>199</height>
+             <width>430</width>
+             <height>198</height>
             </rect>
            </property>
            <attribute name="label">
@@ -1539,8 +1582,8 @@ color: rgb(255, 255, 255);</string>
             <rect>
              <x>0</x>
              <y>0</y>
-             <width>276</width>
-             <height>250</height>
+             <width>300</width>
+             <height>247</height>
             </rect>
            </property>
            <attribute name="label">
@@ -1709,8 +1752,8 @@ color: rgb(255, 255, 255);</string>
             <rect>
              <x>0</x>
              <y>0</y>
-             <width>166</width>
-             <height>69</height>
+             <width>177</width>
+             <height>74</height>
             </rect>
            </property>
            <attribute name="label">
@@ -1788,8 +1831,8 @@ color: rgb(255, 255, 255);</string>
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>526</width>
-     <height>21</height>
+     <width>633</width>
+     <height>20</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuLog">
