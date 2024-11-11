@@ -63,7 +63,8 @@ def serial_send_string(input: str = ""):
 def serial_connect(port: str, baud=115200, xonxoff=False, rtscts=False, dsrdtr=False, parity="NONE"):
     try:
         ser.baudrate = baud
-        ser.setPort(port)
+        ser.port = port
+        # ser.setPort(port)
         ser.xonxoff = xonxoff
         ser.rtscts = rtscts
         ser.dsrdtr = dsrdtr
@@ -72,7 +73,7 @@ def serial_connect(port: str, baud=115200, xonxoff=False, rtscts=False, dsrdtr=F
         ser.parity = parity_values[parity]
         ser.close()
         ser.open()
-        if (ser.isOpen()):
+        if (ser.is_open):
             ser.flush()
             return True
         else:
@@ -166,6 +167,11 @@ def get_ports() -> dict:
             'pid': str(port.pid),
             's/n': str(port.serial_number),
             'prod' : str(port.product),
+            'path' : str(port.device_path),
+            'loc': str(port.location),
+            'iface': str(port.interface),
+            # 'str': str(port.product) + str(port.usb_interface_path),
+            'usb': str(port.usb_info()),
             'numb': get_serial_port_number(port.device),
         }
 

@@ -65,7 +65,7 @@ def show_ports():
 def show_help():
     help_str = '''\
 Usage:
-    sk [options]
+    sk [-x <size>] [-y <size>] [-c <command>] [-u] [-i] [-v] [-h]
     sk ports 
     
 Options:

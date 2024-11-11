@@ -28,6 +28,7 @@ class SK_Logger:
         self.handler = logging.FileHandler(self.file_path)
         self.handler.setFormatter(self.formatter)
         self.logger.addHandler(self.handler)
+        vprint(f"Logger Started: {self.file_path}", color='green')
 
 
     def set_port(self, port_name:str = None):

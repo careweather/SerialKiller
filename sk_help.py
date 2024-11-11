@@ -33,6 +33,7 @@ Options:
     -ls                 list the scripts in the script directory
     -r [name]           run the script [name].txt.
     -a <arg>            run the script with argument <arg>
+    -t                  Open the script tab and set focus there
 
 '''
 SCRIPT_SYNTAX_HELP = '''\
@@ -51,6 +52,7 @@ Additional Script Commands:
   #loop=[numb_loops]          Run the code between this line and #endloop [numb_loops] times.
                               If no '=[numb_loops]' is provided, it will run infinitely
   #endloop                    Signals the end of the loop 
+  #end                        Signals the end of the script prematurely 
   #exit=<exit str>            This line will be executed whenever the script exits 
 
 Script Special Words:
@@ -67,6 +69,7 @@ Options:
     -o, --open              open a log 
     -a, --archive [name]    archive the current log (optional [name].txt)
     -ls, --list             list all logs
+    -n, --new <name>        Start a new log named [name]
     --name <name>           Set the log "name"
     --tfmt <format>         Set the log "time format"
     --fmt <format>          Set the log "format"

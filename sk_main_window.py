@@ -118,6 +118,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
         self.ui.setupUi(self)
         self.connect_ui()
+        self.debug_text("No Ports Found", color=COLOR_RED)
         self.ui.lineEdit_pass = CaptureLineEdit(self.ui.lineEdit_pass)
         self.ui.lineEdit_pass.setPlaceholderText("pass")
         self.ui.lineEdit_pass.setMaximumSize(50, 1000)
@@ -1012,11 +1013,14 @@ class MainWindow(QtWidgets.QMainWindow):
         cmd_log.add_option(("-o", "--open"))
         cmd_log.add_option(("-a", "--archive"))
         cmd_log.add_option(("-ls", "--list"))
-        cmd_log.add_option(("--name"))
+        cmd_log.add_option(("-n", '--new'))
+        cmd_log.add_option(("--nfmt"))
         cmd_log.add_option(("--tfmt"))
         cmd_log.add_option(("--fmt"))
         cmd_log.add_option(("--disable"))
         cmd_log.add_option(("--enable"))
+        
+        #cmd_log.add_option(("--name"))
         self.cmd_list.append(cmd_log)
 
         cmd_cow = Command("cowsay", self.cowsay)
@@ -1314,7 +1318,10 @@ class MainWindow(QtWidgets.QMainWindow):
         if '-a' in kwargs:
             self.log.archive(kwargs['-a'], self.ui.comboBox_log_name_extension.currentText())
             return
-        if '--name' in kwargs:
+        if '-n' in kwargs:
+            self.start_logger(kwargs['-n'])
+            return
+        if '--nfmt' in kwargs:
             self.ui.lineEdit_log_name.setText(kwargs['--name'])
         if '--tfmt' in kwargs:
             self.ui.lineEdit_time_format.setText(kwargs['--tfmt'])
@@ -1335,10 +1342,19 @@ class MainWindow(QtWidgets.QMainWindow):
         self.ui.pushButton_restart_logger.setStyleSheet(STYLE_SHEET_BUTTON_ACTIVE)
         pass
 
-    def start_logger(self):
+    def start_logger(self, filename:str = None):
         folder_path = self.ui.lineEdit_log_folder.text()
+
         file_extension = self.ui.comboBox_log_name_extension.currentText()
         file_name = time.strftime(self.ui.lineEdit_log_name.text())
+
+        if filename is not None:
+            toks = filename.split('.')
+            file_name = toks[0]
+            if len(toks) > 1:
+                file_extension = '.' + toks[-1]
+
+        
         log_fmt = replace_escapes(self.ui.lineEdit_log_format.text())
         time_fmt = replace_escapes(self.ui.lineEdit_time_format.text())
         if not (os.path.isdir(folder_path)):
@@ -1353,7 +1369,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def open_log(self, log_file=None):
         if not log_file:
-            log_file = self.get_latest_file(DEFAULT_LOG_FOLDER)
+            log_file = self.log.file_path
         open_log_viewer(self, log_file)
 
 
