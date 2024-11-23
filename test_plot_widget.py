@@ -60,11 +60,11 @@ def _test_plot():
 
     if UPDATE_TYPE == "SA":
         update_func = update_sa
-        plot.begin("Single-Array", max_points=100, ref_lines=[0,1])
+        plot.begin("Single-Array", max_points=100)
 
     else:
         update_func = update_kv
-        plot.begin(max_points=50, targets=['A', 'B', 'c', 'd'], ref_lines=[5])
+        plot.begin(max_points=50, targets=['A', 'B', 'c', 'd'])
 
 
 
@@ -73,7 +73,7 @@ def _test_plot():
     #pauseTimer.start(2000)
     app.processEvents()
 
-    timer.start(50)
+    timer.start(100)
     plot.show()
     sys.exit(app.exec_())
 

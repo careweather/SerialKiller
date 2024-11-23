@@ -41,7 +41,33 @@ def print_keyPress(event:QtGui.QKeyEvent):
 
     print(f"Key: {event.key().real} {event.key().imag} {event.key().as_integer_ratio()} Mod: {modifiers[event.modifiers()]}")
 
+class KeyControlLineEdit(QtWidgets.QLineEdit):
+    keyPress = pyqtSignal(str)
+    def __init__(self, *args):
+        QLineEdit.__init__(self, *args)
 
+    def keyPressEvent(self, event: QtGui.QKeyEvent) -> None:
+        key = event.key()
+        
+        text = event.text() 
+        self.setText("")
+        print(key, text)
+        if key == QtCore.Qt.Key_Right:
+            self.keyPress.emit("RIGHT")
+            print("RIGHT")
+        elif key == QtCore.Qt.Key_Left:
+            self.keyPress.emit("LEFT")
+            print("LEFT")
+        elif key == QtCore.Qt.Key_Up:
+            self.keyPress.emit("UP")
+            print("UP")
+        elif key == QtCore.Qt.Key_Down:
+            self.keyPress.emit("DOWN")
+            print("DOWN")
+        elif text:
+            self.keyPress.emit(text)
+        return 
+    
 
 class CaptureLineEdit(QtWidgets.QLineEdit):
     keyPress = pyqtSignal(str)
@@ -56,6 +82,7 @@ class CaptureLineEdit(QtWidgets.QLineEdit):
         key = event.key()
         self.setText("")
         text = event.text() 
+        #print(key, text)
         if key == QtCore.Qt.Key_Return or key == QtCore.Qt.Key_Enter:
             self.keyPress.emit('\n')
             return 
@@ -89,6 +116,7 @@ class CaptureLineEdit(QtWidgets.QLineEdit):
 
 
 class MainWindow(QtWidgets.QMainWindow):
+    auto_reconnect_to = None 
     target_port: str = None  # Port to auto-connect to.
     current_ports: dict = {}  # List of current ports
     command_char: str = None
@@ -96,7 +124,6 @@ class MainWindow(QtWidgets.QMainWindow):
     cmd_history = [""]
     commands = {}
     history_index = 1
-    target_port: str = None
     key_cmds: dict = {}
     script_thread = QThread()
     plot_started = False
@@ -117,11 +144,15 @@ class MainWindow(QtWidgets.QMainWindow):
         self.app: QtWidgets.QApplication = parent
 
         self.ui.setupUi(self)
+        self.ui.lineEdit_keyboard_control = KeyControlLineEdit(self.ui.lineEdit_keyboard_control)
+        self.ui.lineEdit_keyboard_control.setPlaceholderText("Type Here")
         self.connect_ui()
         self.debug_text("No Ports Found", color=COLOR_RED)
         self.ui.lineEdit_pass = CaptureLineEdit(self.ui.lineEdit_pass)
         self.ui.lineEdit_pass.setPlaceholderText("pass")
         self.ui.lineEdit_pass.setMaximumSize(50, 1000)
+
+
         self.save_timer = QTimer()
 
         self.create_settings()
@@ -145,7 +176,22 @@ class MainWindow(QtWidgets.QMainWindow):
 
         self.ui.pushButton_restart_logger.setEnabled(False)
         self.ui.lineEdit_pass.keyPress.connect(self.passTextEntered)
-        #self.installEventFilter(self.ui.lineEdit_pass, )
+
+        self.update_status_bar()
+
+    def update_status_bar(self, text: str = None):
+        if text is not None:
+            self.ui.statusbar.showMessage(text)
+            return 
+        text = "Port: " 
+        if self.is_connected:
+            text += f" {ser.port}"
+        else:
+            text += "None"
+
+        text += f" Auto: {self.auto_reconnect_to}"
+        self.ui.statusbar.showMessage(text)
+        
         
 
 
@@ -260,7 +306,9 @@ class MainWindow(QtWidgets.QMainWindow):
         self.ui.pushButton_clear_table.clicked.connect(self.clear_key_cmds)
         self.ui.tableWidget_keys.setRowCount(1)
         self.ui.tableWidget_keys.cellChanged.connect(self.key_cmds_edited)
-        self.ui.lineEdit_keyboard_control.textChanged.connect(self.keyboard_control)
+        #self.ui.lineEdit_keyboard_control.textChanged.connect(self.keyboard_control)
+        self.ui.lineEdit_keyboard_control.keyPress.connect(self.keyboard_control)
+        #self.ui.lineEdit_keyboard_control.installEventFilter()
         self.ui.pushButton_run_script.clicked.connect(self.start_script)
         self.ui.pushButton_start_plot.clicked.connect(self.start_plot_clicked)
         self.ui.pushButton_start_plot.setStyleSheet(STYLE_SHEET_BUTTON_INACTIVE)
@@ -275,6 +323,12 @@ class MainWindow(QtWidgets.QMainWindow):
         self.change_timestamp_format()
         #self.ui.groupBox_adv_plot.toggled.connect(lambda: self.collapse_box(self.ui.groupBox_adv_plot))
         #self.collapse_box(self.ui.groupBox_adv_plot, True)
+
+    def keyboard_control_keypress(self, event: QtGui.QKeyEvent):
+        key = event.key()
+        print(key)
+        if key == QtCore.Qt.Key_Return or key == QtCore.Qt.Key_Enter:
+            self.send_clicked()
 
     def scroll_history(self, scroll_down=True):
         if scroll_down:
@@ -463,6 +517,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
         if intentional:
             self.target_port = None
+            self.auto_reconnect_to = None
             self.ui.label_port.setText(f"Ports: ({self.preference_port})")
             self.add_text(f"DISCONNECTED FROM: {ser.port}\n", type=TYPE_INFO)
             self.debug_text(f"DISCONNECTED FROM: {ser.port}")
@@ -481,6 +536,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.ui.checkBox_dsrdtr.setEnabled(True)
         self.ui.checkBox_xonxoff.setEnabled(True)
         self.log.set_port("NONE")
+        self.update_status_bar()
 
     def connect(self, port: str, baud: str = "115200", xonxoff: bool = False, dsrdtr: bool = False, rtscts: str = False, parity: str = "NONE") -> bool:
         #self.ui.comboBox_port.setCurrentText(port)
@@ -502,6 +558,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.preference_port = port
         if self.ui.checkBox_auto_reconnect.isChecked():
             self.target_port = port
+            self.auto_reconnect_to = self.current_ports[port]['s/n']
 
             self.ui.label_port.setText(f"Port: Auto ({self.target_port})")
 
@@ -526,6 +583,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.serial_thread.start()
 
         vprint("Serial Connection Success")
+        self.update_status_bar()
         return True
 
     def find_port_name(self, input: str):
@@ -570,6 +628,9 @@ class MainWindow(QtWidgets.QMainWindow):
             port = self.find_port_name(args[0])
             if port == None:
                 self.debug_text(f"ERR: PORT {args[0]} NOT FOUND", color=COLOR_RED)
+                return
+            if len(args) > 1:
+                kwargs["-b"] = args[1]
                 return
         else:
             port = self.find_port_name(self.ui.comboBox_port.currentText())
@@ -644,9 +705,11 @@ class MainWindow(QtWidgets.QMainWindow):
             if self.is_connected:
                 self.target_port = ser.port
                 self.ui.label_port.setText(f"Ports: (Auto {self.target_port})")
+                self.auto_reconnect_to = self.current_ports[self.target_port]['s/n']
         else:
             self.ui.label_port.setText(f"Ports:")
             self.target_port = None
+            self.auto_reconnect_to = None
 
     def start_rescan(self):
         self.rescan_thread = QThread()
@@ -733,6 +796,7 @@ class MainWindow(QtWidgets.QMainWindow):
                                 self.ui.checkBox_timestamp,
                                 self.ui.checkBox_allow_commands,
                                 self.ui.checkBox_autolog,
+                                self.ui.checkBox_interpret_escape,
                                 ]
 
         self.save_line_edits = [self.ui.lineEdit_err_chr,
@@ -1568,13 +1632,15 @@ class MainWindow(QtWidgets.QMainWindow):
         self.ui.tableWidget_keys.setItem(indx, 1, QTableWidgetItem(str(send)))
         self.key_cmds_edited()
 
-    def keyboard_control(self):
-        key = self.ui.lineEdit_keyboard_control.text()
+    def keyboard_control(self, key: str):
+        vprint(key, color='green', end='\t')
+        if not key:
+            key = self.ui.lineEdit_keyboard_control.text()
         if not key:
             return
         self.ui.lineEdit_keyboard_control.clear()
         key_cmds = self.get_key_cmds()
-        vprint(key, color='green', end='\t')
+        
         vprint(key_cmds, color='red')
         if key in key_cmds:
             self.ui.lineEdit_input.setText(key_cmds[key])

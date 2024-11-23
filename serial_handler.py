@@ -167,11 +167,11 @@ def get_ports() -> dict:
             'pid': str(port.pid),
             's/n': str(port.serial_number),
             'prod' : str(port.product),
-            'path' : str(port.device_path),
-            'loc': str(port.location),
-            'iface': str(port.interface),
+            #'path' : str(port.device_path),
+            #'loc': str(port.location),
+            #'iface': str(port.interface),
             # 'str': str(port.product) + str(port.usb_interface_path),
-            'usb': str(port.usb_info()),
+            #'usb': str(port.usb_info()),
             'numb': get_serial_port_number(port.device),
         }
 

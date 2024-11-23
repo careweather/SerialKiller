@@ -81,7 +81,8 @@ class Plot_Widget(pg.GraphicsLayoutWidget):
             if isinstance(ref_lines, (float, int)):
                 ref_lines = [ref_lines]
             for line in ref_lines:
-                self.plot.addLine(y=line, pen=pg.mkPen(style=PyQt5.QtCore.Qt.DashLine))
+                self.plot.addLine(y=line)
+                #self.plot.addLine(y=line, pen=pg.mkPen(style=PyQt5.QtCore.Qt.DashLine))
 
         self.prev_color = 0
         self.plot_type = type
