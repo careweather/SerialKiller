@@ -62,7 +62,7 @@ class ScriptWorker(QObject):
 
     def __init__(self, text: str, delay: int = DEFAULT_SCRIPT_DELAY, arg_str: str = "") -> None:
         super().__init__()
-        self.on_exit_str = ""
+        self.on_exit_cmds = []
         self.arg_str = arg_str
         self.delay = delay
         vprint("SCRIPT DELAY:", self.delay, " SCRIPT COMMAND: ", self.arg_str)
@@ -123,10 +123,10 @@ class ScriptWorker(QObject):
                 continue
             cmd = cmd.strip()
 
-            if cmd.startswith("exit="):
-                self.on_exit_str = cmd[5:]
+            # if cmd.startswith("exit="):
+            #     self.on_exit_cmds = cmd[5:]
 
-            elif cmd.startswith("delay="):
+            if cmd.startswith("delay="):
                 self.delay = get_number(cmd[6:], int, self.delay)
 
             elif cmd.startswith("info="):
@@ -162,10 +162,14 @@ class ScriptWorker(QObject):
                 return
         line = line.replace("$LOOP", str(abs(self.loop_counter))).replace("$ARG", self.arg_str)
 
-        if line.strip().startswith("#"):
-            return self.handle_command(line)
 
-        self.send(line)
+        if line.strip().startswith("#exit="):
+            line = line.strip() 
+            self.on_exit_cmds.append(line[6:])
+        elif line.strip().startswith("#"):
+            return self.handle_command(line)
+        else:
+            self.send(line)
         return
 
     def run(self):
@@ -176,7 +180,12 @@ class ScriptWorker(QObject):
         self.finished.emit(True)
 
     def stop(self):
-        if self.on_exit_str:
-            self.handle_command(self.on_exit_str)
+        if self.on_exit_cmds:
+            for c in self.on_exit_cmds:
+                print(c)
+                if c.startswith("#"):
+                    self.handle_command(c)
+                else: 
+                    self.send(c)
         self.active = False
         vprint("SCRIPT DONE")

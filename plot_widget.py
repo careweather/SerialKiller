@@ -49,6 +49,7 @@ class Plot_Widget(pg.GraphicsLayoutWidget):
         self.start_time: float = None
         self.separators = [',', ';', '\t', '\n', '|', ']', '[', ' ', '=', ':']
         self.prev_color = 0
+        #self.setMinimumHeight(0)
 
 
     def begin(self, type="Key-Value", targets: list = None, max_points=100, limits: list = [], separators: list = None, ref_lines: list = None):
@@ -98,8 +99,16 @@ class Plot_Widget(pg.GraphicsLayoutWidget):
         self.legend.setParentItem(self.plot)
         vprint(f"[PLOT] STARTING {self.plot_type}\n\ttarget:\t{self.targets}\n\tlen:\t{self.max_points}\n\tseps:\t{self.separators}\n\tlines:\t{ref_lines}", color="green")
         vprint(f"\tlimits: {self.limits}", color="green")
+
         
         self.addItem(self.plot)
+
+        #self.plot.min
+
+        #self.plot.setMinimumHeight(100.0)
+
+        #size = self.plot.minimumSize()
+        #print(size.height(), size.width(), self.plot.height(), self.plot.width(), self.height(), self.width())
 
     def pause(self):
         vprint("[PLOT] Paused")
@@ -124,7 +133,7 @@ class Plot_Widget(pg.GraphicsLayoutWidget):
 
         self.elements = {}
         self.started = False
-        self.plot.enableAutoScale()
+        #self.plot.enableAutoScale()
 
     def end(self):  # TODO
         self.reset() 

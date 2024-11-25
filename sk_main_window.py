@@ -21,11 +21,12 @@ from sk_log_popup import Log_Viewer, open_log_viewer
 from sk_logging import SK_Logger
 from sk_scripting import ScriptSyntaxHighlighter, ScriptWorker
 from sk_tools import *
-
+from collections import OrderedDict
 import re
 import random
 import math
-
+import csv 
+import shutil
 
 def print_keyPress(event:QtGui.QKeyEvent):
     modifiers = {
@@ -319,6 +320,8 @@ class MainWindow(QtWidgets.QMainWindow):
         self.ui.groupBox_plot_settings.clicked.connect(lambda: self.hide_groupbox(self.ui.groupBox_plot_settings))
         self.ui.textEdit_script.setAcceptRichText(False)
         self.ui.lineEdit_timestamp_format.textChanged.connect(self.change_timestamp_format)
+
+        self.ui.pushButton_export_csv.clicked.connect(self.export_csv)
 
         self.change_timestamp_format()
         #self.ui.groupBox_adv_plot.toggled.connect(lambda: self.collapse_box(self.ui.groupBox_adv_plot))
@@ -1064,6 +1067,8 @@ class MainWindow(QtWidgets.QMainWindow):
         cmd_plot.add_option(("-r", "--ref"))
         cmd_plot.add_option(("-s", "--seps"))
         cmd_plot.add_option(("-t", "--test"))
+        cmd_plot.add_option(("csv", "export", "CSV", "--csv"))
+        cmd_plot.add_option(("--round"), require_values=1)
 
         self.cmd_list.append(cmd_plot)
 
@@ -1476,6 +1481,21 @@ class MainWindow(QtWidgets.QMainWindow):
             elif arg == "sv" or arg.upper() == "SINGLE-VALUE":
                 plot_type = "Single-Value"
 
+            elif arg == "k3d" or arg.upper() == "KEY-3D":
+                plot_type = "Key-3D"
+
+
+
+        if 'csv' in kwargs: 
+            if '--round' in kwargs: 
+                round_to = float(kwargs["--round"])
+                if abs(round_to) > 1.00:
+                    round_to = round_to / 1000
+                self.export_csv(kwargs['csv'], round_to)
+            else: 
+                self.export_csv(kwargs['csv'])
+            return 
+
         if '-h' in kwargs or '--help' in kwargs:
             self.add_text(PLOT_HELP, type=TYPE_HELP)
             return
@@ -1562,6 +1582,64 @@ class MainWindow(QtWidgets.QMainWindow):
         self.ui.pushButton_start_plot.setStyleSheet(STYLE_SHEET_BUTTON_INACTIVE)
         self.ui.widget_plot.reset()
         self.plot_started = False
+
+    def export_csv(self, filename: str = None, round_to = .025):
+        if not self.ui.widget_plot.elements:
+            vprint("No data to export", color='red')
+            self.debug_text("No data to export", color=COLOR_RED)
+            return
+        if not filename:
+            filename = self.get_save_file(os.path.join(INSTALL_FOLDER, "logs"), "*.csv", "Export CSV")
+        if not filename:
+            vprint("Export CSV Cancelled", color='red')
+            return
+        if not filename.endswith(".csv"):
+            filename += ".csv"
+
+        if not os.path.isabs(filename):
+            filename = os.path.join(INSTALL_FOLDER, "logs", filename)
+        vprint("EXPORT CSV: ", filename, color = "green")
+
+        backup = get_backup_filename(filename)
+
+        print("backup:", backup)
+        if backup: 
+            shutil.copy2(filename, backup)
+            self.add_text(f"CSV File exists, backing up to:\n\t{backup}\n", type=TYPE_INFO)
+
+        keys = ["SECONDS"]
+        keys += list(self.ui.widget_plot.elements.keys())
+
+        empty = {}
+        for key in keys: 
+            empty[key] = None 
+        #print(keys)
+        elements = self.ui.widget_plot.elements
+        data = {}
+        for element in elements:
+            vprint(f"CSV COL {element} Len: {len(elements[element]['x'])} {round_to}", color = "green")
+            for index,timestamp in enumerate(elements[element]['x']):
+                timestamp = discrete_round(timestamp, round_to)
+                
+                if timestamp not in data: 
+                    #print(timestamp, round_to < 0)
+                    data[timestamp] = empty.copy()
+                    data[timestamp]["SECONDS"] = timestamp 
+                data[timestamp][element] = float(elements[element]['y'][index])
+
+        data = dict(sorted(data.items(), reverse = round_to < 0))
+
+        with open(filename, 'w+') as file: 
+            writer = csv.DictWriter(file, keys)
+            writer.writeheader()
+            for element in data: 
+                writer.writerow(data[element])
+                #print(element, data[element])
+                #print(index, timestamp)
+
+        self.add_text(f"Wrote CSV to:\n\t{filename}\n", type = TYPE_INFO)
+        self.debug_text(f"Wrote CSV", color = COLOR_GREEN)
+
 
 ########################################################################
 #
@@ -1760,6 +1838,9 @@ class MainWindow(QtWidgets.QMainWindow):
         with open(file_path, 'r') as file:
             text = file.read()
         return text
+    
+
+
 
     def get_directory(self, start=DEFAULT_LOG_FOLDER):
         dir = str(QFileDialog.getExistingDirectory(self, directory=start)) + "/"

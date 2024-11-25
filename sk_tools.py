@@ -7,6 +7,7 @@ from datetime import date, datetime
 from PyQt5.QtGui import QColor
 from PyQt5.QtWidgets import QFileDialog
 
+
 DATE_TODAY = date.today()
 
 USER_OS = platform.system()
@@ -190,6 +191,27 @@ def get_file_name(input:str, start_folder:str, extension:str = None):
         return input, True
     return input, False
 
+
+def get_backup_filename(file_path:str = None): 
+
+    if not os.path.exists(file_path):
+        return None 
+    parent_dir, base_name = os.path.split(file_path)
+    base_name, extension = os.path.splitext(base_name)
+    #s = os.path.split(file_path)[1].
+    #print(parent_dir, base_name, extension)
+
+    indx = 1
+
+    backup_name = os.path.join(parent_dir, f'{base_name}_{indx}{extension}')
+    while os.path.exists(backup_name):
+        indx = indx + 1 
+        if indx > 99:
+            return backup_name
+        backup_name = os.path.join(parent_dir, f'{base_name}_{indx}{extension}')
+    return backup_name
+    #while os.path.exists(file_path):
+
 def replace_escapes(input: str) -> str:
     input = input.replace(r"\\n", '^n^').replace(r'\\r', '^r^').replace(r'\\t', '^t^')  # Temporary change any \\n, ,etc
     input = input.replace(r"\n", '\n').replace(r'\r', '\r').replace(r'\t', '\t')
@@ -203,3 +225,6 @@ STYLE_SHEET_BUTTON_ACTIVE = f"background-color: {colorToStyleSheet(COLOR_GREEN)}
 STYLE_SHEET_SCRIPT = f'background-color: {colorToStyleSheet(COLOR_DARK_RED)};color: rgb(255, 255, 255);font: 10pt "Consolas";'
 STYLE_SHEET_LINE_EDIT_ERROR = f'background-color: {colorToStyleSheet(COLOR_LIGHT_RED)};font: 10pt "Consolas";'
 STYLE_SHEET_LINE_EDIT_NORMAL = f'background-color: {colorToStyleSheet(COLOR_WHITE)};font: 10pt "Consolas";'
+
+def discrete_round(x, base) -> float: 
+    return round(base * round(x / base), 6)

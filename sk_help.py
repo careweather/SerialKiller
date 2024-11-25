@@ -79,14 +79,15 @@ Options:
 PLOT_HELP = '''\
 USEAGE:
     plot [command] [options]
-
+    
 Commands:
-    kv, key-value       Start a plot in Key-Value mode 
-    sv, single-value    Start a plot in Single-Value mode 
-    sa, single-array    Start a plot in Single-Array mode 
-    ka, key-array       Start a plot in Key-Array mode 
-    p, pause            Pause / Resume the plot 
-    c, clear            Clear the Plot 
+    kv, key-value           Start a plot in Key-Value mode 
+    sv, single-value        Start a plot in Single-Value mode 
+    sa, single-array        Start a plot in Single-Array mode 
+    ka, key-array           Start a plot in Key-Array mode 
+    p, pause                Pause / Resume the plot 
+    c, clear                Clear the Plot 
+    csv, export <filename>  Export the current plot as <filename>.csv
 
 Options:
     -h, --help              Print this help message
@@ -95,6 +96,8 @@ Options:
     -l, --limits <limits>   Set the plot limit mode ("Max" or "Window")
     -k, --keys <keys>       Set the target keywords (comma seperate)
     -p, --points <points>   Set the number of plot points
+    --round [value]         Set timestamp rounding (seconds) in csv export 
+                                default = .02
 
 '''
 PLOT_TYPES_HELP = '''\
