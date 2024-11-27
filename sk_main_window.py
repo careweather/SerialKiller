@@ -1631,7 +1631,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
         data = dict(sorted(data.items(), reverse = round_to < 0))
 
-        with open(filename, 'w+') as file: 
+        with open(filename, 'w+', newline='', encoding='utf-8') as file: 
             writer = csv.DictWriter(file, keys)
             writer.writeheader()
             for element in data: 
