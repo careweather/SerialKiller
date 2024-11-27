@@ -1046,7 +1046,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
         self.cmd_list.append(Command("dcon", self.disconnect, 0))
 
-        cmd_script = Command("script", self.handle_script_command, 0)
+        cmd_script = Command("script", self.handle_script_command)
         cmd_script.add_option(("-h", "--help"))
         cmd_script.add_option(("-o", "--open"))
         cmd_script.add_option(("-t", "--tab"))
@@ -1187,6 +1187,8 @@ class MainWindow(QtWidgets.QMainWindow):
             return
         if "-a" in kwargs:
             arg_str = kwargs['-a']
+        for arg in args: 
+            arg_str += arg + " "
         if '-ls' in kwargs:
             self.list_files(SCRIPT_FOLDER)
             return
@@ -1371,7 +1373,7 @@ class MainWindow(QtWidgets.QMainWindow):
         if '-o' in kwargs or '--open' in kwargs:
             if kwargs['-o']:
                 log_file = DEFAULT_LOG_FOLDER + kwargs["-o"]
-                if not log_file.endswith(".txt"):
+                if not log_file.endswith((".txt", ".csv")):
                     log_file += ".txt"
                 if not os.path.exists(log_file):
                     self.add_text(f"Log file {log_file} not found", type=TYPE_ERROR)
